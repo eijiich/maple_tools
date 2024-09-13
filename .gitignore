@@ -1,3 +1,8 @@
-.env
+.venv
 *.png
-jTessBoxEditor
+
+# Node.js dependencies
+node_modules/
+
+#Other things
+jTessBoxEditor/
