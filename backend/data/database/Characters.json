@@ -1,0 +1,26 @@
+[
+    {
+        "Id": 1,
+        "OnBoard": true,
+        "Class": "Bishop",
+        "Name": "Ayamushy",
+        "Level": 285,
+        "PreferenceOrder": 0
+    },
+    {
+        "Id": 3,
+        "OnBoard": true,
+        "Class": "Lynn",
+        "Name": "KawaiiBotan",
+        "Level": 260,
+        "PreferenceOrder": 1
+    },
+    {
+        "Id": 4,
+        "OnBoard": true,
+        "Class": "Kanna",
+        "Name": "UmeTusugumi",
+        "Level": 255,
+        "PreferenceOrder": 1
+    }
+]

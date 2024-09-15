@@ -1,0 +1,94 @@
+[
+  {
+    "class": "Bishop",
+    "name": "Ayamushy",
+    "equipments": [
+      {
+        "type": "Hat",
+        "set": "Eternal",
+        "name": null,
+        "star_force": 18,
+        "potentials": {
+          "lines": [
+            {
+              "position": 1,
+              "stat": "int",
+              "value": 13
+            },
+            {
+              "position": 1,
+              "stat": "all_stats",
+              "value": 7
+            },
+            {
+              "position": 1,
+              "stat": "all_stats",
+              "value": 7
+            }
+          ],
+          "total_stats": 30
+        },
+        "flames": {
+          "values": {
+            "main_stats": null,
+            "secondary_stats": null,
+            "att": null,
+            "all_stats": null
+          },
+          "flame_score": 164
+        },
+        "preset_1": true,
+        "preset_2": true,
+        "preset_3": true,
+        "equipped": true
+      }
+    ]
+  },
+  {
+    "class": "Lynn",
+    "name": "KawaiiBotan",
+    "equipments": [
+            {
+                "type": "Top",
+                "set": "CRA",
+                "name": null,
+                "star_force": 21,
+                "potentials": {
+                  "lines": [
+                    {
+                      "position": 1,
+                      "stat": "int",
+                      "value": 13
+                    },
+                    {
+                      "position": 1,
+                      "stat": "all_stats",
+                      "value": 7
+                    },
+                    {
+                      "position": 1,
+                      "stat": "all_stats",
+                      "value": 7
+                    }
+                  ],
+                    "total_stats": 30
+                },
+                "flames": {
+                  "values": {
+                    "main_stats": null,
+                    "secondary_stats": null,
+                    "att": null,
+                    "all_stats": null
+                  },
+                    "flame_score": 90
+                },
+                "equipped": true
+            }
+        ]
+  },
+  {
+    "class": "Kanna",
+    "name": "UmeTusugumi",
+    "equipments": null
+  }
+]

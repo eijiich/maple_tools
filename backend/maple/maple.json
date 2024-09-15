@@ -1,0 +1,785 @@
+{
+    "desired_values": [
+        {
+            "item": "heart",
+            "list_of_desired_values": [
+                {
+                    "stats": 21
+                },
+                {
+                    "stats": 24
+                },
+                {
+                    "stats": 27
+                },
+                {
+                    "stats": 30
+                },
+                {
+                    "stats": 33
+                },
+                {
+                    "stats": 36
+                },
+                {
+                    "all_stats": 21
+                },
+                {
+                    "all_stats": 24
+                },
+                {
+                    "all_stats": 27
+                },
+                {
+                    "all_stats": 30
+                },
+                {
+                    "all_stats": 33
+                },
+                {
+                    "all_stats": 36
+                },
+                {
+                    "HP": 21
+                },
+                {
+                    "HP": 24
+                },
+                {
+                    "HP": 27
+                },
+                {
+                    "HP": 30
+                },
+                {
+                    "HP": 33
+                },
+                {
+                    "HP": 36
+                }
+            ]
+        },
+        {
+            "item": "cape_belt_shoulder",
+            "list_of_desired_values": [
+                {
+                    "stats": 21
+                },
+                {
+                    "stats": 24
+                },
+                {
+                    "stats": 27
+                },
+                {
+                    "stats": 30
+                },
+                {
+                    "stats": 33
+                },
+                {
+                    "stats": 36
+                },
+                {
+                    "all_stats": 21
+                },
+                {
+                    "all_stats": 24
+                },
+                {
+                    "all_stats": 27
+                },
+                {
+                    "all_stats": 30
+                },
+                {
+                    "all_stats": 33
+                },
+                {
+                    "all_stats": 36
+                },
+                {
+                    "HP": 21
+                },
+                {
+                    "HP": 24
+                },
+                {
+                    "HP": 27
+                },
+                {
+                    "HP": 30
+                },
+                {
+                    "HP": 33
+                },
+                {
+                    "HP": 36
+                }
+            ]
+        },
+        {
+            "item": "bot",
+            "list_of_desired_values": [
+                {
+                    "stats": 21
+                },
+                {
+                    "stats": 24
+                },
+                {
+                    "stats": 27
+                },
+                {
+                    "stats": 30
+                },
+                {
+                    "stats": 33
+                },
+                {
+                    "stats": 36
+                },
+                {
+                    "all_stats": 21
+                },
+                {
+                    "all_stats": 24
+                },
+                {
+                    "all_stats": 27
+                },
+                {
+                    "all_stats": 30
+                },
+                {
+                    "all_stats": 33
+                },
+                {
+                    "all_stats": 36
+                },
+                {
+                    "HP": 21
+                },
+                {
+                    "HP": 24
+                },
+                {
+                    "HP": 27
+                },
+                {
+                    "HP": 30
+                },
+                {
+                    "HP": 33
+                },
+                {
+                    "HP": 36
+                }
+            ]
+        },
+        {
+            "item": "top",
+            "list_of_desired_values": [
+                {
+                    "stats": 21
+                },
+                {
+                    "stats": 24
+                },
+                {
+                    "stats": 27
+                },
+                {
+                    "stats": 30
+                },
+                {
+                    "stats": 33
+                },
+                {
+                    "stats": 36
+                },
+                {
+                    "all_stats": 21
+                },
+                {
+                    "all_stats": 24
+                },
+                {
+                    "all_stats": 27
+                },
+                {
+                    "all_stats": 30
+                },
+                {
+                    "all_stats": 33
+                },
+                {
+                    "all_stats": 36
+                },
+                {
+                    "HP": 21
+                },
+                {
+                    "HP": 24
+                },
+                {
+                    "HP": 27
+                },
+                {
+                    "HP": 30
+                },
+                {
+                    "HP": 33
+                },
+                {
+                    "HP": 36
+                }
+            ]
+        },
+        {
+            "item": "shoes",
+            "list_of_desired_values": [
+                {
+                    "stats": 21
+                },
+                {
+                    "stats": 24
+                },
+                {
+                    "stats": 27
+                },
+                {
+                    "stats": 30
+                },
+                {
+                    "stats": 33
+                },
+                {
+                    "stats": 36
+                },
+                {
+                    "all_stats": 21
+                },
+                {
+                    "all_stats": 24
+                },
+                {
+                    "all_stats": 27
+                },
+                {
+                    "all_stats": 30
+                },
+                {
+                    "all_stats": 33
+                },
+                {
+                    "all_stats": 36
+                },
+                {
+                    "HP": 21
+                },
+                {
+                    "HP": 24
+                },
+                {
+                    "HP": 27
+                },
+                {
+                    "HP": 30
+                },
+                {
+                    "HP": 33
+                },
+                {
+                    "HP": 36
+                }
+            ]
+        },
+        {
+            "item": "hat",
+            "list_of_desired_values": [
+                {
+                    "CD": -6
+                },
+                {
+                    "CD": -5
+                },
+                {
+                    "CD": -4,
+                    "stats": 6
+                },
+                {
+                    "CD": -3,
+                    "stats": 6
+                },
+                {
+                    "CD": -4
+                },
+                {
+                    "CD": -3
+                },
+                {
+                    "CD": -2,
+                    "HP": 24
+                },
+                {
+                    "CD": -2,
+                    "HP": 21
+                },
+                {
+                    "CD": -2,
+                    "HP": 18
+                },
+                {
+                    "CD": -2,
+                    "HP": 9
+                },
+                {
+                    "CD": 16
+                },
+                {
+                    "CD": 8,
+                    "stats": 18
+                },
+                {
+                    "CD": 8,
+                    "stats": 9
+                },
+                {
+                    "CD": 8,
+                    "all_stats": 12
+                },
+                {
+                    "CD": 8,
+                    "all_stats": 6
+                },
+                {
+                    "CD": 8,
+                    "HP": 18
+                },
+                {
+                    "CD": 8,
+                    "HP": 9
+                },
+                {
+                    "stats": 21
+                },
+                {
+                    "stats": 24
+                },
+                {
+                    "stats": 27
+                },
+                {
+                    "stats": 30
+                },
+                {
+                    "stats": 33
+                },
+                {
+                    "stats": 36
+                },
+                {
+                    "all_stats": 21
+                },
+                {
+                    "all_stats": 24
+                },
+                {
+                    "all_stats": 27
+                },
+                {
+                    "all_stats": 30
+                },
+                {
+                    "all_stats": 33
+                },
+                {
+                    "all_stats": 36
+                },
+                {
+                    "HP": 21
+                },
+                {
+                    "HP": 24
+                },
+                {
+                    "HP": 27
+                },
+                {
+                    "HP": 30
+                },
+                {
+                    "HP": 33
+                },
+                {
+                    "HP": 36
+                }
+            ]
+        },
+        {
+            "item": "gloves",
+            "list_of_desired_values": [
+                {
+                    "Crit DMG": 24
+                },
+                {
+                    "Crit DMG": 16,
+                    "stats": 9
+                },
+                {
+                    "Crit DMG": 16,
+                    "all_stats": 6
+                },
+                {
+                    "Crit DMG": 16,
+                    "HP": 9
+                },
+                {
+                    "Crit DMG": 16
+                },
+                {
+                    "Crit DMG": 8,
+                    "stats": 18
+                },
+                {
+                    "Crit DMG": 8,
+                    "stats": 9
+                },
+                {
+                    "Crit DMG": 8,
+                    "all_stats": 12
+                },
+                {
+                    "Crit DMG": 8,
+                    "all_stats": 6
+                },
+                {
+                    "Crit DMG": 8,
+                    "HP": 18
+                },
+                {
+                    "Crit DMG": 8,
+                    "HP": 9
+                },
+                {
+                    "Crit DMG": 8
+                },
+                {
+                    "stats": 21
+                },
+                {
+                    "stats": 24
+                },
+                {
+                    "stats": 27
+                },
+                {
+                    "stats": 30
+                },
+                {
+                    "stats": 33
+                },
+                {
+                    "stats": 36
+                },
+                {
+                    "all_stats": 21
+                },
+                {
+                    "all_stats": 24
+                },
+                {
+                    "all_stats": 27
+                },
+                {
+                    "all_stats": 30
+                },
+                {
+                    "all_stats": 33
+                },
+                {
+                    "all_stats": 36
+                },
+                {
+                    "HP": 21
+                },
+                {
+                    "HP": 24
+                },
+                {
+                    "HP": 27
+                },
+                {
+                    "HP": 30
+                },
+                {
+                    "HP": 33
+                },
+                {
+                    "HP": 36
+                }
+            ]
+        },
+        {
+            "item": "acc",
+            "list_of_desired_values": [
+                {
+                    "stats": 21
+                },
+                {
+                    "stats": 24
+                },
+                {
+                    "stats": 27
+                },
+                {
+                    "stats": 30
+                },
+                {
+                    "stats": 33
+                },
+                {
+                    "stats": 36
+                },
+                {
+                    "all_stats": 21
+                },
+                {
+                    "all_stats": 24
+                },
+                {
+                    "all_stats": 27
+                },
+                {
+                    "all_stats": 30
+                },
+                {
+                    "all_stats": 33
+                },
+                {
+                    "all_stats": 36
+                },
+                {
+                    "HP": 21
+                },
+                {
+                    "HP": 24
+                },
+                {
+                    "HP": 27
+                },
+                {
+                    "HP": 30
+                },
+                {
+                    "HP": 33
+                },
+                {
+                    "HP": 36
+                },
+                {
+                    "Drop": 20,
+                    "Meso": 40
+                },
+                {
+                    "Drop": 40,
+                    "Meso": 20
+                },
+                {
+                    "Drop": 60
+                },
+                {
+                    "Meso": 60
+                },
+                {
+                    "Drop": 40
+                },
+                {
+                    "Meso": 40
+                },
+                {
+                    "Drop": 20,
+                    "Meso": 20
+                }
+            ]
+        },
+        {
+            "item": "weapon",
+            "list_of_desired_values": [
+                {
+                    "ATT": 36
+                },
+                {
+                    "ATT": 33
+                },
+                {
+                    "ATT": 30
+                },
+                {
+                    "ATT": 24,
+                    "BOSS": 40
+                },
+                {
+                    "ATT": 24,
+                    "BOSS": 35
+                },
+                {
+                    "ATT": 24,
+                    "BOSS": 30
+                },
+                {
+                    "ATT": 21,
+                    "BOSS": 40
+                },
+                {
+                    "ATT": 21,
+                    "BOSS": 35
+                },
+                {
+                    "ATT": 21,
+                    "BOSS": 30
+                },
+                {
+                    "ATT": 18,
+                    "BOSS": 40
+                },
+                {
+                    "ATT": 18,
+                    "BOSS": 35
+                },
+                {
+                    "ATT": 18,
+                    "BOSS": 30
+                },
+                {
+                    "ATT": 24
+                },
+                {
+                    "ATT": 21
+                },
+                {
+                    "ATT": 18
+                }
+            ]
+        },
+        {
+            "item": "secondary",
+            "list_of_desired_values": [
+                {
+                    "ATT": 36
+                },
+                {
+                    "ATT": 33
+                },
+                {
+                    "ATT": 30
+                },
+                {
+                    "ATT": 24,
+                    "BOSS": 40
+                },
+                {
+                    "ATT": 24,
+                    "BOSS": 35
+                },
+                {
+                    "ATT": 24,
+                    "BOSS": 30
+                },
+                {
+                    "ATT": 21,
+                    "BOSS": 40
+                },
+                {
+                    "ATT": 21,
+                    "BOSS": 35
+                },
+                {
+                    "ATT": 21,
+                    "BOSS": 30
+                },
+                {
+                    "ATT": 18,
+                    "BOSS": 40
+                },
+                {
+                    "ATT": 18,
+                    "BOSS": 35
+                },
+                {
+                    "ATT": 18,
+                    "BOSS": 30
+                },
+                {
+                    "ATT": 24
+                },
+                {
+                    "ATT": 21
+                },
+                {
+                    "ATT": 18
+                }
+            ]
+        },
+        {
+            "item": "emblem",
+            "list_of_desired_values": [
+                {
+                    "ATT": 36
+                },
+                {
+                    "ATT": 33
+                },
+                {
+                    "ATT": 30
+                },
+                {
+                    "ATT": 24,
+                    "IED": 40
+                },
+                {
+                    "ATT": 24,
+                    "IED": 35
+                },
+                {
+                    "ATT": 24,
+                    "IED": 30
+                },
+                {
+                    "ATT": 21,
+                    "IED": 40
+                },
+                {
+                    "ATT": 21,
+                    "IED": 35
+                },
+                {
+                    "ATT": 21,
+                    "IED": 30
+                },
+                {
+                    "ATT": 18,
+                    "IED": 40
+                },
+                {
+                    "ATT": 18,
+                    "IED": 35
+                },
+                {
+                    "ATT": 18,
+                    "IED": 30
+                },
+                {
+                    "ATT": 24
+                },
+                {
+                    "ATT": 21
+                },
+                {
+                    "ATT": 18
+                }
+            ]
+        }
+    ]
+}

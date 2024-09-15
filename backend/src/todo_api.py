@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request, abort
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 # Mock database (in-memory list)
 todo_list = [

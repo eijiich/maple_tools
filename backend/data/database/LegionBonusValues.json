@@ -1,0 +1,443 @@
+[
+  {
+    "Job": "Hoyoung",
+    "Bonus": "LUK",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Lara",
+    "Bonus": "INT",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Blaze Wizard",
+    "Bonus": "INT",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Dawn Warrior",
+    "Bonus": "Max HP",
+    "B": 250,
+    "A": 500,
+    "S": 1000,
+    "SS": 2000,
+    "SSS": 2500
+  },
+  {
+    "Job": "Mihile",
+    "Bonus": "Max HP",
+    "B": 250,
+    "A": 500,
+    "S": 1000,
+    "SS": 2000,
+    "SSS": 2500
+  },
+  {
+    "Job": "Night Walker",
+    "Bonus": "LUK",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Thunder Breaker",
+    "Bonus": "STR",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Wind Archer",
+    "Bonus": "DEX",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Arch Mage (F/P)",
+    "Bonus": "MP %",
+    "B": 2,
+    "A": 3,
+    "S": 4,
+    "SS": 5,
+    "SSS": 6
+  },
+  {
+    "Job": "Arch Mage (I/L)",
+    "Bonus": "INT",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Bishop",
+    "Bonus": "INT",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Bowmaster",
+    "Bonus": "DEX",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Buccaneer",
+    "Bonus": "STR",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Cannonneer",
+    "Bonus": "STR",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Corsair",
+    "Bonus": "Summon Duration %",
+    "B": 4,
+    "A": 6,
+    "S": 8,
+    "SS": 10,
+    "SSS": 12
+  },
+  {
+    "Job": "Dark Knight",
+    "Bonus": "HP %",
+    "B": 2,
+    "A": 3,
+    "S": 4,
+    "SS": 5,
+    "SSS": 6
+  },
+  {
+    "Job": "Dual Blade",
+    "Bonus": "LUK",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Hero",
+    "Bonus": "STR",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Marksman",
+    "Bonus": "Critical Rate %",
+    "B": 1,
+    "A": 2,
+    "S": 3,
+    "SS": 4,
+    "SSS": 5
+  },
+  {
+    "Job": "Night Lord",
+    "Bonus": "Critical Rate %",
+    "B": 1,
+    "A": 2,
+    "S": 3,
+    "SS": 4,
+    "SSS": 5
+  },
+  {
+    "Job": "Paladin",
+    "Bonus": "STR",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Pathfinder",
+    "Bonus": "DEX",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Shadower",
+    "Bonus": "LUK",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Adele",
+    "Bonus": "STR",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Ark",
+    "Bonus": "STR",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Illium",
+    "Bonus": "INT",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Khali",
+    "Bonus": "LUK",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Aran",
+    "Bonus": "70% chance to recover x% of Max HP with each attack",
+    "B": 2,
+    "A": 4,
+    "S": 6,
+    "SS": 8,
+    "SSS": 10
+  },
+  {
+    "Job": "Evan",
+    "Bonus": "70% chance to recover x% of Max MP with each attack",
+    "B": 2,
+    "A": 4,
+    "S": 6,
+    "SS": 8,
+    "SSS": 10
+  },
+  {
+    "Job": "Luminous",
+    "Bonus": "INT",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Mercedes",
+    "Bonus": "Cooldown Reduction %",
+    "B": -2,
+    "A": 3,
+    "S": 4,
+    "SS": 5,
+    "SSS": 6
+  },
+  {
+    "Job": "Phantom",
+    "Bonus": "Mesos Obtained",
+    "B": 1,
+    "A": 2,
+    "S": 3,
+    "SS": 4,
+    "SSS": 5
+  },
+  {
+    "Job": "Shade",
+    "Bonus": "Critical Damage",
+    "B": 1,
+    "A": 2,
+    "S": 3,
+    "SS": 5,
+    "SSS": 6
+  },
+  {
+    "Job": "Kinesis",
+    "Bonus": "INT",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Lynn",
+    "Bonus": "IED %",
+    "B": 1,
+    "A": 2,
+    "S": 3,
+    "SS": 5,
+    "SSS": "6%"
+  },
+  {
+    "Job": "Angelic Buster",
+    "Bonus": "DEX",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Cadena",
+    "Bonus": "LUK",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Kain",
+    "Bonus": "DEX",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Kaiser",
+    "Bonus": "STR",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Battle Mage",
+    "Bonus": "INT",
+    "B": 10,
+    "A": 20,
+    "S": 40,
+    "SS": 80,
+    "SSS": 100
+  },
+  {
+    "Job": "Blaster",
+    "Bonus": "IED %",
+    "B": 1,
+    "A": 2,
+    "S": 3,
+    "SS": 5,
+    "SSS": 6
+  },
+  {
+    "Job": "Demon Avenger",
+    "Bonus": "Boss Damage %",
+    "B": 1,
+    "A": 2,
+    "S": 3,
+    "SS": 5,
+    "SSS": 6
+  },
+  {
+    "Job": "Demon Slayer",
+    "Bonus": "Status Resistance",
+    "B": 1,
+    "A": 2,
+    "S": 3,
+    "SS": 4,
+    "SSS": 5
+  },
+  {
+    "Job": "Mechanic",
+    "Bonus": "Buff Duration %",
+    "B": 5,
+    "A": 10,
+    "S": 15,
+    "SS": 20,
+    "SSS": 25
+  },
+  {
+    "Job": "Wild Hunter",
+    "Bonus": "20% chance to deal X% + dmg",
+    "B": 4,
+    "A": 8,
+    "S": 12,
+    "SS": 16,
+    "SSS": 20
+  },
+  {
+    "Job": "Xenon",
+    "Bonus": "STR, DEX, and LUK",
+    "B": 5,
+    "A": 10,
+    "S": 20,
+    "SS": 40,
+    "SSS": 50
+  },
+  {
+    "Job": "Hayato",
+    "Bonus": "Critical Damage",
+    "B": 1,
+    "A": 2,
+    "S": 3,
+    "SS": 5,
+    "SSS": 6
+  },
+  {
+    "Job": "Kanna",
+    "Bonus": "Boss Damage",
+    "B": 1,
+    "A": 2,
+    "S": 3,
+    "SS": 5,
+    "SSS": 6
+  },
+  {
+    "Job": "Zero",
+    "Bonus": "EXP Obtained",
+    "B": 4,
+    "A": 6,
+    "S": 8,
+    "SS": 10,
+    "SSS": 12
+  }
+]

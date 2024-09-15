@@ -1,0 +1,294 @@
+[
+  {
+    "class": "Bishop",
+    "name": "Ayamushy",
+    "equipments": [
+      {
+        "type": "Hat",
+        "set": "Eternal",
+        "name": null,
+        "star_force": 18,
+        "potentials": {
+          "lines": [
+            {
+              "position": 1,
+              "stat": "int",
+              "value": 13
+            },
+            {
+              "position": 1,
+              "stat": "all_stats",
+              "value": 7
+            },
+            {
+              "position": 1,
+              "stat": "all_stats",
+              "value": 7
+            }
+          ],
+          "total_stats": 30
+        },
+        "flames": {
+          "main_stats": null,
+          "secondary_stats": null,
+          "att": null,
+          "all_stats": null
+        },
+        "flame_score": 164,
+        "preset_1": true,
+        "preset_2": true,
+        "preset_3": true,
+        "equipped": true
+      }
+    ]
+  },
+  {
+    "class": "Lara",
+    "name": "HitsujiMayoi",
+    "equipments": null
+  },
+  {
+    "class": "Lynn",
+    "name": "KawaiiBotan",
+    "equipments": null
+  },
+  {
+    "class": "Kanna",
+    "name": "UmeTusugumi",
+    "equipments": null
+  },
+  {
+    "class": "Hayato",
+    "name": "MomoHitomi",
+    "equipments": null
+  },
+  {
+    "class": "Bishop",
+    "name": "NotAyamushy",
+    "equipments": null
+  },
+  {
+    "class": "Shade",
+    "name": "EimiYuna",
+    "equipments": null
+  },
+  {
+    "class": "Phantom",
+    "name": "KanamiYuuka",
+    "equipments": null
+  },
+  {
+    "class": "Mechanic",
+    "name": "MekaMei",
+    "equipments": null
+  },
+  {
+    "class": "Arch Mage (I/L)",
+    "name": "YukiRairi",
+    "equipments": null
+  },
+  {
+    "class": "Arch Mage (F/P)",
+    "name": "MihoBusujima",
+    "equipments": null
+  },
+  {
+    "class": "Corsair",
+    "name": "MakaneRimi",
+    "equipments": null
+  },
+  {
+    "class": "Kinesis",
+    "name": "KuroyuriNen",
+    "equipments": null
+  },
+  {
+    "class": "Demon Avenger",
+    "name": "YuuSayuri",
+    "equipments": null
+  },
+  {
+    "class": "Mercedes",
+    "name": "YuukiMeru",
+    "equipments": null
+  },
+  {
+    "class": "Aran",
+    "name": "NaramiChibi",
+    "equipments": null
+  },
+  {
+    "class": "Khali",
+    "name": "KarinSatsuki",
+    "equipments": null
+  },
+  {
+    "class": "Adele",
+    "name": "KurohaRiyuki",
+    "equipments": null
+  },
+  {
+    "class": "Bishop",
+    "name": "FakeAyamushy",
+    "equipments": null
+  },
+  {
+    "class": "Zero",
+    "name": "DeltaYuuki",
+    "equipments": null
+  },
+  {
+    "class": "Battle Mage",
+    "name": "MeiKamakura",
+    "equipments": null
+  },
+  {
+    "class": "Luminous",
+    "name": "MikageHikari",
+    "equipments": null
+  },
+  {
+    "class": "Illium",
+    "name": "MiakiReiha",
+    "equipments": null
+  },
+  {
+    "class": "Blaze Wizard",
+    "name": "AyakaEn",
+    "equipments": null
+  },
+  {
+    "class": "Marksman",
+    "name": "ReiyaTooko",
+    "equipments": null
+  },
+  {
+    "class": "Night Lord",
+    "name": "YozoraYomi",
+    "equipments": null
+  },
+  {
+    "class": "Wild Hunter",
+    "name": "HayaRakko",
+    "equipments": null
+  },
+  {
+    "class": "Dark Knight",
+    "name": "ToukoYamika",
+    "equipments": null
+  },
+  {
+    "class": "Bowmaster",
+    "name": "RemiyaMisato",
+    "equipments": null
+  },
+  {
+    "class": "Angelic Buster",
+    "name": "AtsukaNoeru",
+    "equipments": null
+  },
+  {
+    "class": "Evan",
+    "name": "xRyuuka",
+    "equipments": null
+  },
+  {
+    "class": "Buccaneer",
+    "name": "Amane​Hebi​"
+  },
+  {
+    "class": "Paladin",
+    "name": "RinKiyoe",
+    "equipments": null
+  },
+  {
+    "class": "Pathfinder",
+    "name": "YukineYayoi",
+    "equipments": null
+  },
+  {
+    "class": "Shadower",
+    "name": "MikageMiei",
+    "equipments": null
+  },
+  {
+    "class": "Cannonneer",
+    "name": "HouryuuNuiko",
+    "equipments": null
+  },
+  {
+    "class": "Hero",
+    "name": "TatewakiHime",
+    "equipments": null
+  },
+  {
+    "class": "Dual Blade",
+    "name": "ReiniKuroha",
+    "equipments": null
+  },
+  {
+    "class": "Hoyoung",
+    "name": "KoyamiSen",
+    "equipments": null
+  },
+  {
+    "class": "Xenon",
+    "name": "YuranRenge",
+    "equipments": null
+  },
+  {
+    "class": "Ark",
+    "name": "KouenYuri",
+    "equipments": null
+  },
+  {
+    "class": "Kain",
+    "name": "KayaYamiya",
+    "equipments": null
+  },
+  {
+    "class": "Cadena",
+    "name": "MegumiSeisa",
+    "equipments": null
+  },
+  {
+    "class": "Blaster",
+    "name": "KanonHayame",
+    "equipments": null
+  },
+  {
+    "class": "Dawn Warrior",
+    "name": "KyoukoRei",
+    "equipments": null
+  },
+  {
+    "class": "Demon Slayer",
+    "name": "YamiOniyuri",
+    "equipments": null
+  },
+  {
+    "class": "Kaiser",
+    "name": "RiyuTeruko",
+    "equipments": null
+  },
+  {
+    "class": "Mihile",
+    "name": "KenshiKon",
+    "equipments": null
+  },
+  {
+    "class": "Night Walker",
+    "name": "RiyoSetsuna",
+    "equipments": null
+  },
+  {
+    "class": "Thunder Breaker",
+    "name": "AtsumiMirai",
+    "equipments": null
+  },
+  {
+    "class": "Wind Archer",
+    "name": "FuyuAyane",
+    "equipments": null
+  }
+]

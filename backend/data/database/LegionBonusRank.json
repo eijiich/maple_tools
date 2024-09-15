@@ -1,0 +1,27 @@
+[
+  {
+    "Rank": "B",
+    "Level": 60,
+    "ZeroLevel": 130
+  },
+  {
+    "Rank": "A",
+    "Level": 100,
+    "ZeroLevel": 160
+  },
+  {
+    "Rank": "S",
+    "Level": 140,
+    "ZeroLevel": 180
+  },
+  {
+    "Rank": "SS",
+    "Level": 200,
+    "ZeroLevel": 200
+  },
+  {
+    "Rank": "SSS",
+    "Level": 250,
+    "ZeroLevel": 250
+  }
+]

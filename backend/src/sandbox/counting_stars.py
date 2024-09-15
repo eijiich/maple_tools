@@ -1,12 +1,13 @@
 import cv2
 import numpy as np
 
-data_path = r'C:\Users\GuilhermeIchibara\OneDrive - StepWise\Guilherme Ichibara\Projects\maple_tools\data\img\dataset\\'
-output_path = r'C:\Users\GuilhermeIchibara\OneDrive - StepWise\Guilherme Ichibara\Projects\maple_tools\data\img\output\\'
+data_path = r'D:\Programming\maple_tools\data\\'
+output_path = r'D:\Programming\maple_tools\data\output\\'
 
 
 # Load the main image in color
-image = cv2.imread(data_path+r'TrixterPants.png')
+image = cv2.imread(data_path+r'Weapon2.png')
+print(image)
 # Load the star template with transparency (RGBA)
 template = cv2.imread(data_path+r'star.png', cv2.IMREAD_UNCHANGED)
 
