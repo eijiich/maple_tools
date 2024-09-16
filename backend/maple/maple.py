@@ -27,13 +27,13 @@ probabilities = {
         {"name": "HP",         "value": 12,"prob":  4/39},
         {"name": "Zero",       "value": 0, "prob": 32/39},
     ],
-    "bot_unique_prob": [
+    "bottom_unique_prob": [
         {"name": "main_stats", "value": 9, "prob":  5/52},
         {"name": "all_stats",  "value": 6, "prob":  4/52},
         {"name": "HP",         "value": 9, "prob":  6/52},
         {"name": "Zero",       "value": 0, "prob": 41/52},
     ],
-    "bot_leg_prob": [
+    "bottom_leg_prob": [
         {"name": "main_stats", "value": 12,"prob":  4/33},
         {"name": "all_stats",  "value": 9, "prob":  3/33},
         {"name": "HP",         "value": 12,"prob":  4/33},

@@ -21,7 +21,8 @@ class PotentialLine:
         self,
         position: int  = None,
         stat: str = None,
-        value: int = None
+        value: int = None,
+        allowed_stats: Optional[List[str]] = None
     ):
         if (stat and value):
             if position not in [1,2,3]:
@@ -32,6 +33,10 @@ class PotentialLine:
         self.position = position
         self.stat = stat
         self.value = value
+        
+        if allowed_stats and stat not in allowed_stats:
+            raise ValueError(f"Stat '{stat}' is not allowed for this equipment type.")
+    
 
     def as_list(self):
         return [self.position, self.stat, self.att, self.value]

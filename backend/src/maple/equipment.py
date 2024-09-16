@@ -43,7 +43,41 @@ class Equipment:
     
     def __str__(self):
         return (str(self.as_dict()))
-    # Example usage
+
+
+a = [
+    'hat',
+
+    'overall',
+    'top',
+    
+    'bottom',
+    
+
+    'gloves',
+
+    'shoes',
+
+    'cape',
+    'shoulder',
+    'belt',
+
+    'face'
+    'eye',
+    'ring',
+    'earring',
+    'pendant',
+
+    'heart'
+
+    'weapon',
+
+    'secondary',
+
+    'emblem'
+]
+
+
 if __name__ == '__main__':
     # Assuming Potentials and Flames classes are defined properly
     pot_lines = [
