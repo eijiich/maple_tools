@@ -1,4 +1,5 @@
 # maple/__init__.py
-
-from .module1 import MyClass1
-from .module2 import MyClass2
+import maple_schemas
+from equipment import Equipment
+from pots import Potentials, PotentialLine
+from flames import Flames, FlameValues, FlameWeights

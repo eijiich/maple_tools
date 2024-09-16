@@ -1,7 +1,7 @@
 from typing import List, Dict, Union, Optional
 
 list_of_possible_stats = [
-    "stats",
+    "main_stats",
     "all_stats",
     "HP",
 
@@ -13,16 +13,22 @@ list_of_possible_stats = [
     
     "ATT",
     "BOSS",
-    "IED",
+    "IED"
 ]
 
-class PotentialLines:
+class PotentialLine:
     def __init__(
         self,
-        position: float = None,
+        position: int  = None,
         stat: str = None,
         value: int = None
     ):
+        if (stat and value):
+            if position not in [1,2,3]:
+                raise ValueError(f"position should be in [1, 2, 3] and not {position}")
+            if stat not in list_of_possible_stats:
+                raise ValueError("That line is not in the possible stats list")
+
         self.position = position
         self.stat = stat
         self.value = value
@@ -43,7 +49,7 @@ class PotentialLines:
 class Potentials:
     def __init__(
         self,
-        lines: Optional[List[PotentialLines]] = None,
+        lines: Optional[List[PotentialLine]] = None,
         total_stats: Optional[int] = None,
     ):
         # Initialize weights with default values if not provided
@@ -52,14 +58,14 @@ class Potentials:
    
     def calculate_total_stats(self):
         # Sum values where 'stats' is in the stat name
-        return sum(line.value for line in self.lines if 'stats' in line.stat)
+        return sum(line.value for line in self.lines if 'stats' in str(line.stat))
 
     def as_dict(self):
         # Generate a default list if lines is empty
         if not self.lines:
             # Define how many default entries you want
             num_defaults = 3
-            self.lines = [PotentialLines() for _ in range(num_defaults)]
+            self.lines = [PotentialLine() for _ in range(num_defaults)]
             
         return {
             "lines": [line.as_dict() for line in self.lines],
@@ -71,9 +77,9 @@ class Potentials:
 
 if __name__ == '__main__':
     teste = [
-        PotentialLines(position=1, stat="main_stats", value=13),
-        PotentialLines(position=1, stat="main_stats", value=7),
-        PotentialLines(position=1, stat="all_stats", value=7),
+        PotentialLine(position=1, stat="main_stats", value=13),
+        PotentialLine(position=1, stat="main_stats", value=7),
+        PotentialLine(position=1, stat="all_stats", value=7),
     ]
     
     potentials = Potentials(lines=teste)

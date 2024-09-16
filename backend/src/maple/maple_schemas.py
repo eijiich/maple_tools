@@ -1,6 +1,6 @@
 from typing import List, Dict, Union, Optional
 from flames import Flames, FlameValues, FlameWeights
-from pots import Potentials, PotentialLines
+from pots import Potentials, PotentialLine
 from equipment import Equipment
 from marshmallow import Schema, fields, post_load, post_dump, pre_dump
 
@@ -31,17 +31,17 @@ class FlamesSchema(Schema):
     def make_flames(self, data, **kwargs):
         return Flames(**data)
 
-class PotentialLinesSchema(Schema):
+class PotentialLineSchema(Schema):
     position = fields.Float(allow_none=True, load_default=None)
     stat = fields.Str(allow_none=True, load_default=None)
     value = fields.Int(allow_none=True, load_default=None)
 
     @post_load
     def make_potential_line(self, data, **kwargs):
-        return PotentialLines(**data)
+        return PotentialLine(**data)
 
 class PotentialsSchema(Schema):
-    lines = fields.List(fields.Nested(PotentialLinesSchema), allow_none=True, load_default=[])
+    lines = fields.List(fields.Nested(PotentialLineSchema), allow_none=True, load_default=[])
     total_stats = fields.Int(allow_none=True, load_default=0)
     
     @pre_dump
@@ -81,74 +81,6 @@ class EquipmentSchema(Schema):
     @post_load
     def make_equipment(self, data, **kwargs):
         return Equipment(**data)
-
-equipments1 = [
-    {
-        "equip_type": None,
-        "equip_set": None,
-        "equip_name": None,
-        "star_force": None,
-        "potentials": {
-            "lines": [
-                {
-                "position":None,
-                "stat":None,
-                "value":None,
-                },
-                {
-                "position":None,
-                "stat":None,
-                "value":None,
-                },
-                {
-                "position":None,
-                "stat":None,
-                "value":None,
-                },
-            ],
-            "total_stats": None,
-        },
-        "flames": {
-            "values": {
-                "main_stats": None,
-                "secondary_stats": None,
-                "att": None,
-                "all_stats": None,
-            },
-            "flame_score": None,
-        },
-        "preset_1": True,
-        "preset_2": True,
-        "preset_3": True,
-        "equipped": True,
-    }
-]
-
-equipments2 = [
-    {
-        "equip_type": "Hat",
-        "equip_set": "Eternal",
-        "equip_name": None,
-        "star_force": 18,
-        "potentials": {
-            "lines": None,
-            "total_stats": 30,
-        },
-        "flames": {
-            "values": {
-                "main_stats": None,
-                "secondary_stats": None,
-                "att": None,
-                "all_stats": None,
-            },
-            "flame_score": 164,
-        },
-        "preset_1": True,
-        "preset_2": True,
-        "preset_3": True,
-        "equipped": True,
-    }
-]
 
 if __name__ == '__main__':# Example input data
     equipments = [
@@ -202,29 +134,26 @@ if __name__ == '__main__':# Example input data
     serialized_data = equipment_schema.dump(equipment_data)
     print(serialized_data)
 
-    # equipment_data = equipments2[0]
-    # flames = Flames(**equipment_data['flames'])
-    # potentials_lines = [PotentialLines(**line) for line in equipment_data['potentials']['lines']]
-    # potentials = Potentials(lines=potentials_lines)
+    pot_lines = [
+        PotentialLine(1, "main_stats", 30),
+        PotentialLine(2, "main_stats", 30),
+        PotentialLine(3, "main_stats", 30),
+    ]
+    pots = Potentials(pot_lines)
 
-    # equipment_object = Equipment(
-    #     equip_type=equipment_data['type'],
-    #     equip_set=equipment_data['set'],
-    #     equip_name=equipment_data['name'],
-    #     star_force=equipment_data['star_force'],
-    #     potentials=potentials,
-    #     flames=flames,
-    #     preset_1=equipment_data['preset_1'],
-    #     preset_2=equipment_data['preset_2'],
-    #     preset_3=equipment_data['preset_3'],
-    #     equipped=equipment_data['equipped']
-    # )
+    flames = Flames(flame_score = 69)
 
-    # # Serialize to JSON
-    # equipment_schema = EquipmentSchema()
-    # json_data = equipment_schema.dump(equipment_object)
-    # print(json_data)
+    equipment = Equipment(
+        equip_type="Bottom",
+        equip_set="CRA",
+        equip_name=None,
+        star_force=21,
+        potentials=pots,
+        flames=flames,
+        preset_1=True,
+        preset_2=False,
+        preset_3=False,
+        equipped=True
+    )
 
-    # # Deserialize from JSON back to an object
-    # loaded_equipment = equipment_schema.load(json_data)
-    # print(loaded_equipment)
+    print(equipment)

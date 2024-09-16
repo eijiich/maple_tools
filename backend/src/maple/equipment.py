@@ -1,6 +1,6 @@
 from typing import List, Dict, Union, Optional
 from flames import Flames, FlameWeights
-from pots import Potentials, PotentialLines
+from pots import Potentials, PotentialLine
 
 class Equipment:
     def __init__(
@@ -46,20 +46,28 @@ class Equipment:
     # Example usage
 if __name__ == '__main__':
     # Assuming Potentials and Flames classes are defined properly
-    potentials = Potentials(lines=None, total_stats=None)
-    flames = Flames(values=None, flame_score=None)
-    
+    pot_lines = [
+        PotentialLine(1, "main_stats", 30),
+        PotentialLine(2, "main_stats", 30),
+        PotentialLine(3, "main_stats", 30),
+    ]
+    pots = Potentials(pot_lines)
+
+    flames = Flames(flame_score = 69)
+
     equipment = Equipment(
-        equip_type=None,
-        equip_set=None,
+        equip_type="Bottom",
+        equip_set="CRA",
         equip_name=None,
-        star_force=None,
-        potentials=potentials,
+        star_force=21,
+        potentials=pots,
         flames=flames,
         preset_1=True,
-        preset_2=True,
-        preset_3=True,
+        preset_2=False,
+        preset_3=False,
         equipped=True
     )
-    
+
     print(equipment)
+
+    

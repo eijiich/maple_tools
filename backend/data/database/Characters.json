@@ -1,26 +1,42 @@
 [
     {
-        "Id": 1,
-        "OnBoard": true,
-        "Class": "Bishop",
-        "Name": "Ayamushy",
-        "Level": 285,
-        "PreferenceOrder": 0
-    },
-    {
-        "Id": 3,
-        "OnBoard": true,
-        "Class": "Lynn",
-        "Name": "KawaiiBotan",
-        "Level": 260,
-        "PreferenceOrder": 1
-    },
-    {
-        "Id": 4,
-        "OnBoard": true,
-        "Class": "Kanna",
-        "Name": "UmeTusugumi",
-        "Level": 255,
-        "PreferenceOrder": 1
+        "equip_type": "Bottom",
+        "equip_set": "CRA",
+        "equip_name": null,
+        "star_force": 21,
+        "potentials": {
+            "lines": [
+                {
+                    "position": 1,
+                    "stat": "main_stats",
+                    "value": 30
+                },
+                {
+                    "position": 2,
+                    "stat": "main_stats",
+                    "value": 30
+                },
+                {
+                    "position": 3,
+                    "stat": "main_stats",
+                    "value": 30
+                }
+            ],
+            "total_stats": 90
+        },
+        "flames": {
+            "values": {
+                "main_stats": null,
+                "secondary_stats": null,
+                "att": null,
+                "all_stats": null
+            },
+            "flame_score": 69
+        },
+        "preset_1": true,
+        "preset_2": false,
+        "preset_3": false,
+        "equipped": true
     }
 ]
+

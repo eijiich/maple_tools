@@ -1,6 +1,5 @@
 [
     {
-        "Id": 1,
         "OnBoard": true,
         "Class": "Bishop",
         "Name": "Ayamushy",
@@ -8,7 +7,6 @@
         "PreferenceOrder": 0
     },
     {
-        "Id": 2,
         "OnBoard": true,
         "Class": "Lynn",
         "Name": "KawaiiBotan",
@@ -16,7 +14,6 @@
         "PreferenceOrder": 1
     },
     {
-        "Id": 3,
         "OnBoard": true,
         "Class": "Kanna",
         "Name": "UmeTusugumi",
@@ -24,7 +21,6 @@
         "PreferenceOrder": 1
     },
     {
-        "Id": 4,
         "OnBoard": true,
         "Class": "Lara",
         "Name": "HitsujiMayoi",
@@ -32,7 +28,6 @@
         "PreferenceOrder": 1
     },
     {
-        "Id": 5,
         "OnBoard": true,
         "Class": "Hayato",
         "Name": "MomoHitomi",
@@ -40,7 +35,6 @@
         "PreferenceOrder": 2
     },
     {
-        "Id": 6,
         "OnBoard": true,
         "Class": "Bishop 2",
         "Name": "NotAyamushy",
@@ -48,7 +42,6 @@
         "PreferenceOrder": 3
     },
     {
-        "Id": 7,
         "OnBoard": true,
         "Class": "Shade",
         "Name": "EimiYuna",
@@ -56,7 +49,6 @@
         "PreferenceOrder": 4
     },
     {
-        "Id": 8,
         "OnBoard": true,
         "Class": "Phantom",
         "Name": "KanamiYuuka",
@@ -64,7 +56,6 @@
         "PreferenceOrder": 5
     },
     {
-        "Id": 9,
         "OnBoard": true,
         "Class": "Mechanic",
         "Name": "MekaMei",
@@ -72,7 +63,6 @@
         "PreferenceOrder": 6
     },
     {
-        "Id": 10,
         "OnBoard": true,
         "Class": "Arch Mage (I/L)",
         "Name": "YukiRairi",
@@ -80,7 +70,6 @@
         "PreferenceOrder": 7
     },
     {
-        "Id": 11,
         "OnBoard": true,
         "Class": "Arch Mage (F/P)",
         "Name": "MihoBusujima",
@@ -88,7 +77,6 @@
         "PreferenceOrder": 8
     },
     {
-        "Id": 12,
         "OnBoard": true,
         "Class": "Corsair",
         "Name": "MakaneRimi",
@@ -96,7 +84,6 @@
         "PreferenceOrder": 9
     },
     {
-        "Id": 13,
         "OnBoard": true,
         "Class": "Kinesis",
         "Name": "KuroyuriNen",
@@ -104,7 +91,6 @@
         "PreferenceOrder": 10
     },
     {
-        "Id": 14,
         "OnBoard": true,
         "Class": "Demon Avenger",
         "Name": "YuuSayuri",
@@ -112,7 +98,6 @@
         "PreferenceOrder": 11
     },
     {
-        "Id": 15,
         "OnBoard": true,
         "Class": "Mercedes",
         "Name": "YuukiMeru",
@@ -120,7 +105,6 @@
         "PreferenceOrder": 12
     },
     {
-        "Id": 16,
         "OnBoard": true,
         "Class": "Aran",
         "Name": "NaramiChibi",
@@ -128,7 +112,6 @@
         "PreferenceOrder": 13
     },
     {
-        "Id": 17,
         "OnBoard": false,
         "Class": "Khali",
         "Name": "KarinSatsuki",
@@ -136,7 +119,6 @@
         "PreferenceOrder": 14
     },
     {
-        "Id": 18,
         "OnBoard": true,
         "Class": "Adele",
         "Name": "KurohaRiyuki",
@@ -144,7 +126,6 @@
         "PreferenceOrder": 15
     },
     {
-        "Id": 19,
         "OnBoard": false,
         "Class": "Bishop 3",
         "Name": "FakeAyamushy",
@@ -152,7 +133,6 @@
         "PreferenceOrder": 16
     },
     {
-        "Id": 20,
         "OnBoard": true,
         "Class": "Zero",
         "Name": "DeltaYuuki",
@@ -160,7 +140,6 @@
         "PreferenceOrder": 21
     },
     {
-        "Id": 21,
         "OnBoard": true,
         "Class": "Battle Mage",
         "Name": "MeiKamakura",
@@ -168,7 +147,6 @@
         "PreferenceOrder": 30
     },
     {
-        "Id": 22,
         "OnBoard": true,
         "Class": "Luminous",
         "Name": "MikageHikari",
@@ -176,7 +154,6 @@
         "PreferenceOrder": 31
     },
     {
-        "Id": 23,
         "OnBoard": true,
         "Class": "Illium",
         "Name": "MiakiReiha",
@@ -184,7 +161,6 @@
         "PreferenceOrder": 32
     },
     {
-        "Id": 24,
         "OnBoard": true,
         "Class": "Blaze Wizard",
         "Name": "AyakaEn",
@@ -192,7 +168,6 @@
         "PreferenceOrder": 33
     },
     {
-        "Id": 25,
         "OnBoard": true,
         "Class": "Marksman",
         "Name": "ReiyaTooko",
@@ -200,7 +175,6 @@
         "PreferenceOrder": 40
     },
     {
-        "Id": 26,
         "OnBoard": true,
         "Class": "Night Lord",
         "Name": "YozoraYomi",
@@ -208,7 +182,6 @@
         "PreferenceOrder": 41
     },
     {
-        "Id": 27,
         "OnBoard": true,
         "Class": "Wild Hunter",
         "Name": "HayaRakko",
@@ -216,7 +189,6 @@
         "PreferenceOrder": 42
     },
     {
-        "Id": 28,
         "OnBoard": true,
         "Class": "Dark Knight",
         "Name": "ToukoYamika",
@@ -224,7 +196,6 @@
         "PreferenceOrder": 43
     },
     {
-        "Id": 29,
         "OnBoard": true,
         "Class": "Bowmaster",
         "Name": "RemiyaMisato",
@@ -232,7 +203,6 @@
         "PreferenceOrder": 44
     },
     {
-        "Id": 30,
         "OnBoard": true,
         "Class": "Angelic Buster",
         "Name": "AtsukaNoeru",
@@ -240,7 +210,6 @@
         "PreferenceOrder": 60
     },
     {
-        "Id": 31,
         "OnBoard": true,
         "Class": "Evan",
         "Name": "xRyuuka",
@@ -248,7 +217,6 @@
         "PreferenceOrder": 61
     },
     {
-        "Id": 32,
         "OnBoard": true,
         "Class": "Buccaneer",
         "Name": "Amane​Hebi​",
@@ -256,7 +224,6 @@
         "PreferenceOrder": 62
     },
     {
-        "Id": 33,
         "OnBoard": false,
         "Class": "Paladin",
         "Name": "RinKiyoe",
@@ -264,7 +231,6 @@
         "PreferenceOrder": 63
     },
     {
-        "Id": 34,
         "OnBoard": false,
         "Class": "Pathfinder",
         "Name": "YukineYayoi",
@@ -272,7 +238,6 @@
         "PreferenceOrder": 64
     },
     {
-        "Id": 35,
         "OnBoard": false,
         "Class": "Shadower",
         "Name": "MikageMiei",
@@ -280,7 +245,6 @@
         "PreferenceOrder": 65
     },
     {
-        "Id": 36,
         "OnBoard": false,
         "Class": "Cannonneer",
         "Name": "HouryuuNuiko",
@@ -288,7 +252,6 @@
         "PreferenceOrder": 66
     },
     {
-        "Id": 37,
         "OnBoard": false,
         "Class": "Hero",
         "Name": "TatewakiHime",
@@ -296,7 +259,6 @@
         "PreferenceOrder": 67
     },
     {
-        "Id": 38,
         "OnBoard": true,
         "Class": "Dual Blade",
         "Name": "ReiniKuroha",
@@ -304,7 +266,6 @@
         "PreferenceOrder": 68
     },
     {
-        "Id": 39,
         "OnBoard": false,
         "Class": "Hoyoung",
         "Name": "KoyamiSen",
@@ -312,7 +273,6 @@
         "PreferenceOrder": 69
     },
     {
-        "Id": 40,
         "OnBoard": true,
         "Class": "Xenon",
         "Name": "YuranRenge",
@@ -320,7 +280,6 @@
         "PreferenceOrder": 70
     },
     {
-        "Id": 41,
         "OnBoard": true,
         "Class": "Ark",
         "Name": "KouenYuri",
@@ -328,7 +287,6 @@
         "PreferenceOrder": 71
     },
     {
-        "Id": 42,
         "OnBoard": true,
         "Class": "Kain",
         "Name": "KayaYamiya",
@@ -336,7 +294,6 @@
         "PreferenceOrder": 72
     },
     {
-        "Id": 43,
         "OnBoard": false,
         "Class": "Cadena",
         "Name": "MegumiSeisa",
@@ -344,7 +301,6 @@
         "PreferenceOrder": 73
     },
     {
-        "Id": 44,
         "OnBoard": true,
         "Class": "Blaster",
         "Name": "KanonHayame",
@@ -352,7 +308,6 @@
         "PreferenceOrder": 74
     },
     {
-        "Id": 45,
         "OnBoard": false,
         "Class": "Dawn Warrior",
         "Name": "KyoukoRei",
@@ -360,7 +315,6 @@
         "PreferenceOrder": 100
     },
     {
-        "Id": 46,
         "OnBoard": true,
         "Class": "Demon Slayer",
         "Name": "YamiOniyuri",
@@ -368,7 +322,6 @@
         "PreferenceOrder": 101
     },
     {
-        "Id": 47,
         "OnBoard": true,
         "Class": "Kaiser",
         "Name": "RiyuTeruko",
@@ -376,7 +329,6 @@
         "PreferenceOrder": 102
     },
     {
-        "Id": 48,
         "OnBoard": true,
         "Class": "Mihile",
         "Name": "KenshiKon",
@@ -384,7 +336,6 @@
         "PreferenceOrder": 103
     },
     {
-        "Id": 49,
         "OnBoard": false,
         "Class": "Night Walker",
         "Name": "RiyoSetsuna",
@@ -392,7 +343,6 @@
         "PreferenceOrder": 104
     },
     {
-        "Id": 50,
         "OnBoard": false,
         "Class": "Thunder Breaker",
         "Name": "AtsumiMirai",
@@ -400,7 +350,6 @@
         "PreferenceOrder": 105
     },
     {
-        "Id": 51,
         "OnBoard": false,
         "Class": "Wind Archer",
         "Name": "FuyuAyane",
