@@ -27,10 +27,10 @@ class PotentialLines:
         self.stat = stat
         self.value = value
 
-    def asList(self):
+    def as_list(self):
         return [self.position, self.stat, self.att, self.value]
 
-    def asDict(self):
+    def as_dict(self):
         return {
             "position": self.position,
             "stat": self.stat,
@@ -38,7 +38,7 @@ class PotentialLines:
         }
 
     def __str__(self):
-        return f"{str(self.asDict())})"
+        return f"{str(self.as_dict())})"
 
 class Potentials:
     def __init__(
@@ -54,19 +54,25 @@ class Potentials:
         # Sum values where 'stats' is in the stat name
         return sum(line.value for line in self.lines if 'stats' in line.stat)
 
-    def asDict(self):
+    def as_dict(self):
+        # Generate a default list if lines is empty
+        if not self.lines:
+            # Define how many default entries you want
+            num_defaults = 3
+            self.lines = [PotentialLines() for _ in range(num_defaults)]
+            
         return {
-            "lines": [line.asDict() for line in self.lines],
+            "lines": [line.as_dict() for line in self.lines],
             "total_stats": self.total_stats,
         }
 
     def __str__(self):
-        return f"{str(self.asDict())}"
+        return f"{str(self.as_dict())}"
 
 if __name__ == '__main__':
     teste = [
         PotentialLines(position=1, stat="main_stats", value=13),
-        PotentialLines(position=1, stat="cd", value=7),
+        PotentialLines(position=1, stat="main_stats", value=7),
         PotentialLines(position=1, stat="all_stats", value=7),
     ]
     
