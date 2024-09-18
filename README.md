@@ -12,9 +12,11 @@
 
 ### backend
 - [ ] Item tracker
+    - [ ] Item tracker
 - [ ] Bosses tracking
 - [ ] Legion
 - [ ] Nodes calculator
+- [ ] Frags calculator
 - [ ] Exp Calc
 - [ ] Cube Calc
 - [ ] SF Calc
