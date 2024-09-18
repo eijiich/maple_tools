@@ -12,7 +12,12 @@
 
 ### backend
 - [ ] Item tracker
-    - [ ] Item tracker testing
+    - [x] Character class
+    - [x] Equipment class
+    - [x] Potentials class
+    - [x] Flames class
+    - [x] All of the above schemas
+    - [ ] CRUD for this data
 - [ ] Bosses tracking
 - [ ] Legion
 - [ ] Nodes calculator
