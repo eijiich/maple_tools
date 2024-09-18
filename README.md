@@ -12,7 +12,7 @@
 
 ### backend
 - [ ] Item tracker
-    - [ ] Item tracker
+    - [ ] Item tracker testing
 - [ ] Bosses tracking
 - [ ] Legion
 - [ ] Nodes calculator
