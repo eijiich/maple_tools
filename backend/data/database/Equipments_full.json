@@ -1,7 +1,7 @@
 [
   {
-    "class": "Bishop",
-    "name": "Ayamushy",
+    "character_class": "Bishop",
+    "character_name": "Ayamushy",
     "equipments": [
       {
         "type": "Hat",
@@ -43,252 +43,252 @@
     ]
   },
   {
-    "class": "Lara",
-    "name": "HitsujiMayoi",
+    "character_class": "Lara",
+    "character_name": "HitsujiMayoi",
     "equipments": null
   },
   {
-    "class": "Lynn",
-    "name": "KawaiiBotan",
+    "character_class": "Lynn",
+    "character_name": "KawaiiBotan",
     "equipments": null
   },
   {
-    "class": "Kanna",
-    "name": "UmeTusugumi",
+    "character_class": "Kanna",
+    "character_name": "UmeTusugumi",
     "equipments": null
   },
   {
-    "class": "Hayato",
-    "name": "MomoHitomi",
+    "character_class": "Hayato",
+    "character_name": "MomoHitomi",
     "equipments": null
   },
   {
-    "class": "Bishop",
-    "name": "NotAyamushy",
+    "character_class": "Bishop",
+    "character_name": "NotAyamushy",
     "equipments": null
   },
   {
-    "class": "Shade",
-    "name": "EimiYuna",
+    "character_class": "Shade",
+    "character_name": "EimiYuna",
     "equipments": null
   },
   {
-    "class": "Phantom",
-    "name": "KanamiYuuka",
+    "character_class": "Phantom",
+    "character_name": "KanamiYuuka",
     "equipments": null
   },
   {
-    "class": "Mechanic",
-    "name": "MekaMei",
+    "character_class": "Mechanic",
+    "character_name": "MekaMei",
     "equipments": null
   },
   {
-    "class": "Arch Mage (I/L)",
-    "name": "YukiRairi",
+    "character_class": "Arch Mage (I/L)",
+    "character_name": "YukiRairi",
     "equipments": null
   },
   {
-    "class": "Arch Mage (F/P)",
-    "name": "MihoBusujima",
+    "character_class": "Arch Mage (F/P)",
+    "character_name": "MihoBusujima",
     "equipments": null
   },
   {
-    "class": "Corsair",
-    "name": "MakaneRimi",
+    "character_class": "Corsair",
+    "character_name": "MakaneRimi",
     "equipments": null
   },
   {
-    "class": "Kinesis",
-    "name": "KuroyuriNen",
+    "character_class": "Kinesis",
+    "character_name": "KuroyuriNen",
     "equipments": null
   },
   {
-    "class": "Demon Avenger",
-    "name": "YuuSayuri",
+    "character_class": "Demon Avenger",
+    "character_name": "YuuSayuri",
     "equipments": null
   },
   {
-    "class": "Mercedes",
-    "name": "YuukiMeru",
+    "character_class": "Mercedes",
+    "character_name": "YuukiMeru",
     "equipments": null
   },
   {
-    "class": "Aran",
-    "name": "NaramiChibi",
+    "character_class": "Aran",
+    "character_name": "NaramiChibi",
     "equipments": null
   },
   {
-    "class": "Khali",
-    "name": "KarinSatsuki",
+    "character_class": "Khali",
+    "character_name": "KarinSatsuki",
     "equipments": null
   },
   {
-    "class": "Adele",
-    "name": "KurohaRiyuki",
+    "character_class": "Adele",
+    "character_name": "KurohaRiyuki",
     "equipments": null
   },
   {
-    "class": "Bishop",
-    "name": "FakeAyamushy",
+    "character_class": "Bishop",
+    "character_name": "FakeAyamushy",
     "equipments": null
   },
   {
-    "class": "Zero",
-    "name": "DeltaYuuki",
+    "character_class": "Zero",
+    "character_name": "DeltaYuuki",
     "equipments": null
   },
   {
-    "class": "Battle Mage",
-    "name": "MeiKamakura",
+    "character_class": "Battle Mage",
+    "character_name": "MeiKamakura",
     "equipments": null
   },
   {
-    "class": "Luminous",
-    "name": "MikageHikari",
+    "character_class": "Luminous",
+    "character_name": "MikageHikari",
     "equipments": null
   },
   {
-    "class": "Illium",
-    "name": "MiakiReiha",
+    "character_class": "Illium",
+    "character_name": "MiakiReiha",
     "equipments": null
   },
   {
-    "class": "Blaze Wizard",
-    "name": "AyakaEn",
+    "character_class": "Blaze Wizard",
+    "character_name": "AyakaEn",
     "equipments": null
   },
   {
-    "class": "Marksman",
-    "name": "ReiyaTooko",
+    "character_class": "Marksman",
+    "character_name": "ReiyaTooko",
     "equipments": null
   },
   {
-    "class": "Night Lord",
-    "name": "YozoraYomi",
+    "character_class": "Night Lord",
+    "character_name": "YozoraYomi",
     "equipments": null
   },
   {
-    "class": "Wild Hunter",
-    "name": "HayaRakko",
+    "character_class": "Wild Hunter",
+    "character_name": "HayaRakko",
     "equipments": null
   },
   {
-    "class": "Dark Knight",
-    "name": "ToukoYamika",
+    "character_class": "Dark Knight",
+    "character_name": "ToukoYamika",
     "equipments": null
   },
   {
-    "class": "Bowmaster",
-    "name": "RemiyaMisato",
+    "character_class": "Bowmaster",
+    "character_name": "RemiyaMisato",
     "equipments": null
   },
   {
-    "class": "Angelic Buster",
-    "name": "AtsukaNoeru",
+    "character_class": "Angelic Buster",
+    "character_name": "AtsukaNoeru",
     "equipments": null
   },
   {
-    "class": "Evan",
-    "name": "xRyuuka",
+    "character_class": "Evan",
+    "character_name": "xRyuuka",
     "equipments": null
   },
   {
-    "class": "Buccaneer",
-    "name": "Amane​Hebi​"
+    "character_class": "Buccaneer",
+    "character_name": "Amane​Hebi​"
   },
   {
-    "class": "Paladin",
-    "name": "RinKiyoe",
+    "character_class": "Paladin",
+    "character_name": "RinKiyoe",
     "equipments": null
   },
   {
-    "class": "Pathfinder",
-    "name": "YukineYayoi",
+    "character_class": "Pathfinder",
+    "character_name": "YukineYayoi",
     "equipments": null
   },
   {
-    "class": "Shadower",
-    "name": "MikageMiei",
+    "character_class": "Shadower",
+    "character_name": "MikageMiei",
     "equipments": null
   },
   {
-    "class": "Cannonneer",
-    "name": "HouryuuNuiko",
+    "character_class": "Cannonneer",
+    "character_name": "HouryuuNuiko",
     "equipments": null
   },
   {
-    "class": "Hero",
-    "name": "TatewakiHime",
+    "character_class": "Hero",
+    "character_name": "TatewakiHime",
     "equipments": null
   },
   {
-    "class": "Dual Blade",
-    "name": "ReiniKuroha",
+    "character_class": "Dual Blade",
+    "character_name": "ReiniKuroha",
     "equipments": null
   },
   {
-    "class": "Hoyoung",
-    "name": "KoyamiSen",
+    "character_class": "Hoyoung",
+    "character_name": "KoyamiSen",
     "equipments": null
   },
   {
-    "class": "Xenon",
-    "name": "YuranRenge",
+    "character_class": "Xenon",
+    "character_name": "YuranRenge",
     "equipments": null
   },
   {
-    "class": "Ark",
-    "name": "KouenYuri",
+    "character_class": "Ark",
+    "character_name": "KouenYuri",
     "equipments": null
   },
   {
-    "class": "Kain",
-    "name": "KayaYamiya",
+    "character_class": "Kain",
+    "character_name": "KayaYamiya",
     "equipments": null
   },
   {
-    "class": "Cadena",
-    "name": "MegumiSeisa",
+    "character_class": "Cadena",
+    "character_name": "MegumiSeisa",
     "equipments": null
   },
   {
-    "class": "Blaster",
-    "name": "KanonHayame",
+    "character_class": "Blaster",
+    "character_name": "KanonHayame",
     "equipments": null
   },
   {
-    "class": "Dawn Warrior",
-    "name": "KyoukoRei",
+    "character_class": "Dawn Warrior",
+    "character_name": "KyoukoRei",
     "equipments": null
   },
   {
-    "class": "Demon Slayer",
-    "name": "YamiOniyuri",
+    "character_class": "Demon Slayer",
+    "character_name": "YamiOniyuri",
     "equipments": null
   },
   {
-    "class": "Kaiser",
-    "name": "RiyuTeruko",
+    "character_class": "Kaiser",
+    "character_name": "RiyuTeruko",
     "equipments": null
   },
   {
-    "class": "Mihile",
-    "name": "KenshiKon",
+    "character_class": "Mihile",
+    "character_name": "KenshiKon",
     "equipments": null
   },
   {
-    "class": "Night Walker",
-    "name": "RiyoSetsuna",
+    "character_class": "Night Walker",
+    "character_name": "RiyoSetsuna",
     "equipments": null
   },
   {
-    "class": "Thunder Breaker",
-    "name": "AtsumiMirai",
+    "character_class": "Thunder Breaker",
+    "character_name": "AtsumiMirai",
     "equipments": null
   },
   {
-    "class": "Wind Archer",
-    "name": "FuyuAyane",
+    "character_class": "Wind Archer",
+    "character_name": "FuyuAyane",
     "equipments": null
   }
 ]
