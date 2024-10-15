@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { addTodo, getTodos, removeTodo, updateTodo } from '../utils/indexedDB';
 import AddTask from './AddTask';
 import TaskList from './TaskList';
@@ -9,35 +9,37 @@ interface Todo {
   completed: boolean;
 }
 
-const TodoList: React.FC = () => {
-  const [todos, setTodos] = useState<Todo[]>([]);  // State is Todo[]
+const TodoList = forwardRef((_props, ref) => {
+  const [todos, setTodos] = useState<Todo[]>([]);
+
+  const fetchTodos = async () => {
+    const storedTodos: Todo[] = await getTodos();
+    setTodos(storedTodos);
+  };
 
   useEffect(() => {
-    const fetchTodos = async () => {
-      const storedTodos: Todo[] = await getTodos();  // Ensure getTodos returns Todo[]
-      setTodos(storedTodos);  // Pass the array directly
-    };
     fetchTodos();
   }, []);
 
+  useImperativeHandle(ref, () => ({
+    fetchTodos,  // Expose fetchTodos method to parent component
+  }));
+
   const handleAddTask = async (task: string) => {
     await addTodo(task);
-    const updatedTodos: Todo[] = await getTodos();  // Fetch updated todos
-    setTodos(updatedTodos);  // Set state to updated list of todos
+    fetchTodos();
   };
 
   const handleRemoveTask = async (id: number) => {
     await removeTodo(id);
-    const updatedTodos: Todo[] = await getTodos();
-    setTodos(updatedTodos);
+    fetchTodos();
   };
 
   const handleToggle = async (id: number) => {
     const todo = todos.find((t) => t.id === id);
     if (todo) {
       await updateTodo({ ...todo, completed: !todo.completed });
-      const updatedTodos: Todo[] = await getTodos();
-      setTodos(updatedTodos);
+      fetchTodos();
     }
   };
 
@@ -52,6 +54,6 @@ const TodoList: React.FC = () => {
       />
     </div>
   );
-};
+});
 
 export default TodoList;
