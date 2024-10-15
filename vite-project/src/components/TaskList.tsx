@@ -15,7 +15,7 @@ interface TaskListProps {
 
 const TaskList: React.FC<TaskListProps> = ({ tasks, onToggleComplete, onRemoveTask }) => {
   return (
-    <ul className="mt-4">
+    <ul className="mt-2">
       {tasks.map((task, index) => (
         <Task
           key={task.id ?? index}  // Use index as fallback key if id is undefined

@@ -41,13 +41,13 @@ const ImportTaskList: React.FC<ImportTaskListProps> = ({ fetchTodos }) => {
       <textarea
         value={jsonInput}
         onChange={(e) => setJsonInput(e.target.value)}
-        className="border border-gray-300 rounded-lg p-2 w-full mb-2"
+        className="border bg-gray-700 border-gray-500 rounded-lg p-2 w-full mb-2"
         placeholder="Paste JSON here"
         rows={5}
       />
       <button
         onClick={importTasks}
-        className="bg-green-500 text-white p-2 rounded-lg w-full"
+        className="bg-green-700 text-white p-2 rounded-lg w-full"
       >
         Import Task List
       </button>

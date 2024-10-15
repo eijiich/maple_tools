@@ -15,15 +15,15 @@ const AddTask: React.FC<AddTaskProps> = ({ onAddTask }) => {
   };
 
   return (
-    <div className="mb-4 flex">
+    <div className="mb-4 flex h-10">
       <input
-        className="border border-gray-300 rounded-lg p-2 flex-grow"
+        className="border bg-gray-700 border-gray-500 rounded-lg p-2 flex-grow h-10"
         type="text"
         value={task}
         onChange={(e) => setTask(e.target.value)}
       />
       <button
-        className="ml-2 bg-blue-500 text-white p-2 rounded-lg"
+        className="ml-2 bg-gray-500 text-white p-2 rounded-lg"
         onClick={handleSubmit}
       >
         Add Task

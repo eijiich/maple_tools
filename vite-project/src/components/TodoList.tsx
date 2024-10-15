@@ -44,7 +44,7 @@ const TodoList = forwardRef((_props, ref) => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-4 rounded-lg">
+    <div className="max-w-md mx-auto mt-4 p-4 rounded-lg">
       <h1 className="text-2xl font-bold mb-4">To-Do List</h1>
       <AddTask onAddTask={handleAddTask} />
       <TaskList
