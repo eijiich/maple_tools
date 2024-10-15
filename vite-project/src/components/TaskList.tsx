@@ -1,22 +1,29 @@
 import React from 'react';
 import Task from './Task';
 
-interface TaskListProps {
-  tasks: { text: string; completed: boolean }[];
-  onToggleTask: (index: number) => void;
-  onRemoveTask: (index: number) => void;
+interface Todo {
+  id?: number;
+  task: string;
+  completed: boolean;
 }
 
-const TaskList: React.FC<TaskListProps> = ({ tasks, onToggleTask, onRemoveTask }) => {
+interface TaskListProps {
+  tasks: Todo[];
+  onToggleComplete: (id: number) => void;
+  onRemoveTask: (id: number) => void;
+}
+
+const TaskList: React.FC<TaskListProps> = ({ tasks, onToggleComplete, onRemoveTask }) => {
   return (
-    <ul className="list-none p-0">
+    <ul className="mt-4">
       {tasks.map((task, index) => (
         <Task
-          key={index}
-          text={task.text}
+          key={task.id ?? index}  // Use index as fallback key if id is undefined
+          id={task.id ?? index}    // Use index as fallback id if id is undefined
+          task={task.task}
           completed={task.completed}
-          onToggle={() => onToggleTask(index)}
-          onRemove={() => onRemoveTask(index)}
+          onToggleComplete={onToggleComplete}
+          onRemoveTask={onRemoveTask}
         />
       ))}
     </ul>

@@ -1,57 +1,57 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { addTodo, getTodos, removeTodo, updateTodo } from '../utils/indexedDB';
 import AddTask from './AddTask';
 import TaskList from './TaskList';
 
-interface Task {
-  text: string;
+interface Todo {
+  id?: number;
+  task: string;
   completed: boolean;
 }
 
-function TodoList() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+const TodoList: React.FC = () => {
+  const [todos, setTodos] = useState<Todo[]>([]);  // State is Todo[]
 
-  // Load tasks from LocalStorage
   useEffect(() => {
-    const storedTasks = localStorage.getItem('tasks');
-    if (storedTasks) {
-      setTasks(JSON.parse(storedTasks));
-    }
+    const fetchTodos = async () => {
+      const storedTodos: Todo[] = await getTodos();  // Ensure getTodos returns Todo[]
+      setTodos(storedTodos);  // Pass the array directly
+    };
+    fetchTodos();
   }, []);
 
-  // Save tasks to LocalStorage whenever tasks array changes
-  useEffect(() => {
-    if (tasks.length > 0) {
-      localStorage.setItem('tasks', JSON.stringify(tasks));
+  const handleAddTask = async (task: string) => {
+    await addTodo(task);
+    const updatedTodos: Todo[] = await getTodos();  // Fetch updated todos
+    setTodos(updatedTodos);  // Set state to updated list of todos
+  };
+
+  const handleRemoveTask = async (id: number) => {
+    await removeTodo(id);
+    const updatedTodos: Todo[] = await getTodos();
+    setTodos(updatedTodos);
+  };
+
+  const handleToggle = async (id: number) => {
+    const todo = todos.find((t) => t.id === id);
+    if (todo) {
+      await updateTodo({ ...todo, completed: !todo.completed });
+      const updatedTodos: Todo[] = await getTodos();
+      setTodos(updatedTodos);
     }
-  }, [tasks]);
-
-  const addTask = (taskText: string) => {
-    setTasks([...tasks, { text: taskText, completed: false }]);
-  };
-
-  const toggleTask = (index: number) => {
-    const updatedTasks = tasks.map((task, i) => (
-      i === index ? { ...task, completed: !task.completed } : task
-    ));
-    setTasks(updatedTasks);
-  };
-
-  const removeTask = (index: number) => {
-    const updatedTasks = tasks.filter((_, i) => i !== index);
-    setTasks(updatedTasks);
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-4 bg-white rounded-lg shadow-lg">
+    <div className="max-w-md mx-auto mt-10 p-4 rounded-lg">
       <h1 className="text-2xl font-bold mb-4">To-Do List</h1>
-      <AddTask onAddTask={addTask} />
-      <TaskList 
-        tasks={tasks} 
-        onToggleTask={toggleTask} 
-        onRemoveTask={removeTask} 
+      <AddTask onAddTask={handleAddTask} />
+      <TaskList
+        tasks={todos}
+        onToggleComplete={handleToggle}
+        onRemoveTask={handleRemoveTask}
       />
     </div>
   );
-}
+};
 
 export default TodoList;

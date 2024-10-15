@@ -5,26 +5,26 @@ interface AddTaskProps {
 }
 
 const AddTask: React.FC<AddTaskProps> = ({ onAddTask }) => {
-  const [newTask, setNewTask] = useState<string>('');
+  const [task, setTask] = useState('');
 
-  const handleAddTask = () => {
-    if (newTask.trim() === '') return;
-    onAddTask(newTask);
-    setNewTask('');
+  const handleSubmit = () => {
+    if (task.trim()) {
+      onAddTask(task);
+      setTask('');  // Clear the input after adding
+    }
   };
 
   return (
     <div className="mb-4 flex">
       <input
-        type="text"
         className="border border-gray-300 rounded-lg p-2 flex-grow"
-        value={newTask}
-        onChange={(e) => setNewTask(e.target.value)}
-        placeholder="Enter a new task"
+        type="text"
+        value={task}
+        onChange={(e) => setTask(e.target.value)}
       />
       <button
         className="ml-2 bg-blue-500 text-white p-2 rounded-lg"
-        onClick={handleAddTask}
+        onClick={handleSubmit}
       >
         Add Task
       </button>
