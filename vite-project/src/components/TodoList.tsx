@@ -7,6 +7,9 @@ interface Todo {
   id?: number;
   task: string;
   completed: boolean;
+  resetType?: 'daily' | 'weekly' | 'monthly';
+  resetDay?: 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
+  resetDayOfMonth?: number;
 }
 
 const TodoList = forwardRef((_props, ref) => {
@@ -25,8 +28,8 @@ const TodoList = forwardRef((_props, ref) => {
     fetchTodos,  // Expose fetchTodos method to parent component
   }));
 
-  const handleAddTask = async (task: string) => {
-    await addTodo(task);
+  const handleAddTask = async (task: string, resetType?: 'daily' | 'weekly' | 'monthly', resetDay?: Todo['resetDay'], resetDayOfMonth?: number) => {
+    await addTodo(task, resetType, resetDay, resetDayOfMonth);
     fetchTodos();
   };
 
