@@ -1,18 +1,21 @@
+from pathlib import Path
 import cv2
 import numpy as np
-from math import floor
-import pytesseract
 
-# Load the main image and the reference image with the blue dot
-pytesseract.pytesseract.tesseract_cmd = r'C:\Users\GuilhermeIchibara\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'  # Windows example
-data_path = r'C:\Users\GuilhermeIchibara\OneDrive - StepWise\Guilherme Ichibara\Projects\maple_tools\data\img\dataset\\'
-output_path = r'C:\Users\GuilhermeIchibara\OneDrive - StepWise\Guilherme Ichibara\Projects\maple_tools\data\img\output\\'
+base_dir = Path(__file__).resolve().parent.parent.parent.parent  # Adjust according to the file's structure
 
+# Define paths relative to the base directory
+data_path = base_dir/'data'/'img'/'dataset'
+output_path = base_dir/'data'/'img'/'output'
+
+# Converting Path objects to strings for compatibility with OpenCV
+data_path = str(data_path)
+output_path = str(output_path)
 
 # Load the main image in color
-image = cv2.imread(data_path+r'TrixterPants.png')
+image = cv2.imread(data_path+'\\'+r'TrixterPants.png')
 # Load the star template with transparency (RGBA)
-template = cv2.imread(data_path+r'BlueDotTransparent.png', cv2.IMREAD_UNCHANGED)
+template = cv2.imread(data_path+'\\'+r'BlueDotTransparent.png', cv2.IMREAD_UNCHANGED)
 
 # Split the template into color channels and alpha channel (to use as a mask)
 template_rgb = template[:, :, :3]  # Extract RGB channels

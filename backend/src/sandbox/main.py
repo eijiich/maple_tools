@@ -1,8 +1,6 @@
 from math import floor
 from pathlib import Path
-
 import cv2
-import numpy as np
 import pytesseract
 
 base_dir = Path(__file__).resolve().parent.parent.parent.parent  # Adjust according to the file's structure
@@ -13,9 +11,8 @@ output_path = base_dir/'data'/'img'/'output'
 
 # Converting Path objects to strings for compatibility with OpenCV
 data_path = str(data_path)
-output_path = str(data_path)
+output_path = str(output_path)
 
-# Load the image
 image_path = data_path+'\\'+r'\Weapon2.png'
 image = cv2.imread(image_path)
 gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
