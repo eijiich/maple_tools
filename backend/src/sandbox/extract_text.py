@@ -1,15 +1,22 @@
+from math import floor
+from pathlib import Path
+
 import cv2
 import numpy as np
-from math import floor
 import pytesseract
 
-# Load the main image and the reference image with the blue dot
-pytesseract.pytesseract.tesseract_cmd = r'C:\Users\GuilhermeIchibara\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'  # Windows example
-data_path = r'C:\Users\GuilhermeIchibara\OneDrive - StepWise\Guilherme Ichibara\Projects\maple_tools\data\img\dataset\\'
-output_path = r'C:\Users\GuilhermeIchibara\OneDrive - StepWise\Guilherme Ichibara\Projects\maple_tools\data\img\output\\'
+base_dir = Path(__file__).resolve().parent.parent.parent.parent  # Adjust according to the file's structure
 
-image = cv2.imread(data_path+r'Ring2.png')
-dot_image = cv2.imread(data_path+r'BlueDotOriginal.png')
+# Define paths relative to the base directory
+data_path = base_dir/'data'/'img'/'dataset'
+output_path = base_dir/'data'/'img'/'output'
+
+# Converting Path objects to strings for compatibility with OpenCV
+data_path = str(data_path)
+output_path = str(output_path)
+
+image = cv2.imread(data_path+'\\'+r'Ring2.png')
+dot_image = cv2.imread(data_path+'\\'+r'BlueDotOriginal.png')
 
 # Calculate the new dimensions
 original_height, original_width = image.shape[:2]
@@ -17,7 +24,7 @@ new_width = original_width * 4
 new_height = original_height * 4
 
 image2 = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
-cv2.imwrite(output_path+"target2.png", image2)
+cv2.imwrite(output_path+'\\'+"target2.png", image2)
 
 
 
@@ -34,7 +41,7 @@ upper_blue = np.array([(110), (255), (255)])
 # Create a mask that captures areas within the blue range
 mask_blue = cv2.inRange(hsv_image, lower_blue, upper_blue)
 target = cv2.bitwise_and(image,image, mask=mask_blue)
-cv2.imwrite(output_path+"target_blue.png", target)
+cv2.imwrite(output_path+'\\'+"target_blue.png", target)
 
 #green mask
 lower_green = np.array([(32), (80), (80)])
@@ -42,7 +49,7 @@ upper_green = np.array([(80), (255), (255)])
 # Create a mask that captures areas within the blue range
 mask_green = cv2.inRange(hsv_image, lower_green, upper_green)
 target = cv2.bitwise_and(image,image, mask=mask_green)
-cv2.imwrite(output_path+"target_green.png", target)
+cv2.imwrite(output_path+'\\'+"target_green.png", target)
 
 #yellow mask
 lower_yellow = np.array([(15), (80), (80)])
@@ -50,7 +57,7 @@ upper_yellow = np.array([(32), (255), (255)])
 # Create a mask that captures areas within the blue range
 mask_yellow = cv2.inRange(hsv_image, lower_yellow, upper_yellow)
 target = cv2.bitwise_and(image,image, mask=mask_yellow)
-cv2.imwrite(output_path+"target_yellow.png", target)
+cv2.imwrite(output_path+'\\'+"target_yellow.png", target)
 
 #lower red mask
 lower_red = np.array([(0), (80), (80)])
@@ -64,7 +71,7 @@ upper_red = np.array([(180), (255), (255)])
 upper_mask = cv2.inRange(hsv_image, lower_red, upper_red)
 mask_red = lower_mask+upper_mask
 target = cv2.bitwise_and(image,image, mask=mask_red)
-cv2.imwrite(output_path+"target_red.png", target)
+cv2.imwrite(output_path+'\\'+"target_red.png", target)
 
 #pink_red mask
 lower_pink = np.array([(155), (80), (80)])
@@ -72,7 +79,7 @@ upper_pink = np.array([(170), (255), (255)])
 # Create a mask that captures areas within the blue range
 mask_pink = cv2.inRange(hsv_image, lower_pink, upper_pink)
 target = cv2.bitwise_and(image,image, mask=mask_pink)
-cv2.imwrite(output_path+"target_red.png", target)
+cv2.imwrite(output_path+'\\'+"target_red.png", target)
 
 #purple mask
 lower_purple = np.array([(125), (80), (80)])
@@ -80,7 +87,7 @@ upper_purple = np.array([(145), (255), (255)])
 # Create a mask that captures areas within the blue range
 mask_purple = cv2.inRange(hsv_image, lower_purple, upper_purple)
 target = cv2.bitwise_and(image,image, mask=mask_purple)
-cv2.imwrite(output_path+"target_purple.png", target)
+cv2.imwrite(output_path+'\\'+"target_purple.png", target)
 
 #mono mask
 lower = np.array([(0), (0), (80)])
@@ -88,7 +95,7 @@ upper = np.array([(180), (50), (255)])
 # Create a mask that captures areas within the blue range
 mask_mono = cv2.inRange(hsv_image, lower, upper)
 target = cv2.bitwise_and(image,image, mask=mask_mono)
-cv2.imwrite(output_path+"target_white.png", target)
+cv2.imwrite(output_path+'\\'+"target_white.png", target)
 
 mask = (
     mask_red
@@ -128,7 +135,7 @@ for contour in reversed(contours):
         # Optional: Save or display the extracted region
         # cv2.imshow('Text Region', text_region)
         # cv2.waitKey(0)
-        cv2.imwrite('extracted_text_region.png', text_region)
+        cv2.imwrite(output_path+'\\'+'extracted_text_region.png', text_region)
         
         break
 
@@ -143,7 +150,7 @@ mask_stats = np.zeros((height, width), dtype=np.uint8)
 mask_stats[roi_start_y:roi_end_y, roi_start_x:roi_end_x] = 255  # Set the left half to white (255)
 
 target = cv2.bitwise_and(image,image, mask=mask_stats)
-cv2.imwrite(output_path+"target.png", target)
+cv2.imwrite(output_path+'\\'+'\\'+"target.png", target)
 mask_pink[0:50,0:width] = 0
 mask_pink[y+10:height,0:width] = 0
 mask = (
@@ -158,9 +165,9 @@ mask = (
 target = cv2.bitwise_and(image,image, mask=mask)
 gray_image = cv2.cvtColor(target, cv2.COLOR_BGR2GRAY)
 _, binary_image = cv2.threshold(gray_image, 50, 255, cv2.THRESH_BINARY_INV)
-cv2.imwrite(output_path+"target.png", target)
-cv2.imwrite(output_path+"target_gray.png", gray_image)
-cv2.imwrite(output_path+"target_binary.png", binary_image)
+cv2.imwrite(output_path+'\\'+'\\'+"target.png", target)
+cv2.imwrite(output_path+'\\'+'\\'+"target_gray.png", gray_image)
+cv2.imwrite(output_path+'\\'+'\\'+"target_binary.png", binary_image)
  
 extracted_text_gray_image = pytesseract.image_to_string(gray_image)
 extracted_text_binary_image = pytesseract.image_to_string(binary_image)
@@ -173,7 +180,7 @@ new_height = original_height * 10
 
 # Resize the image
 resized_image = cv2.resize(binary_image, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
-cv2.imwrite(output_path+"target_binary2.png", resized_image)
+cv2.imwrite(output_path+'\\'+"target_binary2.png", resized_image)
 
  
 # Optional: Display the results

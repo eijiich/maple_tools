@@ -1,11 +1,19 @@
+from pathlib import Path
+
 import cv2
 import pytesseract
-import numpy as np
 
-# Step 1: Load the image
-pytesseract.pytesseract.tesseract_cmd = r'C:\Users\GuilhermeIchibara\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'  # Windows example
-data_path = r'C:\Users\GuilhermeIchibara\OneDrive - StepWise\Guilherme Ichibara\Projects\maple_tools\data\img\output\\'
-image_path = data_path+r"target_binary.png"
+base_dir = Path(__file__).resolve().parent.parent.parent.parent  # Adjust according to the file's structure
+
+# Define paths relative to the base directory
+data_path = base_dir/'data'/'img'/'dataset'
+output_path = base_dir/'data'/'img'/'output'
+
+# Converting Path objects to strings for compatibility with OpenCV
+data_path = str(data_path)
+output_path = str(output_path)
+
+image_path = data_path+'\\'+r"target_binary.png"
 image = cv2.imread(image_path)
 # Check if the image is None
 if image is None:
@@ -41,8 +49,8 @@ for contour in sorted_contours:
     # Recognize each line. Crop the image for each line and pass to OCR engine.
     line_image = image[y:y + h+2, x:x+w+2]
     line_text = pytesseract.image_to_string(line_image)
-    cv2.imwrite(f'line_{i}.png',line_image)
+    cv2.imwrite(output_path+'\\'+f'line_{i}.png',line_image)
     i+=1
     print(line_text)
 
-cv2.imwrite('opencv_detect_text_lines.png',image)
+cv2.imwrite(output_path+'\\'+'opencv_detect_text_lines.png',image)

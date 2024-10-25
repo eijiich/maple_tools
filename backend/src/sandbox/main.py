@@ -1,15 +1,22 @@
+from math import floor
+from pathlib import Path
+
 import cv2
-from PIL import Image
+import numpy as np
 import pytesseract
 
-# If tesseract is not in your PATH, you need to specify the path to the executable
-# pytesseract.pytesseract.tesseract_cmd = r'C:\Users\GuilhermeIchibara\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'  # Windows example
+base_dir = Path(__file__).resolve().parent.parent.parent.parent  # Adjust according to the file's structure
 
-data_path = r'D:\Programming\maple_tools\data\\'
-output_path = r'D:\Programming\maple_tools\data\output\\'
+# Define paths relative to the base directory
+data_path = base_dir/'data'/'img'/'dataset'
+output_path = base_dir/'data'/'img'/'output'
+
+# Converting Path objects to strings for compatibility with OpenCV
+data_path = str(data_path)
+output_path = str(data_path)
 
 # Load the image
-image_path = data_path+r'\Weapon2.png'
+image_path = data_path+'\\'+r'\Weapon2.png'
 image = cv2.imread(image_path)
 gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 _, binary_image = cv2.threshold(gray_image, 75, 255, cv2.THRESH_BINARY_INV)
@@ -33,7 +40,7 @@ extracted_text_gray_image_binary = pytesseract.image_to_string(binary_image)
 # _, binary_image = cv2.threshold(gray_image, 75, 255, cv2.THRESH_BINARY_INV)
 extracted_text_gray_image = pytesseract.image_to_string(gray_image)
 extracted_text_gray_image_binary = pytesseract.image_to_string(binary_image)
-cv2.imwrite(data_path+r'extracted_text_gray_image.png', gray_image)
-cv2.imwrite(data_path+r'extracted_text_gray_image_binary.png', binary_image)
+cv2.imwrite(data_path+'\\'+r'extracted_text_gray_image.png', gray_image)
+cv2.imwrite(data_path+'\\'+r'extracted_text_gray_image_binary.png', binary_image)
 print(extracted_text)
 print(extracted_text_gray_image_binary)
