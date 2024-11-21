@@ -1,5 +1,5 @@
 import React from 'react';
-import Task from './Task';
+import BossTask from './BossTask';
 
 interface Todo {
   id?: number;
@@ -8,27 +8,31 @@ interface Todo {
   resetType?: 'daily' | 'weekly' | 'monthly';
   resetDay?: 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
   resetDayOfMonth?: number;
-  characterName?: string;  // New field for character name
-  characterClass?: string; // New field for character class
+  characterName?: string;
+  characterClass?: string;
+  bossName: string;
+  partySize: number;
 }
 
-interface TaskListProps {
-  tasks: Todo[];  // Update this to reference the new Todo interface
-  onToggleComplete: (id: number) => void;
-  onRemoveTask: (id: number) => void;
+interface BossTaskListProps {
+  tasks: Todo[]; // Array of tasks that are boss-related
+  onToggleComplete: (id: number) => void; // Function for toggling completion status
+  onRemoveTask: (id: number) => void; // Function for removing a task
 }
 
-const TaskList: React.FC<TaskListProps> = ({ tasks, onToggleComplete, onRemoveTask }) => {
+const BossTaskList: React.FC<BossTaskListProps> = ({ tasks, onToggleComplete, onRemoveTask }) => {
   return (
     <ul className="mt-2">
       {tasks.map((task, index) => (
-        <Task
+        <BossTask
           key={task.id ?? index}
           id={task.id ?? index}
           task={task.task}
           completed={task.completed}
           characterName={task.characterName}
           characterClass={task.characterClass}
+          bossName={task.bossName}
+          partySize={task.partySize}
           onToggleComplete={onToggleComplete}
           onRemoveTask={onRemoveTask}
         />
@@ -37,4 +41,4 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggleComplete, onRemoveTa
   );
 };
 
-export default TaskList;
+export default BossTaskList;

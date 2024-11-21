@@ -10,7 +10,7 @@ const ImportTaskList: React.FC<ImportTaskListProps> = ({ fetchTodos }) => {
 
   const importTasks = async () => {
     try {
-      const tasks = JSON.parse(jsonInput); // Parse the JSON input
+      const tasks = JSON.parse(jsonInput);
 
       if (!Array.isArray(tasks)) {
         throw new Error('Invalid format');
@@ -24,8 +24,8 @@ const ImportTaskList: React.FC<ImportTaskListProps> = ({ fetchTodos }) => {
 
       // Add new tasks
       for (const task of tasks) {
-        if (task.task && typeof task.task === 'string') {
-          await addTodo(task.task);
+        if (task.task && typeof task.task === 'string' && task.characterName && task.characterClass) {
+          await addTodo(task.task, task.characterName, task.characterClass); // Pass new fields
         }
       }
 
