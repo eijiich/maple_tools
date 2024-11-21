@@ -70,8 +70,8 @@ const TodoList = forwardRef((_props, ref) => {
         <h1 className="text-4xl font-bold mb-4">Maple Planner</h1>
       </div>
       {/* <div className="flex justify-evenly mt-4 p-4"> */}
-      <div className="flex justify-center space-x-16">
-        <div className="max-w-md min-w-96">
+      <div className="flex flex-col md:flex-row items-center justify-center space-y-8 md:space-y-0 md:space-x-16">
+        <div className="flex-grow max-w-md w-full">
           <h1 className="text-4xl font-bold mb-4">General Content</h1>
           <TaskList
             tasks={generalTasks}
@@ -79,7 +79,7 @@ const TodoList = forwardRef((_props, ref) => {
             onRemoveTask={handleRemoveTask}
           />
         </div>
-        <div className="max-w-md min-w-96">
+        <div className="flex-grow max-w-md w-full">
           <h1 className="text-4xl font-bold mb-4">Boss Content</h1>
           <BossTaskList
             tasks={bossTasks}
