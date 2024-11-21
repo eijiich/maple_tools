@@ -18,9 +18,15 @@ interface BossTaskListProps {
   tasks: Todo[]; // Array of tasks that are boss-related
   onToggleComplete: (id: number) => void; // Function for toggling completion status
   onRemoveTask: (id: number) => void; // Function for removing a task
+  onUpdatePartySize: (id: number, partySize: number) => void; // Function for updating party size
 }
 
-const BossTaskList: React.FC<BossTaskListProps> = ({ tasks, onToggleComplete, onRemoveTask }) => {
+const BossTaskList: React.FC<BossTaskListProps> = ({
+  tasks,
+  onToggleComplete,
+  onRemoveTask,
+  onUpdatePartySize,
+}) => {
   return (
     <ul className="mt-2">
       {tasks.map((task, index) => (
@@ -35,6 +41,7 @@ const BossTaskList: React.FC<BossTaskListProps> = ({ tasks, onToggleComplete, on
           partySize={task.partySize}
           onToggleComplete={onToggleComplete}
           onRemoveTask={onRemoveTask}
+          onUpdatePartySize={onUpdatePartySize} // Pass the callback here
         />
       ))}
     </ul>

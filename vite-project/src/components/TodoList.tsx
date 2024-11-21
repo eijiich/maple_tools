@@ -14,8 +14,8 @@ interface Todo {
   lastReset?: string;
   characterName?: string;
   characterClass?: string;
-  bossName?: string; // Optional for boss task
-  partySize?: number; // Current party size for boss task
+  bossName?: string;
+  partySize?: number;
 }
 
 const TodoList = forwardRef((_props, ref) => {
@@ -41,8 +41,8 @@ const TodoList = forwardRef((_props, ref) => {
     resetType?: 'daily' | 'weekly' | 'monthly',
     resetDay?: Todo['resetDay'],
     resetDayOfMonth?: number,
-    bossName?: string, // New field for boss name
-    partySize?: number // New field for party size
+    bossName?: string,
+    partySize?: number
   ) => {
     await addTodo(task, characterName, characterClass, resetType, resetDay, resetDayOfMonth, bossName, partySize);
     fetchTodos();
@@ -61,7 +61,18 @@ const TodoList = forwardRef((_props, ref) => {
     }
   };
 
-  const generalTasks = todos.filter(todo => !todo.bossName); // Filter out general tasks
+  const handleUpdatePartySize = async (id: number, partySize: number) => {
+    const todo = todos.find((t) => t.id === id);
+    if (todo) {
+      const updatedTodo = { ...todo, partySize };
+      await updateTodo(updatedTodo); // Update in IndexedDB
+      setTodos((prevTodos) =>
+        prevTodos.map((t) => (t.id === id ? updatedTodo : t)) // Update in state
+      );
+    }
+  };
+
+  const generalTasks = todos.filter(todo => !todo.bossName);
   const bossTasks = todos.filter(todo => todo.bossName) as (Todo & { bossName: string; partySize: number; })[];
 
   return (
@@ -70,8 +81,8 @@ const TodoList = forwardRef((_props, ref) => {
         <h1 className="text-4xl font-bold mb-4">Maple Planner</h1>
       </div>
       {/* <div className="flex justify-evenly mt-4 p-4"> */}
-      <div className="flex flex-col md:flex-row items-center justify-center space-y-8 md:space-y-0 md:space-x-16">
-        <div className="flex-grow max-w-md w-full">
+      <div className="flex flex-col md:flex-row items-center md:items-start content-center justify-center space-y-8 md:space-y-0 md:space-x-16">
+        <div className="max-w-md w-full">
           <h1 className="text-4xl font-bold mb-4">General Content</h1>
           <TaskList
             tasks={generalTasks}
@@ -79,12 +90,13 @@ const TodoList = forwardRef((_props, ref) => {
             onRemoveTask={handleRemoveTask}
           />
         </div>
-        <div className="flex-grow max-w-md w-full">
+        <div className="max-w-md w-full">
           <h1 className="text-4xl font-bold mb-4">Boss Content</h1>
           <BossTaskList
             tasks={bossTasks}
             onToggleComplete={handleToggle}
             onRemoveTask={handleRemoveTask}
+            onUpdatePartySize={handleUpdatePartySize}
           />
         </div>
       </div>

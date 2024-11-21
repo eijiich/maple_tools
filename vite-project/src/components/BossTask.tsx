@@ -5,13 +5,15 @@ interface BossTaskProps {
   id: number;
   task: string;
   completed: boolean;
-  characterName?: string;  // New field for character name
-  characterClass?: string; // New field for character class
-  bossName: string; // New field for boss name
-  partySize: number; // Current party size
+  characterName?: string;
+  characterClass?: string;
+  bossName: string;
+  partySize: number;
   onToggleComplete: (id: number) => void;
   onRemoveTask: (id: number) => void;
+  onUpdatePartySize: (id: number, partySize: number) => void; // Callback for party size updates
 }
+
 
 const BossTask: React.FC<BossTaskProps> = ({
   id,
@@ -23,6 +25,7 @@ const BossTask: React.FC<BossTaskProps> = ({
   partySize,
   onToggleComplete,
   onRemoveTask,
+  onUpdatePartySize,
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPartySize, setCurrentPartySize] = useState<number | ''>(partySize); // Track current party size
@@ -35,6 +38,14 @@ const BossTask: React.FC<BossTaskProps> = ({
     setIsDialogOpen(false); // Close the dialog
   };
 
+  const handlePartySizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPartySize = e.target.value ? Number(e.target.value) : '';
+    setCurrentPartySize(newPartySize);
+    if (newPartySize !== '') {
+      onUpdatePartySize(id, newPartySize); // Notify parent of the change
+    }
+  };
+  
   return (
     <>
       <li className="flex bg-gray-800 justify-between items-center m-1 rounded-lg h-12">
@@ -55,7 +66,7 @@ const BossTask: React.FC<BossTaskProps> = ({
         <input
           type="number"
           value={currentPartySize}
-          onChange={(e) => setCurrentPartySize(e.target.value ? Number(e.target.value) : '')}
+          onChange={handlePartySizeChange}
           placeholder="Party Size"
           className="text-center max-w-12 m-2 rounded border"
         />
