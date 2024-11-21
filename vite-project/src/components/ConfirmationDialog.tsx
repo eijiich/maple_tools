@@ -1,4 +1,3 @@
-// src/components/ConfirmationDialogtsx
 import React from 'react';
 import { Dialog, Description, DialogPanel, DialogTitle } from '@headlessui/react';
 

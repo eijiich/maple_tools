@@ -8,6 +8,10 @@ interface Todo {
   resetDay?: 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';  // For weekly tasks
   resetDayOfMonth?: number;  // For monthly tasks
   lastReset?: string;  // ISO string for the last time the task was reset
+  characterName?: string;  // New field for character name
+  characterClass?: string;  // New field for character class
+  bossName?: string; // New field for boss name
+  partySize?: number; // New field for party size
 }
 
 interface MyDB extends DBSchema {
@@ -24,22 +28,35 @@ const dbPromise = openDB<MyDB>('todo-db', 1, {
 });
 
 // Add a new todo with optional reset schedule
-export const addTodo = async (task: string, resetType?: 'daily' | 'weekly' | 'monthly', resetDay?: Todo['resetDay'], resetDayOfMonth?: number) => {
+export const addTodo = async (
+  task: string,
+  characterName?: string,
+  characterClass?: string,
+  resetType?: 'daily' | 'weekly' | 'monthly',
+  resetDay?: Todo['resetDay'],
+  resetDayOfMonth?: number,
+  bossName?: string, // New field for boss name
+  partySize?: number // New field for party size
+) => {
   const db = await dbPromise;
-  const lastReset = new Date().toISOString();  // Record the current time as the last reset time
+  const lastReset = new Date().toISOString(); // Record current time as the last reset time
 
   await db.add('todos', {
     task,
     completed: false,
-    resetType,      // Optional reset type
-    resetDay,       // Optional reset day for weekly tasks
-    resetDayOfMonth,  // Optional reset day of the month for monthly tasks
-    lastReset
+    resetType,
+    resetDay,
+    resetDayOfMonth,
+    lastReset,
+    characterName,
+    characterClass,
+    bossName, // Include new fields
+    partySize, // Include new fields
   });
 };
 
 export const getTodos = async (): Promise<Todo[]> => {
-  const db = await dbPromise;
+  const db = await dbPromise;   
   return await db.getAll('todos');  // Returns Todo[]
 };
 
@@ -79,9 +96,6 @@ function shouldResetTask(todo: Todo): boolean {
     if (resetDayIndex >= 0) {
       resetTime.setDate(now.getDate() + (resetDayIndex - nowDayIndex + 7) % 7);  // Get the next reset day
       resetTime.setHours(21, 0, 0, 0); // Set to 9 PM on the reset day
-      console.log(resetTime)
-      console.log(lastReset)
-      console.log(now)
       // If today is the reset day and it's after 9 PM, set to next week's reset day
       if (nowDayIndex === resetDayIndex && (now < lastReset && now > resetTime)) {
         resetTime.setDate(resetTime.getDate() + 7);

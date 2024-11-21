@@ -1,0 +1,24 @@
+/vite-project
+├── node_modules/
+├── public/
+│   └── logo.svg
+├── src/
+│   ├── components/          # React components
+│   │   ├── AddTask.tsx
+│   │   ├── ConfirmationDialog.tsx
+│   │   ├── ExportTaskList.tsx
+│   │   ├── ImportTaskList.tsx
+│   │   ├── Sidebar.tsx
+│   │   ├── Task.tsx
+│   │   ├── TaskList.tsx
+│   │   ├── TestComponent.tsx
+│   │   └── TodoList.tsx
+│   ├── utils/
+│   │   └── indexedDB.ts     # IndexedDB utility functions
+│   ├── App.css              # Component-specific styles
+│   ├── App.tsx              # Main App component
+│   ├── index.css            # Global styles
+│   └── main.tsx             # App entry point
+├── package.json             # Dependencies and scripts
+├── tsconfig.json            # TypeScript configuration
+└── vite.config.ts           # Vite configuration

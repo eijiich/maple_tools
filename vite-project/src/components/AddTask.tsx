@@ -2,23 +2,37 @@ import React, { useState } from 'react';
 
 interface AddTaskProps {
   onAddTask: (
-    task: string, resetType?: 'daily' | 'weekly' | 'monthly',
+    task: string,
+    characterName?: string,
+    characterClass?: string,
+    resetType?: 'daily' | 'weekly' | 'monthly',
     resetDay?: 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday',
-    resetDayOfMonth?: number) => void;
+    resetDayOfMonth?: number,
+    bossName?: string,
+    partySize?: number
+  ) => void;
 }
 
 const AddTask: React.FC<AddTaskProps> = ({ onAddTask }) => {
-  const [task, setTask] = useState('');
+  const [task, setTask] = useState<string>('');
+  const [characterName, setCharacterName] = useState<string>('');
+  const [characterClass, setCharacterClass] = useState<string>('');
   const [resetType, setResetType] = useState<'daily' | 'weekly' | 'monthly' | undefined>(undefined);
   const [resetDay, setResetDay] = useState<'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | undefined>(undefined);
+  const [bossName, setBossName] = useState<string>('');
+  const [partySize, setPartySize] = useState<number | ''>('');
 
   const handleSubmit = () => {
-    if (task.trim()) {
+    if (task.trim() && characterName.trim() && characterClass.trim()) {
       const resetDayOfMonth = resetType === 'monthly' ? 1 : undefined;
-      onAddTask(task, resetType, resetDay, resetDayOfMonth);
-      setTask('');  // Clear the input after adding
-      setResetType(undefined);  // Clear resetType after adding
-      setResetDay(undefined);  // Clear resetDay after adding
+      onAddTask(task, characterName, characterClass, resetType, resetDay, resetDayOfMonth, bossName, Number(partySize));
+      setTask('');
+      setCharacterName('');
+      setCharacterClass('');
+      setResetType(undefined);
+      setResetDay(undefined);
+      setBossName('');
+      setPartySize('');
     }
   };
 
@@ -30,6 +44,34 @@ const AddTask: React.FC<AddTaskProps> = ({ onAddTask }) => {
         value={task}
         onChange={(e) => setTask(e.target.value)}
         placeholder="Enter task"
+      />
+      <input
+        className="border bg-gray-700 border-gray-500 rounded-lg p-2 flex-grow h-10 mb-2"
+        type="text"
+        value={characterName}
+        onChange={(e) => setCharacterName(e.target.value)}
+        placeholder="Enter character name"
+      />
+      <input
+        className="border bg-gray-700 border-gray-500 rounded-lg p-2 flex-grow h-10 mb-2"
+        type="text"
+        value={characterClass}
+        onChange={(e) => setCharacterClass(e.target.value)}
+        placeholder="Enter character class"
+      />
+      <input
+        className="border bg-gray-700 border-gray-500 rounded-lg p-2 flex-grow h-10 mb-2"
+        type="text"
+        value={bossName}
+        onChange={(e) => setBossName(e.target.value)}
+        placeholder="Enter boss name"
+      />
+      <input
+        className="border bg-gray-700 border-gray-500 rounded-lg p-2 flex-grow h-10 mb-2"
+        type="number"
+        value={partySize}
+        onChange={(e) => setPartySize(e.target.value ? Number(e.target.value) : '')}
+        placeholder="Enter party size"
       />
       <div className="flex items-center justify-between">
         <div className="flex items-center">

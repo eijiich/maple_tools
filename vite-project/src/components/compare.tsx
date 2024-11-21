@@ -11,11 +11,10 @@ interface Todo {
   resetType?: 'daily' | 'weekly' | 'monthly';
   resetDay?: 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
   resetDayOfMonth?: number;
-  lastReset?: string;
   characterName?: string;
   characterClass?: string;
-  bossName?: string; // Optional for boss task
-  partySize?: number; // Current party size for boss task
+  bossName?: string;
+  partySize?: number;
 }
 
 const TodoList = forwardRef((_props, ref) => {
@@ -63,34 +62,17 @@ const TodoList = forwardRef((_props, ref) => {
 
   const generalTasks = todos.filter(todo => !todo.bossName); // Filter out general tasks
   const bossTasks = todos.filter(todo => todo.bossName) as (Todo & { bossName: string; partySize: number; })[];
-
+  
   return (
-    <div>
-      <div className="max-w-md mx-auto mt-4 p-4 rounded-lg">
-        <h1 className="text-4xl font-bold mb-4">Maple Planner</h1>
-      </div>
-      {/* <div className="flex justify-evenly mt-4 p-4"> */}
-      <div className="flex flex-col md:flex-row items-center justify-center space-y-8 md:space-y-0 md:space-x-16">
-        <div className="flex-grow max-w-md w-full">
-          <h1 className="text-4xl font-bold mb-4">General Content</h1>
-          <TaskList
-            tasks={generalTasks}
-            onToggleComplete={handleToggle}
-            onRemoveTask={handleRemoveTask}
-          />
-        </div>
-        <div className="flex-grow max-w-md w-full">
-          <h1 className="text-4xl font-bold mb-4">Boss Content</h1>
-          <BossTaskList
-            tasks={bossTasks}
-            onToggleComplete={handleToggle}
-            onRemoveTask={handleRemoveTask}
-          />
-        </div>
-      </div>
-      <div className="max-w-md mx-auto mt-4 p-4 rounded-lg">
-        <h2 className="text-2xl font-bold mb-4">Add Task</h2>
+    <div className="flex">
+      <div className="w-1/2"> {/* Left Column for General Tasks */}
+        <h1 className="text-2xl font-bold mb-4">General Todo List</h1>
         <AddTask onAddTask={handleAddTask} />
+        <TaskList tasks={generalTasks} onToggleComplete={handleToggle} onRemoveTask={handleRemoveTask} />
+      </div>
+      <div className="w-1/2"> {/* Right Column for Boss Tasks */}
+        <h1 className="text-2xl font-bold mb-4">Boss Task List</h1>
+        <BossTaskList tasks={bossTasks} onToggleComplete={handleToggle} onRemoveTask={handleRemoveTask} />
       </div>
     </div>
   );
