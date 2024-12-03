@@ -1,5 +1,6 @@
 from pathlib import Path
 import json, math as m
+from math import ceil
 
 probabilities = {
     "hat_unique_prob": [
@@ -257,19 +258,23 @@ list_of_possible_stats = [
 ]
 
 ##############################################################################################################################################################
-list_of_stats:list = ['ATT','boss']
-list_of_desired_value:list = [21,30]
-cube_type = 'black'
-equip = 'weapon'
+list_of_stats:list = ['stats']
+list_of_desired_value:list = [30]
+cube_type = 'red'
+equip = 'acc'
+tries = 2861
 
 desired_values = create_desired_values(list_of_stats, list_of_desired_value)
 probability = calc_prob(cube_type, equip, desired_values)
 
 # print(round(a,10))
 if probability != 0:
-    avg_cubes = round(1/probability)
+    avg_cubes = ceil(1/probability)
     avg_cost = avg_cubes*cube_cost[cube_type]
-    percentile_list = [5.00,10.0,15.0,20.0,25.0,50.0,75.0,80.0,85.0,90.0,95.0,97.5]
+
+    print(f"percentile_XX_0: {round((1-(1-probability)**tries)*100,2)}")
+
+    percentile_list = [0.50,5.00,10.0,15.0,20.0,25.0,50.0,75.0,80.0,85.0,90.0,95.0,97.5]
     for percentile in percentile_list:
         percentile_str = f'{percentile:04.1f}'.replace('.','_')
         cube_percentile = round((m.log(1-(percentile/100)))/m.log(1-probability))
