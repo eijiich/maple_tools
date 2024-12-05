@@ -1,0 +1,940 @@
+AddTask.tsx
+
+'''
+import React, { useState } from 'react';
+
+interface AddTaskProps {
+  onAddTask: (
+    task: string,
+    characterName?: string,
+    characterClass?: string,
+    resetType?: 'daily' | 'weekly' | 'monthly',
+    resetDay?: 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday',
+    resetDayOfMonth?: number,
+    bossName?: string,
+    partySize?: number
+  ) => void;
+}
+
+const AddTask: React.FC<AddTaskProps> = ({ onAddTask }) => {
+  const [task, setTask] = useState<string>('');
+  const [characterName, setCharacterName] = useState<string>('');
+  const [characterClass, setCharacterClass] = useState<string>('');
+  const [resetType, setResetType] = useState<'daily' | 'weekly' | 'monthly' | undefined>(undefined);
+  const [resetDay, setResetDay] = useState<'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | undefined>(undefined);
+  const [bossName, setBossName] = useState<string>('');
+  const [partySize, setPartySize] = useState<number | ''>('');
+
+  const handleSubmit = () => {
+    if (task.trim() && characterName.trim() && characterClass.trim()) {
+      const resetDayOfMonth = resetType === 'monthly' ? 1 : undefined;
+      onAddTask(task, characterName, characterClass, resetType, resetDay, resetDayOfMonth, bossName, Number(partySize));
+      setTask('');
+      setCharacterName('');
+      setCharacterClass('');
+      setResetType(undefined);
+      setResetDay(undefined);
+      setBossName('');
+      setPartySize('');
+    }
+  };
+
+  return (
+    <div className="mb-4 flex h-auto flex-col">
+      <input
+        className="border bg-gray-700 border-gray-500 rounded-lg p-2 flex-grow h-10 mb-2"
+        type="text"
+        value={task}
+        onChange={(e) => setTask(e.target.value)}
+        placeholder="Enter task"
+      />
+      <input
+        className="border bg-gray-700 border-gray-500 rounded-lg p-2 flex-grow h-10 mb-2"
+        type="text"
+        value={characterName}
+        onChange={(e) => setCharacterName(e.target.value)}
+        placeholder="Enter character name"
+      />
+      <input
+        className="border bg-gray-700 border-gray-500 rounded-lg p-2 flex-grow h-10 mb-2"
+        type="text"
+        value={characterClass}
+        onChange={(e) => setCharacterClass(e.target.value)}
+        placeholder="Enter character class"
+      />
+      <input
+        className="border bg-gray-700 border-gray-500 rounded-lg p-2 flex-grow h-10 mb-2"
+        type="text"
+        value={bossName}
+        onChange={(e) => setBossName(e.target.value)}
+        placeholder="Enter boss name"
+      />
+      <input
+        className="border bg-gray-700 border-gray-500 rounded-lg p-2 flex-grow h-10 mb-2"
+        type="number"
+        value={partySize}
+        onChange={(e) => setPartySize(e.target.value ? Number(e.target.value) : '')}
+        placeholder="Enter party size"
+      />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <label className="mr-2">Reset Type:</label>
+          <select
+            value={resetType || ''}
+            onChange={(e) => setResetType(e.target.value === '' ? undefined : e.target.value as 'daily' | 'weekly' | 'monthly')}
+            className="border bg-gray-700 border-gray-500 rounded-lg p-2"
+          >
+            <option value="">None</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+
+        {resetType === 'weekly' && (
+          <div className="flex items-center">
+            <label className="mr-2">Reset Day:</label>
+            <select
+              value={resetDay || ''}
+              onChange={(e) => setResetDay(e.target.value as 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday')}
+              className="border bg-gray-700 border-gray-500 rounded-lg p-2"
+            >
+              <option value="sunday">Sunday</option>
+              <option value="monday">Monday</option>
+              <option value="tuesday">Tuesday</option>
+              <option value="wednesday">Wednesday</option>
+              <option value="thursday">Thursday</option>
+              <option value="friday">Friday</option>
+              <option value="saturday">Saturday</option>
+            </select>
+          </div>
+        )}
+      </div>
+      <button
+        className="mt-2 bg-gray-500 text-white p-2 rounded-lg"
+        onClick={handleSubmit}
+      >
+        Add Task
+      </button>
+    </div>
+  );
+};
+
+export default AddTask;
+'''
+
+BossTask.tsx
+
+'''
+import React, { useState } from 'react';
+import ConfirmationDialog from './ConfirmationDialog';
+
+interface BossTaskProps {
+  id: number;
+  task: string;
+  completed: boolean;
+  characterName?: string;
+  characterClass?: string;
+  bossName: string;
+  partySize: number;
+  onToggleComplete: (id: number) => void;
+  onRemoveTask: (id: number) => void;
+  onUpdatePartySize: (id: number, partySize: number) => void; // Callback for party size updates
+}
+
+
+const BossTask: React.FC<BossTaskProps> = ({
+  id,
+  task,
+  completed,
+  bossName,
+  characterName,
+  characterClass,
+  partySize,
+  onToggleComplete,
+  onRemoveTask,
+  onUpdatePartySize,
+}) => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentPartySize, setCurrentPartySize] = useState<number | ''>(partySize); // Track current party size
+  const handleRemoveClick = () => {
+    setIsDialogOpen(true); // Open the confirmation dialog
+  };
+
+  const handleConfirmRemove = () => {
+    onRemoveTask(id); // Proceed with removal
+    setIsDialogOpen(false); // Close the dialog
+  };
+
+  const handlePartySizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPartySize = e.target.value ? Number(e.target.value) : '';
+    setCurrentPartySize(newPartySize);
+    if (newPartySize !== '') {
+      onUpdatePartySize(id, newPartySize); // Notify parent of the change
+    }
+  };
+  
+  return (
+    <>
+      <li className="flex bg-gray-800 justify-between items-center m-1 rounded-lg h-12">
+        <div
+          className="flex h-full items-center w-full cursor-pointer"
+          onClick={() => onToggleComplete(id)}
+        >
+          <input
+            type="checkbox"
+            checked={completed}
+            onChange={() => onToggleComplete(id)}
+            className="m-2 rounded cursor-pointer"
+          />
+          <span className={`flex-grow ${completed ? 'line-through' : ''}`}>
+            {task}
+          </span>
+        </div>
+        <input
+          type="number"
+          value={currentPartySize}
+          onChange={handlePartySizeChange}
+          placeholder="Party Size"
+          className="text-center max-w-12 m-2 rounded border"
+        />
+        <button className="ml-2 bg-red-950 text-red-400 m-1 p-2 rounded-lg" onClick={handleRemoveClick}>
+          Remove
+        </button>
+      </li>
+      <ConfirmationDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onConfirm={handleConfirmRemove}
+      />
+      {/* Display the character name and class below the task */}
+      <div className="ml-4 text-gray-400 text-sm">
+      Boss: <strong>{bossName}</strong> | Character: <strong>{characterName}</strong> | Class: <strong>{characterClass}</strong>
+      </div>
+    </>
+  );
+};
+
+export default BossTask;
+'''
+
+BossTaskList.tsx
+
+'''
+import React from 'react';
+import BossTask from './BossTask';
+
+interface Todo {
+  id?: number;
+  task: string;
+  completed: boolean;
+  resetType?: 'daily' | 'weekly' | 'monthly';
+  resetDay?: 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
+  resetDayOfMonth?: number;
+  characterName?: string;
+  characterClass?: string;
+  bossName: string;
+  partySize: number;
+}
+
+interface BossTaskListProps {
+  tasks: Todo[]; // Array of tasks that are boss-related
+  onToggleComplete: (id: number) => void; // Function for toggling completion status
+  onRemoveTask: (id: number) => void; // Function for removing a task
+  onUpdatePartySize: (id: number, partySize: number) => void; // Function for updating party size
+}
+
+const BossTaskList: React.FC<BossTaskListProps> = ({
+  tasks,
+  onToggleComplete,
+  onRemoveTask,
+  onUpdatePartySize,
+}) => {
+  return (
+    <ul className="mt-2">
+      {tasks.map((task, index) => (
+        <BossTask
+          key={task.id ?? index}
+          id={task.id ?? index}
+          task={task.task}
+          completed={task.completed}
+          characterName={task.characterName}
+          characterClass={task.characterClass}
+          bossName={task.bossName}
+          partySize={task.partySize}
+          onToggleComplete={onToggleComplete}
+          onRemoveTask={onRemoveTask}
+          onUpdatePartySize={onUpdatePartySize} // Pass the callback here
+        />
+      ))}
+    </ul>
+  );
+};
+
+export default BossTaskList;
+'''
+
+compare.tsx
+
+'''
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { addTodo, getTodos, removeTodo, updateTodo } from '../utils/indexedDB';
+import AddTask from './AddTask';
+import TaskList from './TaskList';
+import BossTaskList from './BossTaskList';
+
+interface Todo {
+  id?: number;
+  task: string;
+  completed: boolean;
+  resetType?: 'daily' | 'weekly' | 'monthly';
+  resetDay?: 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
+  resetDayOfMonth?: number;
+  characterName?: string;
+  characterClass?: string;
+  bossName?: string;
+  partySize?: number;
+}
+
+const TodoList = forwardRef((_props, ref) => {
+  const [todos, setTodos] = useState<Todo[]>([]);
+
+  const fetchTodos = async () => {
+    const storedTodos: Todo[] = await getTodos();
+    setTodos(storedTodos);
+  };
+
+  useEffect(() => {
+    fetchTodos();
+  }, []);
+
+  useImperativeHandle(ref, () => ({
+    fetchTodos,
+  }));
+
+  const handleAddTask = async (
+    task: string,
+    characterName?: string,
+    characterClass?: string,
+    resetType?: 'daily' | 'weekly' | 'monthly',
+    resetDay?: Todo['resetDay'],
+    resetDayOfMonth?: number,
+    bossName?: string, // New field for boss name
+    partySize?: number // New field for party size
+  ) => {
+    await addTodo(task, characterName, characterClass, resetType, resetDay, resetDayOfMonth, bossName, partySize);
+    fetchTodos();
+  };
+
+  const handleRemoveTask = async (id: number) => {
+    await removeTodo(id);
+    fetchTodos();
+  };
+
+  const handleToggle = async (id: number) => {
+    const todo = todos.find((t) => t.id === id);
+    if (todo) {
+      await updateTodo({ ...todo, completed: !todo.completed });
+      fetchTodos();
+    }
+  };
+
+  const generalTasks = todos.filter(todo => !todo.bossName); // Filter out general tasks
+  const bossTasks = todos.filter(todo => todo.bossName) as (Todo & { bossName: string; partySize: number; })[];
+  
+  return (
+    <div className="flex">
+      <div className="w-1/2"> {/* Left Column for General Tasks */}
+        <h1 className="text-2xl font-bold mb-4">General Todo List</h1>
+        <AddTask onAddTask={handleAddTask} />
+        <TaskList tasks={generalTasks} onToggleComplete={handleToggle} onRemoveTask={handleRemoveTask} />
+      </div>
+      <div className="w-1/2"> {/* Right Column for Boss Tasks */}
+        <h1 className="text-2xl font-bold mb-4">Boss Task List</h1>
+        <BossTaskList tasks={bossTasks} onToggleComplete={handleToggle} onRemoveTask={handleRemoveTask} />
+      </div>
+    </div>
+  );
+});
+
+export default TodoList;
+'''
+
+ConfirmationDialog.tsx
+
+'''
+import React from 'react';
+import { Dialog, Description, DialogPanel, DialogTitle } from '@headlessui/react';
+
+interface ConfirmationDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({ isOpen, onClose, onConfirm }) => {
+  return (
+    <Dialog open={isOpen} onClose={onClose}>
+      <div className="fixed inset-0 bg-black opacity-30" />
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <DialogPanel className="max-w-sm mx-auto bg-gray-800 rounded-lg shadow-lg">
+          <DialogTitle className="text-lg font-bold p-4">Confirm Removal</DialogTitle>
+          <Description className="p-4">
+            Are you sure you want to remove this task?
+          </Description>
+          <div className="flex justify-end p-4">
+            <button
+              className="mr-2 px-4 py-2 bg-gray-500 rounded-lg"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-4 py-2 bg-red-500 text-white rounded-lg"
+              onClick={onConfirm}
+            >
+              Remove
+            </button>
+          </div>
+        </DialogPanel>
+      </div>
+    </Dialog>
+  );
+};
+
+export default ConfirmationDialog;
+
+'''
+
+ExportTaskList.tsx
+
+'''
+import React from 'react';
+import { getTodos } from '../utils/indexedDB';
+
+const ExportTaskList: React.FC = () => {
+  const exportTasks = async () => {
+    const todos = await getTodos(); // Fetch tasks from indexedDB
+    const json = JSON.stringify(todos, null, 2); // Convert tasks to JSON format
+    await navigator.clipboard.writeText(json); // Copy to clipboard
+    alert('Tasks copied to clipboard!');
+  };
+
+  return (
+    <button
+      onClick={exportTasks}
+      className="bg-blue-700 text-white p-2 rounded-lg w-full mb-4"
+    >
+      Export Task List
+    </button>
+  );
+};
+
+export default ExportTaskList;
+'''
+
+ImportTaskList.tsx
+
+'''
+import React, { useState } from 'react';
+import { addTodo, getTodos, removeTodo } from '../utils/indexedDB';
+
+interface ImportTaskListProps {
+  fetchTodos: () => void;  // Function to refresh the task list
+}
+
+const ImportTaskList: React.FC<ImportTaskListProps> = ({ fetchTodos }) => {
+  const [jsonInput, setJsonInput] = useState<string>('');
+
+  const importTasks = async () => {
+    try {
+      const tasks = JSON.parse(jsonInput);
+
+      if (!Array.isArray(tasks)) {
+        throw new Error('Invalid format');
+      }
+
+      // Clear existing tasks in indexedDB
+      const currentTodos = await getTodos();
+      for (const todo of currentTodos) {
+        await removeTodo(todo.id!);
+      }
+
+      // Add new tasks
+      for (const task of tasks) {
+        if (task.task && typeof task.task === 'string' && task.characterName && task.characterClass) {
+          await addTodo(task.task, task.characterName, task.characterClass); // Pass new fields
+        }
+      }
+
+      alert('Tasks imported successfully!');
+      fetchTodos();  // Refresh the task list after importing
+    } catch (error) {
+      alert('Invalid JSON format');
+    }
+  };
+
+  return (
+    <div>
+      <textarea
+        value={jsonInput}
+        onChange={(e) => setJsonInput(e.target.value)}
+        className="border bg-gray-700 border-gray-500 rounded-lg p-2 w-full mb-2"
+        placeholder="Paste JSON here"
+        rows={5}
+      />
+      <button
+        onClick={importTasks}
+        className="bg-green-700 text-white p-2 rounded-lg w-full"
+      >
+        Import Task List
+      </button>
+    </div>
+  );
+};
+
+export default ImportTaskList;
+'''
+
+Sidebar.tsx
+
+'''
+import React, { useState } from 'react';
+import ImportTaskList from './ImportTaskList';
+import ExportTaskList from './ExportTaskList';
+
+interface SidebarProps {
+  fetchTodos: () => void;  // Pass the function to refresh the task list
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ fetchTodos }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsOpen(!isOpen);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        className="text-xl focus:outline-none"
+        onClick={toggleSidebar}
+      >
+        &#9776; {/* Hamburger menu icon */}
+      </button>
+
+      <div
+        className={`fixed left-0 top-0 w-96 bg-gray-800 text-white h-full transition-transform transform ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
+        <div className="p-4 ">
+          <button className="text-xl bg-gray-800 mb-4" onClick={toggleSidebar}>
+            &#x2715; {/* Close icon */}
+          </button>
+          <ExportTaskList />
+          <ImportTaskList fetchTodos={fetchTodos} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Sidebar;
+
+'''
+
+Task.tsx
+
+'''
+import React, { useState } from 'react';
+import ConfirmationDialog from './ConfirmationDialog';
+
+interface TaskProps {
+  id: number;
+  task: string;
+  completed: boolean;
+  characterName?: string;  // New field for character name
+  characterClass?: string; // New field for character class
+  onToggleComplete: (id: number) => void;
+  onRemoveTask: (id: number) => void;
+}
+
+const Task: React.FC<TaskProps> = ({
+  id,
+  task,
+  completed,
+  characterName,
+  characterClass,
+  onToggleComplete,
+  onRemoveTask,
+}) => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleRemoveClick = () => {
+    setIsDialogOpen(true);  // Open the confirmation dialog
+  };
+
+  const handleConfirmRemove = () => {
+    onRemoveTask(id);  // Proceed with removal
+    setIsDialogOpen(false);  // Close the dialog
+  };
+
+  return (
+    <>
+      <li className="flex bg-gray-800 justify-between items-center m-1 rounded-lg h-12">
+        <div
+          className="flex h-full items-center w-full cursor-pointer"
+          onClick={() => onToggleComplete(id)}
+        >
+          <input
+            type="checkbox"
+            checked={completed}
+            onChange={() => onToggleComplete(id)}
+            className="m-2 rounded cursor-pointer"
+          />
+          <span className={`flex-grow ${completed ? 'line-through' : ''}`}>
+            {task}
+          </span>
+        </div>
+        <button className="ml-2 bg-red-950 text-red-400 m-1 p-2 rounded-lg" onClick={handleRemoveClick}>
+          Remove
+        </button>
+      </li>
+      <ConfirmationDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onConfirm={handleConfirmRemove}
+      />
+      {/* Display the character name and class below the task */}
+      <div className="ml-4 text-gray-400 text-sm">
+        Character: <strong>{characterName}</strong> | Class: <strong>{characterClass}</strong>
+      </div>
+    </>
+  );
+};
+
+export default Task;
+'''
+
+TaskList.tsx
+
+'''
+import React from 'react';
+import Task from './Task';
+
+interface Todo {
+  id?: number;
+  task: string;
+  completed: boolean;
+  resetType?: 'daily' | 'weekly' | 'monthly';
+  resetDay?: 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
+  resetDayOfMonth?: number;
+  characterName?: string;  // New field for character name
+  characterClass?: string; // New field for character class
+}
+
+interface TaskListProps {
+  tasks: Todo[];  // Update this to reference the new Todo interface
+  onToggleComplete: (id: number) => void;
+  onRemoveTask: (id: number) => void;
+}
+
+const TaskList: React.FC<TaskListProps> = ({ tasks, onToggleComplete, onRemoveTask }) => {
+  return (
+    <ul className="mt-2">
+      {tasks.map((task, index) => (
+        <Task
+          key={task.id ?? index}
+          id={task.id ?? index}
+          task={task.task}
+          completed={task.completed}
+          characterName={task.characterName}
+          characterClass={task.characterClass}
+          onToggleComplete={onToggleComplete}
+          onRemoveTask={onRemoveTask}
+        />
+      ))}
+    </ul>
+  );
+};
+
+export default TaskList;
+'''
+
+TestComponent.tsx
+
+'''
+import React from 'react';
+
+const TestComponent: React.FC = () => {
+  return (
+    <div className="p-4">
+      <h1 className="text-3xl font-bold text-blue-600">Tailwind CSS is Working!</h1>
+      <p className="mt-2 text-gray-700">
+        If you see this styled text, then Tailwind CSS is correctly configured.
+      </p>
+      <button className="mt-4 bg-green-500 text-white px-4 py-2 rounded">
+        Test Button
+      </button>
+    </div>
+  );
+};
+
+export default TestComponent;
+
+'''
+
+TodoList.tsx
+
+'''
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { addTodo, getTodos, removeTodo, updateTodo } from '../utils/indexedDB';
+import AddTask from './AddTask';
+import TaskList from './TaskList';
+import BossTaskList from './BossTaskList';
+
+interface Todo {
+  id?: number;
+  task: string;
+  completed: boolean;
+  resetType?: 'daily' | 'weekly' | 'monthly';
+  resetDay?: 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
+  resetDayOfMonth?: number;
+  lastReset?: string;
+  characterName?: string;
+  characterClass?: string;
+  bossName?: string;
+  partySize?: number;
+}
+
+const TodoList = forwardRef((_props, ref) => {
+  const [todos, setTodos] = useState<Todo[]>([]);
+
+  const fetchTodos = async () => {
+    const storedTodos: Todo[] = await getTodos();
+    setTodos(storedTodos);
+  };
+
+  useEffect(() => {
+    fetchTodos();
+  }, []);
+
+  useImperativeHandle(ref, () => ({
+    fetchTodos,
+  }));
+
+  const handleAddTask = async (
+    task: string,
+    characterName?: string,
+    characterClass?: string,
+    resetType?: 'daily' | 'weekly' | 'monthly',
+    resetDay?: Todo['resetDay'],
+    resetDayOfMonth?: number,
+    bossName?: string,
+    partySize?: number
+  ) => {
+    await addTodo(task, characterName, characterClass, resetType, resetDay, resetDayOfMonth, bossName, partySize);
+    fetchTodos();
+  };
+
+  const handleRemoveTask = async (id: number) => {
+    await removeTodo(id);
+    fetchTodos();
+  };
+
+  const handleToggle = async (id: number) => {
+    const todo = todos.find((t) => t.id === id);
+    if (todo) {
+      await updateTodo({ ...todo, completed: !todo.completed });
+      fetchTodos();
+    }
+  };
+
+  const handleUpdatePartySize = async (id: number, partySize: number) => {
+    const todo = todos.find((t) => t.id === id);
+    if (todo) {
+      const updatedTodo = { ...todo, partySize };
+      await updateTodo(updatedTodo); // Update in IndexedDB
+      setTodos((prevTodos) =>
+        prevTodos.map((t) => (t.id === id ? updatedTodo : t)) // Update in state
+      );
+    }
+  };
+
+  const generalTasks = todos.filter(todo => !todo.bossName);
+  const bossTasks = todos.filter(todo => todo.bossName) as (Todo & { bossName: string; partySize: number; })[];
+
+  return (
+    <div>
+      <div className="max-w-md mx-auto mt-4 p-4 rounded-lg">
+        <h1 className="text-4xl font-bold mb-4">Maple Planner</h1>
+      </div>
+      {/* <div className="flex justify-evenly mt-4 p-4"> */}
+      <div className="flex flex-col md:flex-row items-center md:items-start content-center justify-center space-y-8 md:space-y-0 md:space-x-16">
+        <div className="max-w-md w-full">
+          <h1 className="text-4xl font-bold mb-4">General Content</h1>
+          <TaskList
+            tasks={generalTasks}
+            onToggleComplete={handleToggle}
+            onRemoveTask={handleRemoveTask}
+          />
+        </div>
+        <div className="max-w-md w-full">
+          <h1 className="text-4xl font-bold mb-4">Boss Content</h1>
+          <BossTaskList
+            tasks={bossTasks}
+            onToggleComplete={handleToggle}
+            onRemoveTask={handleRemoveTask}
+            onUpdatePartySize={handleUpdatePartySize}
+          />
+        </div>
+      </div>
+      <div className="max-w-md mx-auto mt-4 p-4 rounded-lg">
+        <h2 className="text-2xl font-bold mb-4">Add Task</h2>
+        <AddTask onAddTask={handleAddTask} />
+      </div>
+    </div>
+  );
+});
+
+export default TodoList;
+'''
+
+indexedDB.ts
+
+'''
+import { openDB, DBSchema } from 'idb';
+
+interface Todo {
+  id?: number;  // id is optional when adding a new todo
+  task: string;
+  completed: boolean;
+  resetType?: 'daily' | 'weekly' | 'monthly';  // Optional reset type
+  resetDay?: 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';  // For weekly tasks
+  resetDayOfMonth?: number;  // For monthly tasks
+  lastReset?: string;  // ISO string for the last time the task was reset
+  characterName?: string;  // New field for character name
+  characterClass?: string;  // New field for character class
+  bossName?: string; // New field for boss name
+  partySize?: number; // New field for party size
+}
+
+interface MyDB extends DBSchema {
+  todos: {
+    key: number;
+    value: Todo;
+  };
+}
+
+const dbPromise = openDB<MyDB>('todo-db', 1, {
+  upgrade(db) {
+    db.createObjectStore('todos', { keyPath: 'id', autoIncrement: true });
+  },
+});
+
+// Add a new todo with optional reset schedule
+export const addTodo = async (
+  task: string,
+  characterName?: string,
+  characterClass?: string,
+  resetType?: 'daily' | 'weekly' | 'monthly',
+  resetDay?: Todo['resetDay'],
+  resetDayOfMonth?: number,
+  bossName?: string, // New field for boss name
+  partySize?: number // New field for party size
+) => {
+  const db = await dbPromise;
+  const lastReset = new Date().toISOString(); // Record current time as the last reset time
+
+  await db.add('todos', {
+    task,
+    completed: false,
+    resetType,
+    resetDay,
+    resetDayOfMonth,
+    lastReset,
+    characterName,
+    characterClass,
+    bossName, // Include new fields
+    partySize, // Include new fields
+  });
+};
+
+export const getTodos = async (): Promise<Todo[]> => {
+  const db = await dbPromise;   
+  return await db.getAll('todos');  // Returns Todo[]
+};
+
+export const removeTodo = async (id: number) => {
+  const db = await dbPromise;
+  await db.delete('todos', id);
+};
+
+export const updateTodo = async (todo: Todo) => {
+  const db = await dbPromise;
+  await db.put('todos', todo);
+};
+
+// Function to determine if a todo should reset based on the reset type and current time
+function shouldResetTask(todo: Todo): boolean {
+  const now = new Date();
+  const lastReset = todo.lastReset ? new Date(todo.lastReset) : null;
+
+  if (!lastReset) return false;
+
+  const resetTime = new Date(lastReset); // Start with the last reset time
+
+  if (todo.resetType === 'daily') {
+    resetTime.setHours(21, 0, 0, 0); // Set to 9 PM today
+    // If current time is after 9 PM, set reset time to 9 PM tomorrow
+    if (now < lastReset && now > resetTime) {
+      resetTime.setDate(resetTime.getDate() + 1);
+    }
+    return now >= resetTime;
+
+  } else if (todo.resetType === 'weekly' && todo.resetDay) {
+    const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const resetDayIndex = daysOfWeek.indexOf(todo.resetDay.toLowerCase());
+    const nowDayIndex = now.getDay();
+
+    // Set the reset time to 9 PM on the next reset day
+    if (resetDayIndex >= 0) {
+      resetTime.setDate(now.getDate() + (resetDayIndex - nowDayIndex + 7) % 7);  // Get the next reset day
+      resetTime.setHours(21, 0, 0, 0); // Set to 9 PM on the reset day
+      // If today is the reset day and it's after 9 PM, set to next week's reset day
+      if (nowDayIndex === resetDayIndex && (now < lastReset && now > resetTime)) {
+        resetTime.setDate(resetTime.getDate() + 7);
+      }
+      return now >= resetTime;
+    }
+
+  } else if (todo.resetType === 'monthly' && todo.resetDayOfMonth) {
+    resetTime.setDate(todo.resetDayOfMonth); // Set to the reset day of the month
+    resetTime.setHours(21, 0, 0, 0); // Set to 9 PM
+
+    // If today is past the reset day or it’s the reset day and after 9 PM, set to the next month
+    if (now.getDate() > todo.resetDayOfMonth || (now.getDate() === todo.resetDayOfMonth && (now < lastReset && now > resetTime))) {
+      resetTime.setMonth(resetTime.getMonth() + 1);
+    }
+    return now >= resetTime;
+  }
+
+  return false;
+}
+
+// Check and reset todos if needed
+export const checkAndResetTodos = async () => {
+  const db = await dbPromise;
+  const todos = await db.getAll('todos');
+
+  for (const todo of todos) {
+    if (shouldResetTask(todo)) {
+      todo.completed = false;  // Reset the task
+      todo.lastReset = new Date().toISOString();  // Update last reset time
+      await db.put('todos', todo);
+    }
+  }
+};
+
+// Call this function when the app is loaded to check for resets
+checkAndResetTodos();
+'''

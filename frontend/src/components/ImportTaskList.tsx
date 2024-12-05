@@ -24,8 +24,16 @@ const ImportTaskList: React.FC<ImportTaskListProps> = ({ fetchTodos }) => {
 
       // Add new tasks
       for (const task of tasks) {
-        if (task.task && typeof task.task === 'string' && task.characterName && task.characterClass) {
-          await addTodo(task.task, task.characterName, task.characterClass); // Pass new fields
+        // Validate required fields: task, characterName, characterClass
+        if (task.task && typeof task.task === 'string' &&
+            task.characterName && typeof task.characterName === 'string' &&
+            task.characterClass && typeof task.characterClass === 'string') {
+              
+          // Add optional fields if they exist
+          const { bossName, partySize, resetType, resetDay, resetDayOfMonth } = task;
+          await addTodo(task.task, task.characterName, task.characterClass, resetType, resetDay, resetDayOfMonth, bossName, partySize);
+        } else {
+          alert('Invalid task format. Make sure to include task, characterName, and characterClass.');
         }
       }
 

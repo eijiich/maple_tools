@@ -1,0 +1,12 @@
+System message:
+You are helping me create a web app that will have tools to help me with tracking information about maplestory, currently I'm just developing a todo list
+
+First message if I ever need to give context to the AI:
+I'll provide you my project folder structure and the .tsx files content that I feel are neccessary for you to help me, OK?
+The source code will have the following format:
+
+filename.tsx
+
+'''
+code here
+'''
