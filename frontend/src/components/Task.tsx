@@ -4,6 +4,7 @@ import ConfirmationDialog from './ConfirmationDialog';
 interface TaskProps {
   id: number;
   task: string;
+  resetType?: 'daily' | 'weekly' | 'monthly';
   completed: boolean;
   characterName?: string;  // New field for character name
   characterClass?: string; // New field for character class
@@ -14,6 +15,7 @@ interface TaskProps {
 const Task: React.FC<TaskProps> = ({
   id,
   task,
+  resetType,
   completed,
   characterName,
   characterClass,
@@ -59,7 +61,9 @@ const Task: React.FC<TaskProps> = ({
       />
       {/* Display the character name and class below the task */}
       <div className="ml-4 text-gray-400 text-sm">
-        Character: <strong>{characterName}</strong> | Class: <strong>{characterClass}</strong>
+        Frequency: <strong>{
+          resetType ? (resetType.charAt(0).toUpperCase() + resetType.slice(1)) : 'None'
+        }</strong> | Character: <strong>{characterName}</strong> | Class: <strong>{characterClass}</strong>
       </div>
     </>
   );

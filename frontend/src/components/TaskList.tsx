@@ -26,6 +26,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onToggleComplete, onRemoveTa
           key={task.id ?? index}
           id={task.id ?? index}
           task={task.task}
+          resetType={task.resetType}
           completed={task.completed}
           characterName={task.characterName}
           characterClass={task.characterClass}
