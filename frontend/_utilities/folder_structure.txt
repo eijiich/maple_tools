@@ -5,6 +5,8 @@
 ├── src/
 │   ├── components/          # React components
 │   │   ├── AddTask.tsx
+│   │   ├── BossTask.tsx
+│   │   ├── BossTaskList.tsx
 │   │   ├── ConfirmationDialog.tsx
 │   │   ├── ExportTaskList.tsx
 │   │   ├── ImportTaskList.tsx
