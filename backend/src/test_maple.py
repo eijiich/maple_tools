@@ -232,6 +232,6 @@ if __name__ == '__main__':
     data = test_character()
     schema = CharacterSchema()
     print(json.dumps(schema.dump(data), indent=4))
-    pretty_json = json.dumps(data.as_dict(), indent=4)R
+    pretty_json = json.dumps(data.as_dict(), indent=4)
 
     # test_schemas()
