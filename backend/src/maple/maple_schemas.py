@@ -1,7 +1,7 @@
 from typing import List, Dict, Union, Optional
-from flames import Flames, FlameValues, FlameWeights
-from pots import Potentials, PotentialLine
-from equipment import Equipment
+from .flames import Flames, FlameValues, FlameWeights
+from .pots import Potentials, PotentialLine
+from .equipment import Equipment
 from marshmallow import Schema, fields, post_load, post_dump, pre_dump
 
 #Marshmallow schemas
@@ -81,79 +81,3 @@ class EquipmentSchema(Schema):
     @post_load
     def make_equipment(self, data, **kwargs):
         return Equipment(**data)
-
-if __name__ == '__main__':# Example input data
-    equipments = [
-        {
-            "equip_type": "Hat",
-            "equip_set": "Eternal",
-            "equip_name": None,
-            "star_force": 18,
-            "potentials": {
-                "lines": [
-                    {
-                    "position":None,
-                    "stat":None,
-                    "value":None,
-                    },
-                    {
-                    "position":None,
-                    "stat":None,
-                    "value":None,
-                    },
-                    {
-                    "position":None,
-                    "stat":None,
-                    "value":None,
-                    },
-                ],
-            "total_stats": None,
-        },
-            "flames": {
-                "values": {
-                    "main_stats": None,
-                    "secondary_stats": None,
-                    "att": None,
-                    "all_stats": None,
-                },
-                "flame_score": 164,
-            },
-            "preset_1": True,
-            "preset_2": True,
-            "preset_3": True,
-            "equipped": True,
-        }
-    ]
-
-    # Deserialize
-    equipment_schema = EquipmentSchema()
-    equipment_data = equipment_schema.load(equipments[0])
-    print(equipment_data)
-
-    # Serialize
-    serialized_data = equipment_schema.dump(equipment_data)
-    print(serialized_data)
-
-    pot_lines = [
-        PotentialLine(1, "main_stats", 30),
-        PotentialLine(2, "main_stats", 30),
-        PotentialLine(3, "main_stats", 30),
-    ]
-    pots = Potentials(pot_lines)
-
-    flames = Flames(flame_score = 69)
-
-    equipment = Equipment(
-        equip_type="Bottom",
-        equip_set="CRA",
-        equip_name=None,
-        star_force=21,
-        potentials=pots,
-        flames=flames,
-        preset_1=True,
-        preset_2=False,
-        preset_3=False,
-        equipped=True
-    )
-
-    print(equipment)

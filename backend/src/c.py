@@ -1,0 +1,3 @@
+import maple
+
+print("a")

@@ -1,7 +1,7 @@
 from typing import List, Dict, Union, Optional
-from equipment import Equipment
-from flames import Flames, FlameWeights
-from pots import Potentials, PotentialLine
+from .equipment import Equipment
+from .flames import Flames, FlameWeights
+from .pots import Potentials, PotentialLine
 
 class Character:
     def __init__(
@@ -37,7 +37,4 @@ if __name__ == '__main__':
         preset_3=False,
         equipped=True
     )
-
     print(equipment)
-
-    

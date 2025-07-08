@@ -79,14 +79,3 @@ class Potentials:
 
     def __str__(self):
         return f"{str(self.as_dict())}"
-
-if __name__ == '__main__':
-    teste = [
-        PotentialLine(position=1, stat="main_stats", value=13),
-        PotentialLine(position=1, stat="main_stats", value=7),
-        PotentialLine(position=1, stat="all_stats", value=7),
-    ]
-    
-    potentials = Potentials(lines=teste)
-    print(potentials)
-    print("Total stats sum:", potentials.total_stats)

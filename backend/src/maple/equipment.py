@@ -1,6 +1,27 @@
 from typing import List, Dict, Union, Optional
-from flames import Flames, FlameWeights
-from pots import Potentials, PotentialLine
+from .flames import Flames, FlameWeights
+from .pots import Potentials, PotentialLine
+
+equipment_types = [
+    'hat',
+    'overall',
+    'top',
+    'bottom',
+    'gloves',
+    'shoes',
+    'cape',
+    'shoulder',
+    'belt',
+    'face',
+    'eye',
+    'ring',
+    'earring',
+    'pendant',
+    'heart'
+    'weapon',
+    'secondary',
+    'emblem'
+]
 
 class Equipment:
     def __init__(
@@ -43,65 +64,3 @@ class Equipment:
     
     def __str__(self):
         return (str(self.as_dict()))
-
-
-a = [
-    'hat',
-
-    'overall',
-    'top',
-    
-    'bottom',
-    
-
-    'gloves',
-
-    'shoes',
-
-    'cape',
-    'shoulder',
-    'belt',
-
-    'face'
-    'eye',
-    'ring',
-    'earring',
-    'pendant',
-
-    'heart'
-
-    'weapon',
-
-    'secondary',
-
-    'emblem'
-]
-
-
-if __name__ == '__main__':
-    # Assuming Potentials and Flames classes are defined properly
-    pot_lines = [
-        PotentialLine(1, "main_stats", 30),
-        PotentialLine(2, "main_stats", 30),
-        PotentialLine(3, "main_stats", 30),
-    ]
-    pots = Potentials(pot_lines)
-
-    flames = Flames(flame_score = 69)
-
-    equipment = Equipment(
-        equip_type="Bottom",
-        equip_set="CRA",
-        equip_name=None,
-        star_force=21,
-        potentials=pots,
-        flames=flames,
-        preset_1=True,
-        preset_2=False,
-        preset_3=False,
-        equipped=True
-    )
-
-    print(equipment)
-
-    
