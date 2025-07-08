@@ -1,7 +1,8 @@
 from typing import List, Dict, Union, Optional
+from .characters import Character
+from .equipment import Equipment
 from .flames import Flames, FlameValues, FlameWeights
 from .pots import Potentials, PotentialLine
-from .equipment import Equipment
 from marshmallow import Schema, fields, post_load, post_dump, pre_dump
 
 #Marshmallow schemas
@@ -81,3 +82,12 @@ class EquipmentSchema(Schema):
     @post_load
     def make_equipment(self, data, **kwargs):
         return Equipment(**data)
+    
+class CharacterSchema(Schema):
+    character_class = fields.Str(required=True)
+    character_name = fields.Str(required=True)
+    equipments = fields.List(fields.Nested(EquipmentSchema))
+
+    @post_load
+    def make_character(self, data, **kwargs):
+        return Character(**data)

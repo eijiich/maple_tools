@@ -3,6 +3,7 @@ from .equipment import Equipment
 from .flames import Flames, FlameWeights
 from .pots import Potentials, PotentialLine
 
+
 class Character:
     def __init__(
         self,
@@ -14,7 +15,15 @@ class Character:
         self.character_name = character_name
         self.equipments = equipments
 
-if __name__ == '__main__':
+    def as_dict(self):
+        return {
+            "character_class": self.character_class,
+            "character_name": self.character_name,
+            "equipments": [e.as_dict() for e in self.equipments],
+        }
+
+
+if __name__ == "__main__":
     # Assuming Potentials and Flames classes are defined properly
     pot_lines = [
         PotentialLine(1, "main_stats", 30),
@@ -23,7 +32,7 @@ if __name__ == '__main__':
     ]
     pots = Potentials(pot_lines)
 
-    flames = Flames(flame_score = 69)
+    flames = Flames(flame_score=69)
 
     equipment = Equipment(
         equip_type="Bottom",
@@ -35,6 +44,6 @@ if __name__ == '__main__':
         preset_1=True,
         preset_2=False,
         preset_3=False,
-        equipped=True
+        equipped=True,
     )
     print(equipment)

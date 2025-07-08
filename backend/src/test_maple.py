@@ -3,7 +3,7 @@ from maple.characters import Character
 from maple.equipment import Equipment
 from maple.flames import Flames
 from maple.pots import Potentials, PotentialLine
-from maple.maple_schemas import FlameValuesSchema, FlamesSchema, PotentialLineSchema, PotentialsSchema, EquipmentSchema
+from maple.maple_schemas import FlameValuesSchema, FlamesSchema, PotentialLineSchema, PotentialsSchema, EquipmentSchema, CharacterSchema
 
 def test_equipment():
     pot_lines = [
@@ -90,8 +90,55 @@ def test_pots():
     # print("Total stats sum:", potentials.total_stats)
     return potentials
 
-def test_schemas():
+def test_character():
+    # Sample potential lines
+    pot_lines = [
+        PotentialLine(1, "main_stats", 30),
+        PotentialLine(2, "main_stats", 30),
+        PotentialLine(3, "main_stats", 30),
+    ]
+    pots = Potentials(pot_lines)
+
+    # Sample flames
+    flames = Flames(flame_score=100)
+
+    # Create some sample equipment pieces
+    equipment1 = Equipment(
+        equip_type="Hat",
+        equip_set="Eternal",
+        equip_name=None,
+        star_force=18,
+        potentials=pots,
+        flames=flames,
+        preset_1=True,
+        preset_2=False,
+        preset_3=False,
+        equipped=True
+    )
+
+    equipment2 = Equipment(
+        equip_type="Weapon",
+        equip_set="Abso",
+        equip_name=None,
+        star_force=22,
+        potentials=pots,
+        flames=flames,
+        preset_1=False,
+        preset_2=True,
+        preset_3=False,
+        equipped=True
+    )
+
+    # Now create the character
+    character = Character(
+        character_class="Hero",
+        character_name="GenNoTanjiro",
+        equipments=[equipment1, equipment2]
+    )
     
+    return character
+
+def test_schemas():
     equipments = [
         {
             "equip_type": "Hat",
@@ -182,7 +229,9 @@ if __name__ == '__main__':
     data = test_equipment()
     data = test_flames()
     data = test_pots()
-    pretty_json = json.dumps(data.as_dict(), indent=4)
-    # print(pretty_json)
+    data = test_character()
+    schema = CharacterSchema()
+    print(json.dumps(schema.dump(data), indent=4))
+    pretty_json = json.dumps(data.as_dict(), indent=4)R
 
-    test_schemas()
+    # test_schemas()
