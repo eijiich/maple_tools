@@ -163,6 +163,7 @@ mask = (
 target = cv2.bitwise_and(image,image, mask=mask)
 gray_image = cv2.cvtColor(target, cv2.COLOR_BGR2GRAY)
 _, binary_image = cv2.threshold(gray_image, 50, 255, cv2.THRESH_BINARY_INV)
+adaptive = cv2.adaptiveThreshold(gray_image, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 15, 10)
 cv2.imwrite(output_path+'\\'+'\\'+"target.png", target)
 cv2.imwrite(output_path+'\\'+'\\'+"target_gray.png", gray_image)
 cv2.imwrite(output_path+'\\'+'\\'+"target_binary.png", binary_image)
@@ -178,12 +179,11 @@ new_height = original_height * 10
 
 # Resize the image
 resized_image = cv2.resize(binary_image, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
-cv2.imwrite(output_path+'\\'+"target_binary2.png", resized_image)
+resized_image = cv2.GaussianBlur(resized_image, (3, 3), 0)
+_, final_binary = cv2.threshold(resized_image, 180, 255, cv2.THRESH_BINARY)
 
- 
-# Optional: Display the results
-extracted_text_binary_image = pytesseract.image_to_string(resized_image)
-
-print(extracted_text_binary_image)
+cv2.imwrite(str(output_path+'\\'+r"final_binary.png"), final_binary)
+text = pytesseract.image_to_string(final_binary, config='--psm 6')
+print(text)
 
 #https://stackoverflow.com/questions/43352918/how-do-i-train-tesseract-4-with-image-data-instead-of-a-font-file

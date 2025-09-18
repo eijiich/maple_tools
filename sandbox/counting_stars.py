@@ -2,7 +2,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-base_dir = Path(__file__).resolve().parent.parent.parent.parent  # Adjust according to the file's structure
+base_dir = Path(__file__).resolve().parent.parent  # Adjust according to the file's structure
 
 # Define paths relative to the base directory
 data_path = base_dir/'data'/'img'/'dataset'

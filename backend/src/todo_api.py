@@ -1,69 +1,73 @@
-from flask import Flask, jsonify, request, abort
-from flask_cors import CORS
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List, Optional
 
-app = Flask(__name__)
-CORS(app)
+app = FastAPI()
 
-# Mock database (in-memory list)
-todo_list = [
-    {"id": 1, "task": "Buy groceries", "completed": False},
-    {"id": 2, "task": "Walk the dog", "completed": False}
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Change this in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Pydantic models
+class TodoBase(BaseModel):
+    task: str
+    completed: Optional[bool] = False
+
+class Todo(TodoBase):
+    id: int
+
+# Mock database (in-memory)
+todo_list: List[Todo] = [
+    Todo(id=1, task="Buy groceries", completed=False),
+    Todo(id=2, task="Walk the dog", completed=False)
 ]
 
-# Helper function to find a todo by id
-def find_todo(todo_id):
-    return next((todo for todo in todo_list if todo["id"] == todo_id), None)
+# Helper function
+def find_todo(todo_id: int) -> Optional[Todo]:
+    return next((todo for todo in todo_list if todo.id == todo_id), None)
 
 # Get all todos
-@app.route('/todos', methods=['GET'])
+@app.get("/todos", response_model=List[Todo])
 def get_todos():
-    return jsonify(todo_list), 200
+    return todo_list
 
-# Get a single todo by id
-@app.route('/todos/<int:todo_id>', methods=['GET'])
-def get_todo(todo_id):
+# Get a single todo
+@app.get("/todos/{todo_id}", response_model=Todo)
+def get_todo(todo_id: int):
     todo = find_todo(todo_id)
-    if todo is None:
-        return abort(404, description="Todo not found")
-    return jsonify(todo), 200
+    if not todo:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    return todo
 
 # Create a new todo
-@app.route('/todos', methods=['POST'])
-def create_todo():
-    if not request.json or "task" not in request.json:
-        return abort(400, description="Task is required")
-    
-    new_todo = {
-        "id": todo_list[-1]["id"] + 1 if todo_list else 1,
-        "task": request.json["task"],
-        "completed": request.json.get("completed", False)
-    }
-    todo_list.append(new_todo)
-    return jsonify(new_todo), 201
+@app.post("/todos", response_model=Todo, status_code=201)
+def create_todo(new_todo: TodoBase):
+    new_id = todo_list[-1].id + 1 if todo_list else 1
+    todo = Todo(id=new_id, **new_todo.dict())
+    todo_list.append(todo)
+    return todo
 
-# Update an existing todo
-@app.route('/todos/<int:todo_id>', methods=['PUT'])
-def update_todo(todo_id):
+# Update a todo
+@app.put("/todos/{todo_id}", response_model=Todo)
+def update_todo(todo_id: int, updated_data: TodoBase):
     todo = find_todo(todo_id)
-    if todo is None:
-        return abort(404, description="Todo not found")
-    
-    if not request.json:
-        return abort(400, description="Invalid input")
-    
-    todo["task"] = request.json.get("task", todo["task"])
-    todo["completed"] = request.json.get("completed", todo["completed"])
-    return jsonify(todo), 200
+    if not todo:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    todo.task = updated_data.task
+    todo.completed = updated_data.completed
+    return todo
 
 # Delete a todo
-@app.route('/todos/<int:todo_id>', methods=['DELETE'])
-def delete_todo(todo_id):
+@app.delete("/todos/{todo_id}")
+def delete_todo(todo_id: int):
     todo = find_todo(todo_id)
-    if todo is None:
-        return abort(404, description="Todo not found")
-    
+    if not todo:
+        raise HTTPException(status_code=404, detail="Todo not found")
     todo_list.remove(todo)
-    return jsonify({"message": "Todo deleted"}), 200
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    return {"message": "Todo deleted"}
