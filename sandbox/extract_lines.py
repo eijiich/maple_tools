@@ -3,6 +3,7 @@ import cv2
 import pytesseract
 
 base_dir = Path(__file__).resolve().parent.parent  # Adjust according to the file's structure
+base_dir = Path(__file__).resolve().parent.parent  # Adjust according to the file's structure
 
 # Define paths relative to the base directory
 data_path = base_dir/'data'/'img'/'dataset'

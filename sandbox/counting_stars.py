@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 
 base_dir = Path(__file__).resolve().parent.parent  # Adjust according to the file's structure
-print(base_dir)
+
 # Define paths relative to the base directory
 data_path = base_dir/'data'/'img'/'dataset'
 output_path = base_dir/'data'/'img'/'output'
