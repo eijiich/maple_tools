@@ -11,4 +11,4 @@ fnm use --install-if-missing 22
 node -v # Should print "v22.13.1"
 
 # verifies the right npm version is in the environment
-npm -v # Should print "10.9.2"
+npm -v # Should print "11.6.0"

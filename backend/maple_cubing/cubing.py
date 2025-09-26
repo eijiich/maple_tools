@@ -258,10 +258,10 @@ list_of_possible_stats = [
 ]
 
 ##############################################################################################################################################################
-list_of_stats:list = ['stats']
-list_of_desired_value:list = [30]
+list_of_stats:list = ['ATT','BOSS']
+list_of_desired_value:list = [21,30]
 cube_type = 'red'
-equip = 'acc'
+equip = 'secondary'
 tries = 2861
 
 desired_values = create_desired_values(list_of_stats, list_of_desired_value)

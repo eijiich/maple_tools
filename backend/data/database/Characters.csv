@@ -1,0 +1,52 @@
+Id,OnBoard,Class,Name,Level,PreferenceOrder
+1,True,Bishop,Ayamushy,288,0
+2,True,Lara,HitsujiMayoi,260,1
+3,True,Lynn,KawaiiBotan,260,1
+4,True,Kanna,UmeTusugumi,255,1
+5,True,Hayato,MomoHitomi,250,2
+6,True,Bishop 2,NotAyamushy,250,3
+7,True,Shade,EimiYuna,250,4
+8,True,Phantom,KanamiYuuka,260,5
+9,True,Mechanic,MekaMei,250,6
+10,True,Arch Mage (I/L),YukiRairi,225,7
+11,True,Arch Mage (F/P),MihoBusujima,225,8
+12,True,Corsair,MakaneRimi,220,9
+13,True,Kinesis,KuroyuriNen,237,10
+14,True,Demon Avenger,YuuSayuri,221,11
+15,True,Mercedes,YuukiMeru,260,12
+16,True,Aran,NaramiChibi,212,13
+17,False,Khali,KarinSatsuki,231,14
+18,True,Adele,KurohaRiyuki,215,15
+19,False,Bishop 3,FakeAyamushy,220,16
+20,True,Zero,DeltaYuuki,212,21
+21,True,Battle Mage,MeiKamakura,212,30
+22,True,Luminous,MikageHikari,212,31
+23,True,Illium,MiakiReiha,212,32
+24,True,Blaze Wizard,AyakaEn,212,33
+25,True,Marksman,ReiyaTooko,212,40
+26,True,Night Lord,YozoraYomi,212,41
+27,True,Wild Hunter,HayaRakko,210,42
+28,True,Dark Knight,ToukoYamika,210,43
+29,True,Bowmaster,RemiyaMisato,212,44
+30,True,Angelic Buster,AtsukaNoeru,210,60
+31,True,Evan,xRyuuka,210,61
+32,True,Buccaneer,Amane​Hebi​,217,62
+33,False,Paladin,RinKiyoe,210,63
+34,False,Pathfinder,YukineYayoi,212,64
+35,False,Shadower,MikageMiei,212,65
+36,False,Cannonneer,HouryuuNuiko,212,66
+37,False,Hero,TatewakiHime,210,67
+38,True,Dual Blade,ReiniKuroha,212,68
+39,False,Hoyoung,KoyamiSen,200,69
+40,True,Xenon,YuranRenge,210,70
+41,True,Ark,KouenYuri,210,71
+42,True,Kain,KayaYamiya,205,72
+43,False,Cadena,MegumiSeisa,200,73
+44,True,Blaster,KanonHayame,200,74
+45,False,Dawn Warrior,KyoukoRei,200,100
+46,True,Demon Slayer,YamiOniyuri,210,101
+47,True,Kaiser,RiyuTeruko,210,102
+48,True,Mihile,KenshiKon,210,103
+49,False,Night Walker,RiyoSetsuna,200,104
+50,False,Thunder Breaker,AtsumiMirai,200,105
+51,False,Wind Archer,FuyuAyane,200,106

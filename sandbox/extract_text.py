@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import pytesseract
 
-base_dir = Path(__file__).resolve().parent.parent.parent.parent  # Adjust according to the file's structure
+base_dir = Path(__file__).resolve().parent.parent  # Adjust according to the file's structure
 
 # Define paths relative to the base directory
 data_path = base_dir/'data'/'img'/'dataset'
@@ -13,7 +13,7 @@ output_path = base_dir/'data'/'img'/'output'
 data_path = str(data_path)
 output_path = str(output_path)
 
-image = cv2.imread(data_path+'\\'+r'Ring2.png')
+image = cv2.imread(data_path+'\\'+r'Top.png')
 dot_image = cv2.imread(data_path+'\\'+r'BlueDotOriginal.png')
 
 # Calculate the new dimensions
@@ -162,7 +162,7 @@ mask = (
 ) * mask_stats + mask_pink
 target = cv2.bitwise_and(image,image, mask=mask)
 gray_image = cv2.cvtColor(target, cv2.COLOR_BGR2GRAY)
-_, binary_image = cv2.threshold(gray_image, 50, 255, cv2.THRESH_BINARY_INV)
+_, binary_image = cv2.threshold(gray_image, 80, 255, cv2.THRESH_BINARY_INV)
 cv2.imwrite(output_path+'\\'+'\\'+"target.png", target)
 cv2.imwrite(output_path+'\\'+'\\'+"target_gray.png", gray_image)
 cv2.imwrite(output_path+'\\'+'\\'+"target_binary.png", binary_image)

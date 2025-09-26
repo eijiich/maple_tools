@@ -1,0 +1,23 @@
+{
+  "name": "Eagle Nona ; ~ Increase",
+  "item_type": "Armor Top",
+  "stars": {
+    "current": 11,
+    "detected_slots": 11,
+    "max": 25
+  },
+  "stats": {
+    "INT": "58",
+    "LUK": "68",
+    "All Stats": "3%",
+    "Magic ATT": "8",
+    "Defense": "238",
+    "Enemy DEF Ignored": "5%"
+  },
+  "potential": {
+    "tier": "None",
+    "lines": []
+  },
+  "raw_ocr_header": "Eagle Nona ; ~ Increase",
+  "raw_ocr_body": "Combal Power Increase\ney Currently Equipped\n{et Armor\nTop\nRequired Job Magician\nRequired LevelL¥ 150\nSet Effect Root Abyss Set (Magician)\nINT +§8 (30 +28)\nLUK +68 (30 +28)\nAll Stats +3% (0% +3%)\nMaxHP +1505 (0 +155 +1350)\nMagic ATT +8 (2 +6)\nDetense +238 (120 +94 +24)\nEnemy DEF ignored 9 +5%\nCheck the enhancement details by using the\nInteractHarvest key\nwere eee\nTop\nRequired Job Magician\nRequired LevelLy 150\nSet Effect'* Root Abyss Set (Magician)\nINT +58 (30 +28)\nLUK +68 (30 +28)\nAll Stats +3% (0% +3%)\nMaxHP +1506 (0 +155 +1350)\nMagic ATT +8 (2 +6)\nDefense +238 (120 +94 +24)\nEnemy DEF Ignored +5%"
+}
