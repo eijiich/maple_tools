@@ -115,7 +115,7 @@ for contour in reversed(contours):
     
     x, y, w, h = (x-padding, y-padding, w+padding, h+padding) 
     cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-    cv2.imshow('blue_dot', image)
+    # cv2.imshow('blue_dot', image)
     cv2.waitKey(0)
     # Resize the detected dot to match the reference dot size
     detected_dot_resized = cv2.resize(detected_dot, (hsv_dot.shape[1], hsv_dot.shape[0]))

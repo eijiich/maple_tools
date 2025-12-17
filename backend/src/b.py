@@ -19,12 +19,12 @@ data = [
               "value": 13
             },
             {
-              "position": 1,
+              "position": 2,
               "stat": "all_stats",
               "value": 7
             },
             {
-              "position": 1,
+              "position": 3,
               "stat": "all_stats",
               "value": 7
             }

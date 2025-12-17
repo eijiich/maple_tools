@@ -27,7 +27,7 @@ def create_dataframe(data, extra_columns):
     return pl.DataFrame(data)
 
 base_folder = Path(__file__).resolve().parent.parent / 'data/database'
-characters_file = base_folder / 'Characters.json'
+characters_file = base_folder / 'Characters_full.json'
 equipments_file = base_folder / 'Equipments.json'
 
 # check_file_existance(characters_file)
@@ -108,6 +108,7 @@ print(flames_df)
 
 # Convert JSON data to Polars DataFrames
 print("\nCharacterrs DataFrame:")
+print(characters_df)
 
 # Create DuckDB connection
 con = duckdb.connect()
@@ -121,9 +122,9 @@ con.register("flames", flames_df.to_pandas())
 # Perform SQL query to join both DataFrames on 'Class' and 'Name'
 query = """
 SELECT 
-    characters.Class AS class,
-    characters.Name AS name,
-    characters.Level AS level,
+    characters.class AS class,
+    characters.name AS name,
+    characters.level AS level,
     star_force.hat AS star_force,
     potentials.hat AS total_stats,
     flames.hat AS flame_score,
@@ -132,15 +133,15 @@ FROM
 LEFT JOIN 
     star_force 
 ON 
-    characters.Class = star_force.class AND characters.Name = star_force.name
+    characters.class = star_force.class AND characters.name = star_force.name
 LEFT JOIN 
     potentials
 ON 
-    characters.Class = potentials.class AND characters.Name = potentials.name
+    characters.class = potentials.class AND characters.name = potentials.name
 LEFT JOIN 
     flames 
 ON 
-    characters.Class = flames.class AND characters.Name = flames.name
+    characters.class = flames.class AND characters.name = flames.name
 """
 
 # Execute the query
