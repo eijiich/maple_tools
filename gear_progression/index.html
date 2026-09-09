@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gear Progression</title>
+<style>
+  :root {
+    --bg:#12141a; --panel:#1a1d26; --panel2:#20242f; --line:#2c313d;
+    --fg:#e6e8ee; --dim:#8b93a7; --dimmer:#5b6376;
+    --acc:#6ea8fe; --good:#54c98a; --warn:#e2b344; --bad:#e46b6b; --epic:#a97ee6;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--fg);
+    font:13px/1.45 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  h1 { font-size:15px; margin:0; letter-spacing:.5px; }
+  h2 { font-size:12px; margin:0 0 10px; color:var(--dim);
+       text-transform:uppercase; letter-spacing:1px; font-weight:600; }
+  .wrap { max-width:1500px; margin:0 auto; padding:16px; }
+  .panel { background:var(--panel); border:1px solid var(--line);
+           border-radius:6px; padding:14px; margin-bottom:14px; }
+
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:14px; }
+  .bar .spacer { flex:1; }
+
+  button {
+    background:var(--panel2); color:var(--fg); border:1px solid var(--line);
+    border-radius:4px; padding:5px 10px; font:inherit; cursor:pointer;
+  }
+  button:hover { border-color:var(--acc); color:var(--acc); }
+  button.danger:hover { border-color:var(--bad); color:var(--bad); }
+  button.on { border-color:var(--acc); color:var(--acc); }
+
+  input, select, textarea {
+    background:var(--bg); color:var(--fg); border:1px solid var(--line);
+    border-radius:4px; padding:4px 6px; font:inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--acc); }
+  input[type=number] { text-align:left; padding-left:8px; }
+  /* Drop the native spinner. Right-aligned digits butt straight against it, and
+     across six flame columns it wastes width the numbers need. Arrow keys still
+     step the value, so nothing is lost. */
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+  textarea { width:100%; min-height:150px; resize:vertical; line-height:1.5; }
+
+  .scroll { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; }
+  th { text-align:left; font-weight:600; color:var(--dim); font-size:11px;
+       text-transform:uppercase; letter-spacing:.5px; padding:0 6px 6px; white-space:nowrap; }
+  th.sortable { cursor:pointer; }
+  th.sortable:hover { color:var(--fg); }
+  td { padding:3px 6px; border-top:1px solid var(--line); white-space:nowrap; }
+  tbody tr:hover { background:var(--panel2); }
+  .num { text-align:left; font-variant-numeric:tabular-nums; }
+  .slot-name { color:var(--dim); }
+  .idx { color:var(--dimmer); width:30px; text-align:left; }
+  .best { color:var(--good); font-weight:600; }
+  .detail { color:var(--dimmer); font-size:11px; }
+
+  .tag { display:inline-block; padding:1px 6px; border-radius:3px; font-size:11px;
+         border:1px solid var(--line); background:var(--panel2); }
+  .tag.sf    { color:var(--warn); border-color:#4a4126; }
+  .tag.cube  { color:var(--epic); border-color:#40315c; }
+  .tag.flame { color:var(--good); border-color:#27503b; }
+  tr.off { opacity:.35; }
+  .warn { color:var(--warn); }
+  .bad  { color:var(--bad); }
+
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px 16px; }
+  .two  { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:900px) { .two { grid-template-columns:1fr; } }
+  .fld { display:flex; flex-direction:column; gap:3px; }
+  .fld label { color:var(--dim); font-size:11px; }
+  .row { display:flex; gap:6px; align-items:center; }
+
+  details { border:1px solid var(--line); border-radius:6px; background:var(--panel); margin-bottom:14px; }
+  summary { padding:10px 14px; cursor:pointer; color:var(--dim);
+            text-transform:uppercase; font-size:12px; letter-spacing:1px; }
+  summary:hover { color:var(--fg); }
+  details > .body { padding:0 14px 14px; }
+
+  .note { color:var(--dimmer); font-size:11px; line-height:1.7; }
+  .note code { color:var(--dim); }
+  .note b { color:var(--dim); }
+  .empty { color:var(--dimmer); padding:14px 6px; }
+  .hr { height:1px; background:var(--line); margin:14px 0; }
+  .err { color:var(--bad); background:#2a1a1a; border:1px solid #5c3131;
+         border-radius:4px; padding:8px 10px; margin-bottom:10px; font-size:12px; }
+  .modes { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr));
+           gap:6px 12px; margin-top:8px; }
+  .modes label { display:flex; flex-direction:column; gap:3px; }
+  .modes span { color:var(--dimmer); font-size:12px; }
+  .modes select { width:100%; }
+  .swap { border:none; background:transparent; color:var(--dimmer); padding:0 3px;
+          font-size:12px; line-height:1; cursor:pointer; }
+  .swap:hover { color:var(--fg); }
+  .tabs { display:flex; gap:4px; margin:0 0 14px; border-bottom:1px solid var(--line); }
+  .tabs button { border:1px solid var(--line); border-bottom:none; background:transparent;
+                 color:var(--dim); border-radius:6px 6px 0 0; padding:7px 14px;
+                 margin-bottom:-1px; font-size:12px; }
+  .tabs button.on { color:var(--fg); background:var(--panel); border-color:var(--line);
+                    border-bottom:1px solid var(--panel); }
+  .amts { display:grid; grid-template-columns:repeat(auto-fill, minmax(168px, 1fr));
+          gap:4px 10px; }
+  .amts label { display:flex; align-items:center; gap:6px; justify-content:space-between; }
+  .amts span { color:var(--dimmer); font-size:12px; overflow:hidden;
+               text-overflow:ellipsis; white-space:nowrap; }
+  .amts input { width:58px; flex:none; }
+  .wt { display:flex; flex-wrap:wrap; gap:4px 14px; }
+  .wt span { color:var(--dimmer); }
+  .wt b { color:var(--fg); font-weight:600; }
+
+  /* ---------------------------------------------------------------- mobile
+     Everything below is scoped to narrow screens so the desktop layout is
+     untouched. Three problems being solved:
+
+     1. The gear and flame tables are 14 and 17 columns. They already scroll
+        sideways, but the slot name scrolled away with them, so you lost track of
+        which row you were editing. The first two columns are pinned instead.
+     2. Fields were 13px, which makes iOS zoom the whole page in on focus and
+        then leave you panned somewhere else. 16px is the threshold that stops it.
+     3. Tap targets were mouse-sized. Checkboxes especially, at ~13px.           */
+  @media (max-width: 760px) {
+    .wrap { padding: 10px 8px; }
+    h1 { font-size: 14px; }
+
+    /* 16px exactly: below it, iOS zooms on focus */
+    input, select, textarea, button { font-size: 16px; }
+    input[type=number], input[type=text], select { padding: 7px 8px; }
+    input[type=checkbox] { width: 22px; height: 22px; }
+    button { padding: 8px 12px; }
+    select { max-width: 46vw; }
+
+    /* let columns take their natural width and scroll, rather than cramming
+       seventeen of them into the viewport */
+    .scroll > table { width: max-content; min-width: 100%; }
+    td { padding: 6px; }
+
+    /* Bounding the height is what makes the sticky header work at all. `top`
+       resolves against the nearest scroll container, and .scroll already is one
+       (overflow-x:auto makes overflow-y compute to auto) -- but with no height it
+       never scrolls vertically, so a sticky header would never engage. Capping it
+       turns the pane into the scroller for both axes. */
+    .scroll { max-height: 72vh; overflow: auto; }
+
+    /* pin the header row: which column you are filling stays visible */
+    thead th {
+      position: sticky; top: 0; z-index: 3;
+      background: var(--panel); padding: 8px 6px;
+      box-shadow: 0 1px 0 var(--line);
+    }
+
+    /* pin the leading control and the slot name: which row you are filling stays
+       visible. Opaque backgrounds, or the scrolling cells show through. */
+    thead th:first-child, tbody td:first-child,
+    thead th:nth-child(2), tbody td:nth-child(2) {
+      position: sticky; z-index: 2; background: var(--panel);
+    }
+    thead th:first-child, tbody td:first-child { left: 0; min-width: 44px; }
+    thead th:nth-child(2), tbody td:nth-child(2) { left: 44px; }
+    /* a hairline so the pinned pair reads as separate from what slides under it */
+    tbody td:nth-child(2) { box-shadow: 1px 0 0 var(--line); }
+
+    /* the two corner cells are pinned on both axes, so they must sit above both */
+    thead th:first-child { z-index: 4; }
+    thead th:nth-child(2) {
+      z-index: 4;
+      box-shadow: 1px 0 0 var(--line), 0 1px 0 var(--line);
+    }
+
+    /* the ranking's Detail column is prose; let it wrap instead of running on */
+    #rankBody td:last-child { white-space: normal; min-width: 190px; }
+
+    /* app.js sets inline widths sized for a 13px font. min-width beats width
+       without needing !important, so the fields get a floor at 16px. */
+    .scroll input[type=number] { min-width: 58px; }
+    .scroll select { min-width: 92px; }
+    #pctIn { min-width: 80px; }
+
+    .two { grid-template-columns: 1fr; }
+    .grid { grid-template-columns: 1fr; }
+    textarea { min-height: 190px; }
+    .bar { gap: 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="bar">
+    <h1>GEAR PROGRESSION</h1>
+    <span class="spacer"></span>
+    <select id="charSel" title="Active character"></select>
+    <button id="charAdd">+ char</button>
+    <button id="charRename">rename</button>
+    <button id="charDel" class="danger">delete</button>
+    <button id="doExport">export</button>
+    <button id="doImport">import</button>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+  </div>
+
+  <div class="tabs" id="tabBar">
+    <button data-tab="main" id="tabMain">This character</button>
+    <button data-tab="compare" id="tabCompare">Compare characters</button>
+  </div>
+
+  <div id="bootErr"></div>
+
+  <div id="tab-main">
+
+  <div class="two">
+    <div class="panel">
+      <h2>MapleScouter weights</h2>
+      <p class="note" style="margin:0 0 8px">
+        Paste the table straight from MapleScouter &mdash; either value column works,
+        <b>Main Stat</b> or <b>Final Damage</b>. The ranking is denominated in whichever
+        arrived and the headings follow suit. Both are per-<i>line</i> values, so set the
+        amounts below to match the middle column on the page; select-and-copy drops that
+        column, which is why it is typed here. Re-paste after any big gear change: these
+        are derivatives at your current state, not constants.
+      </p>
+      <textarea id="scouter" spellcheck="false" placeholder="Boss Damage&#9;&#9;12.53&#10;M.Attack&#9;&#9;2.99&#10;..."></textarea>
+      <div class="row" style="margin-top:8px">
+        <button id="loadExample">load the example</button>
+        <span class="spacer"></span>
+        <label class="note" for="iedSel">Ignore Def</label>
+        <select id="iedSel">
+          <option value="300">300 def</option>
+          <option value="380">380 def</option>
+        </select>
+        <label class="note" for="mainSel">Main</label>
+        <select id="mainSel">
+          <option value="">auto</option>
+          <option value="STR">STR</option><option value="DEX">DEX</option>
+          <option value="INT">INT</option><option value="LUK">LUK</option>
+        </select>
+      </div>
+      <div class="hr"></div>
+      <div id="amountBox"></div>
+      <div class="hr"></div>
+      <div id="weightOut"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Star force settings</h2>
+      <div class="grid" id="sfSettings"></div>
+      <div class="hr"></div>
+      <h2 style="font-size:13px">Enhancement mode (15&starf;&ndash;21&starf;)</h2>
+      <div id="sfModes"></div>
+      <p class="note" style="margin:8px 0 0">
+        A boomed <b>Destiny</b> is assumed to come back at 22&starf;, the state liberation
+        grants &mdash; so a boom costs the 10b and the stars above 22, never the 22 itself.
+        That assumption is doing real work: recovering to the ordinary star instead would
+        mean re-climbing 19&starf;&rarr;22&starf; and roughly doubles every figure. It is
+        also why a liberated Destiny prices <i>below</i> an ordinary lv250 weapon despite
+        the 10b &mdash; the 22&starf; floor is worth more than the fee costs.
+      </p>
+      <div class="hr"></div>
+      <h2>Milestones offered</h2>
+      <div class="row"><input id="milestones" type="text" style="flex:1"></div>
+      <p class="note" style="margin:8px 0 0">
+        Bundled climbs priced as one commitment. They are not the sum of the single
+        steps &mdash; committing to the whole climb can change which mode is optimal at
+        each star along the way.
+      </p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Gear</h2>
+    <div class="scroll"><table>
+      <thead><tr>
+        <th title="slot active; untick to skip it entirely">On</th>
+        <th>Slot</th><th class="num">Lv</th><th class="num">&starf;</th>
+        <th>SF</th><th class="num">Spares</th><th title="per-slot enhancement modes, e.g. 444/11/44; blank uses the global">Plan</th>
+        <th class="num">Base ATT</th>
+        <th>CD</th><th>Line 1</th><th>Line 2</th><th>Line 3</th>
+        <th class="num">Pot value</th>
+      </tr></thead>
+      <tbody id="gearBody"></tbody>
+    </table></div>
+    <p class="note" style="margin:12px 0 0">
+      <b>SF</b> off means stars aren't bought with meso &mdash; use it for the endgame weapon,
+      whose stars past 22&starf; come from quests. <b>Spares</b> only drives the
+      &ldquo;you'll run out&rdquo; warning; it never changes the ranked cost.
+      <b>Plan</b> is this slot's enhancement modes, written the way you say them
+      &mdash; <code>444/11/44</code>. Blank uses the global strategy from
+      <b>Star force settings</b>, shown greyed as the placeholder.
+      <b>Base ATT</b> is only read for weapons below 16&starf;, where the
+      wiki gives attack as a formula over the weapon's own base. Secondaries use the
+      armor table, so there is no table to choose. Unticking <b>On</b> drops the slot from star force, cubing and flames alike &mdash; for
+      gear that has none of those systems, like an Oz ring taking no potential. Both tables
+      use the same leading <b>On</b> column, ticked meaning active.
+    </p>
+  </div>
+
+  <div class="panel">
+    <h2>What to do next &mdash; cheapest meso per point of main stat</h2>
+    <div class="bar" style="margin-bottom:10px">
+      <button id="tglBest" class="on">best per slot</button>
+      <button id="tglSteps">show every star step</button>
+      <button id="tglFlame" title="include meso-priced bonus-stat resets as a third axis. Off by default: it is announced in a patch note, not confirmed live">flame resets</button>
+      <label class="note" for="pctIn" title="cost to actually hit it this often, not the average">percentile</label>
+      <input id="pctIn" type="number" min="0" max="99" step="5" style="width:62px"
+             placeholder="mean">
+      <label class="note" for="pageSize">rows</label>
+      <select id="pageSize">
+        <option value="10">10</option><option value="20">20</option>
+        <option value="50">50</option><option value="0">all</option>
+      </select>
+      <span class="row" id="rankPager" style="gap:6px"></span>
+      <span class="spacer"></span>
+      <span class="note" id="rankMeta"></span>
+    </div>
+    <div class="scroll"><table>
+      <thead><tr>
+        <th></th><th>Slot</th><th>Axis</th><th>Move</th>
+        <th class="num sortable" data-sort="cost">Est. cost</th>
+        <th class="num sortable" id="th-gain" data-sort="gain">&Delta; stat</th>
+        <th class="num sortable" id="th-per" data-sort="per">Meso / stat</th>
+        <th>Detail</th>
+      </tr></thead>
+      <tbody id="rankBody"></tbody>
+    </table></div>
+    <p class="note" style="margin:8px 0 0">
+      <b>Percentile</b> blank shows the expected cost. Set 85 and the cost column becomes
+      what it takes to actually get there 85% of the time &mdash; usually far above the
+      average, since both systems are long-tailed. Cubing's percentile is exact (cube count
+      is geometric); star force fits a lognormal to the mean and variance, the same
+      approximation lostara quotes its p85 from. <b>Flame reset</b> is exact too, for the
+      same reason as cubing.
+    </p>
+    <p class="note" style="margin:8px 0 0">
+      <b>Flame reset</b> rows are behind the <b>flame resets</b> button and are
+      <b>off by default</b>: resettable bonus stats were announced in a patch note, and
+      until that is actually live the tool should rank exactly what it ranked before.
+      Switch it on and flames join as a third axis; switch it off and every other row is
+      identical, byte for byte. The button in the compare tab is the same switch.
+      The axis exists because a flat 3m meso reset finally gives a flame a meso price to
+      divide by. A row is
+      &ldquo;reset until it beats what the item already has, then keep it&rdquo; &mdash;
+      the patch lets you decline the new roll, so a bad reset costs only the mesos.
+      <b>Est. cost</b> is the mesos that plan consumes and <b>&Delta; stat</b> the gain you
+      end up with, but note the ratio between them is just
+      <code>3m &divide; E[gain per reset]</code>: how many resets it takes scales both and
+      cancels, so <b>Meso / stat</b> depends only on how much one reset adds on average.
+      Rates are the <em>Black Rebirth Flame</em> table the patch specifies, regardless of
+      what the flames panel below is set to &mdash; that picker is for flames you own.
+      Flame <em>advantage</em> still comes from each slot, and switching it off is usually
+      why a slot looks hopeless here: it costs you two tiers on every line
+      <em>and</em> drops the guaranteed 4 lines to 1&ndash;4. A slot already holding the
+      best roll its pool can produce gets no row at all.
+    </p>
+  </div>
+
+  <div class="panel">
+    <h2>Flames &mdash; stat gained per reroll</h2>
+    <div class="bar" style="margin-bottom:10px">
+      <span class="note">set all:</span>
+      <select id="flameAllType"></select>
+      <button id="flameAllAdv">advantaged</button>
+      <button id="flameAllNon">non-advantaged</button>
+      <button id="flameRecalc" title="re-sort and refresh. Rows never move while you type">recalculate</button>
+      <label class="note" for="flamePctIn"
+             title="rolls to be that confident of beating what you have, not the average">percentile</label>
+      <input id="flamePctIn" type="number" min="0" max="99" step="5" style="width:62px"
+             placeholder="mean">
+      <span class="spacer"></span>
+      <span class="note">no meso column here &mdash; this panel ranks flames you already
+        <em>own</em>. Meso-priced resets are ranked in <b>What to do next</b> instead</span>
+    </div>
+    <div class="scroll"><table>
+      <thead><tr>
+        <th title="flame this slot; untick to sink it to the bottom">On</th>
+        <th class="sortable" data-fsort="slot" title="sort in gear order, easiest for filling in">Slot</th>
+        <th class="num">Lv</th><th>Flame</th><th>Adv</th>
+        <th class="num" id="th-fSTR" title="flat STR from the flame">STR</th>
+        <th class="num" id="th-fDEX" title="flat DEX from the flame">DEX</th>
+        <th class="num" id="th-fINT" title="flat INT from the flame">INT</th>
+        <th class="num" id="th-fLUK" title="flat LUK from the flame">LUK</th>
+        <th class="num" title="flat attack or magic attack">Atk</th>
+        <th class="num" id="th-fHp" title="flat max HP (Demon Avenger)">HP</th>
+        <th class="num" title="all stat %">All%</th>
+        <th class="num" title="damage %">Dmg%</th>
+        <th class="num" title="boss damage %">Boss%</th>
+        <th class="num" title="what those add up to">Now</th>
+        <th class="num" title="Now, in main-stat points — the figure people quote as a flame score. Identical to Now when the paste is already in stat units; a Final Damage paste is converted back through the main stat's own weight">Flame score</th>
+        <th class="num sortable" data-fsort="expected">E[score]</th>
+        <th class="num">Best</th>
+        <th class="num sortable" data-fsort="pImprove">P(better)</th>
+        <th class="num sortable" data-fsort="gainPerRoll">E[gain] / roll</th>
+        <th class="num sortable" data-fsort="rollsToBeat">Rolls to beat</th>
+      </tr></thead>
+      <tbody id="flameBody"></tbody>
+    </table></div>
+    <p class="note" style="margin:12px 0 0">
+      Enter the flame the item already has straight off the equip window; <b>Now</b> is what
+      it adds up to on the same scale as everything else &mdash; which for a Final Damage
+      paste is %fd. <b>Flame score</b> is the same flame in main-stat points, the number
+      people actually quote, so a paste in %fd still reads as &ldquo;130&rdquo; rather than
+      &ldquo;1.32&rdquo;; in a stat paste the two columns agree. Leave the
+      fields 0 on an unflamed item. <b>The stat columns follow your MapleScouter paste</b>:
+      a mage sees INT and LUK, a Xenon STR/DEX/LUK, a Demon Avenger gets an HP column
+      &mdash; each valued at that stat's own weight, so multi-stat flames are entered
+      exactly, not mushed through a single &ldquo;secondary&rdquo; number. The weights
+      panel's <em>&ldquo;Read from the paste&rdquo;</em> line states which profile was
+      detected.
+      Sorted by <b>P(better)</b> &mdash; the chance one reroll beats what's already there, so
+      the top row is where a flame is least likely to be wasted. Click <b>Slot</b> to drop
+      back into gear order, which is easier for filling the inputs in, or any numeric
+      heading to sort by that. <b>Rows never move while you type</b> &mdash; the derived
+      columns update live and re-sorting waits for <b>recalculate</b> or a header click.
+      Recalculate also re-ranks, so it takes you out of slot order back to whichever
+      column you last sorted on. Unticking <b>On</b> here sinks a slot to the bottom at the next reorder and dims it
+      straight away. It is separate from the gear table's <b>On</b>, so a slot can stay in
+      the meso ranking while leaving this one. The table loads in slot order, matching the
+      gear table; <b>recalculate</b> ranks it. <b>E[gain] per roll</b> is
+      <code>E[max(0, new &minus; now)]</code>, which weighs how much better rather than how
+      often. <b>Rolls to beat</b> follows this panel's own <b>percentile</b> box, separate from the ranking's: blank is the average roll, 85 is how many rolls make you 85% sure of beating what you have. <b>Adv</b> off shifts every tier
+      down by two <em>and</em> drops you from a guaranteed 4 lines to 1&ndash;4, which is why
+      it roughly quarters the expected score.
+    </p>
+  </div>
+
+  <details>
+    <summary>Where every number comes from</summary>
+    <div class="body note">
+      <p><b>Star force cost</b> &mdash; engine vendored verbatim from
+      <code>lostara_sf_caculator.html</code> (lines 545&ndash;1035). Per-star cost divisors,
+      the mode 1&ndash;4 rate tables, <code>recoveryStar</code>, star catch and the 30%
+      boom reduction are all its numbers, not mine. Ranking uses
+      <code>solveUnconstrained</code>: expected meso allowing as many booms as it takes.
+      That is always finite. The <b>Safe</b> column instead uses <code>solveSpares</code>
+      with one item, which is legitimately infinite above 21&starf; because no
+      zero-destroy mode exists up there.</p>
+
+      <p><b>Star force stat gain</b> &mdash; generated by <code>tools/extract_sf_stats.py</code>
+      from the saved wiki page into <code>sf-stats.js</code>. Star caps come from where
+      the wiki's cells go blank rather than from an assumption: lv138+ armor reaches
+      30&starf;, weapons 25&starf;, and lv128&ndash;137 stops at 20&starf;. Note armor gains
+      attack from 16&starf; up, and past 23&starf; the gain is <em>only</em> attack &mdash; no
+      class stat at all. <code>Class Stat +N</code> means +N to every class-relevant stat,
+      so it is multiplied by the sum of your flat stat weights.</p>
+
+      <p><b>Cubing</b> &mdash; <code>cubing.js</code> ports <code>calc_prob</code> from
+      <code>backend/maple_cubing/cubing.py</code> and matches it on 330 of 330
+      (pool, cube, target) combinations. One deliberate divergence: cubing.py's
+      <code>hat_unique_prob</code> has <code>Zero</code> at 41/52, which makes that pool
+      sum to 1.077 instead of 1 &mdash; the only one of 22 pools that doesn't. It should be
+      37/52 (5+4+6+37 = 52, matching bottom and shoes). Left uncorrected it made hat
+      targets read about 6% cheaper than they are. Worth fixing in cubing.py too.</p>
+
+      <p><b>Item level 151+</b> raises potential line values by exactly one point in GMS,
+      per StrategyWiki's Potential System page (saved under <code>reference/</code>): a
+      legendary main-stat line is 12% below the threshold and 13% at or above, unique goes
+      9%&rarr;10%, and ATT% and All&nbsp;Stat% follow the same rule. Lines whose value sits
+      in the line name do <em>not</em> scale &mdash; Ignore&nbsp;DEF 30/35/40, Boss Damage
+      30/35/40, the cooldown lines, and MaxHP% at unique and legendary. This is the
+      <b>160+ rule</b> in practice &mdash; no equipment exists between 151 and 159, so of
+      the real item levels it applies to 160, 200 and 250. The wiki words it as 151+, which
+      is why the constant reads that way. <code>cubing.py</code> has no item-level concept and always
+      uses the lower values, so passing level&nbsp;0 reproduces it exactly &mdash; which is
+      how parity is still checked.</p>
+
+      <p><b>Cooldown is a constraint, not a score.</b> There is no seconds-to-main-stat
+      exchange rate, so a cooldown line can't be valued. Instead, asking for &minus;2s on a
+      hat filters the roll space to outcomes that deliver it, which pins one of the three
+      lines and removes three-stat-line results entirely &mdash; the reachable stat ceiling
+      drops from three 12% lines to two. Every probability then becomes a joint one, so the
+      price of &ldquo;cooldown <em>and</em> this much stat&rdquo; is correct and can be
+      compared against the unconstrained rows by eye. That comparison is yours to make;
+      the tool won't pretend to convert seconds into stat.</p>
+
+      <p><b>Main-stat% and all-stat% count as one currency.</b> All-stat does also lift your
+      secondary stat, so it is strictly worth a shade more per point &mdash; 13.84 against
+      12.21 on the sample weights. Scoring that gap made the scan treat 13+10+7 and 10+10+10
+      as different goals despite both being 30% stat, so the ladder filled with lateral
+      rerolls: three rows at 383, 394 and 399 all captioned &ldquo;stat 30&rdquo;. It was also
+      ranking 27% all-stat <em>above</em> 30% main-stat, recommending a downgrade. Both are
+      now scored at the main-stat weight, so any composition summing to the same percentage
+      is the same target, and an item already at 30% is offered 33% and up rather than
+      another 30%. Flames keep the distinct all-stat weight, since no main-stat% flame line
+      exists to conflate it with. The collapse is also <b>conditional on the weights being
+      close</b> (within 1.6&times;), which is every single-stat class &mdash; see the classes
+      paragraph below.</p>
+
+      <p><b>Classes come from the weights, not a picker.</b> MathBro's flame calculator
+      needs a class dropdown (10 / 8 / 8 junk slots for a standard class / Xenon /
+      DB-Shadower-Cadena) because it asks for hand-typed equivalences; here the same splits
+      fall out of the MapleScouter paste by construction &mdash; every stat and combo flame
+      slot is valued per-stat, so a Shadower's DEX and STR or Xenon's double-counted pairs
+      just work. Two pieces are explicit: flat-HP flame lines are valued by the paste's HP
+      weight and the HP column appears only when that weight is nonzero (Demon Avenger,
+      whose flame score <em>is</em> HP); and for Xenon, All&nbsp;Stat% keeps its true
+      weight (roughly triple a single stat%) while DEX%/STR%-style potential lines are
+      lifted out of the junk pool once they are worth at least a quarter of the main
+      stat's % weight. Kanna was reworked into a standard mage and needs nothing special.
+      One known DA gap: star force below 16&starf; grants flat HP that the stat tables drop
+      as combat-irrelevant, so DA star force is slightly undervalued.</p>
+
+      <p><b>Revealing the potential is charged on top of the cube</b>, once per use:
+      <code>20 &times; level&sup2;</code> above level&nbsp;120, so 450k on a lv150 item and
+      1.25m on a lv250 one. From <code>cubes_CDdL.js</code> in MathBro's cubing calculator
+      (<code>getRevealCostConstant</code> / <code>cubingCost</code>);
+      <code>cubing.py</code> omits it, so cube costs here used to read low. It adds about
+      2% at lv150 and 6% at lv250, and because it's a flat fee per cube it weighs
+      proportionally heavier on the 12m red than the 22m black &mdash; up to 10% on a
+      red-cube target at lv250. Enough to shift the odd rung, not enough to overturn
+      red's lead.</p>
+
+      <p><b>Both cube types compete</b> rather than being a setting. Line 1 is always a prime
+      roll for either cube, so any target reachable through that one line has identical odds
+      with black or red &mdash; and red costs 12m against black's 22m, so red simply wins.
+      Black only overtakes when the target needs two or three prime lines, where its
+      0.2&thinsp;/&thinsp;0.05 prime odds beat red's 0.1&thinsp;/&thinsp;0.01. Each rung of
+      the ladder is labelled with the cube that achieves it, and the frontier is recomputed
+      after merging the two &mdash; two individually-Pareto ladders contain entries that
+      dominate each other once combined.</p>
+
+      <p><b>Cube targets</b> are not typed in. Every reachable 3-line combo is valued,
+      then for each distinct total V, &ldquo;reroll until worth at least V&rdquo; is priced at
+      <code>cubeCost / P(&ge;V)</code> with gain <code>E[value | &ge;V] &minus; current</code>.
+      The list is then reduced to its Pareto frontier, so each entry buys strictly more
+      stat than the one above it at a worse rate. Read it as a ladder and pick your rung
+      &mdash; the top entry is often a trivially small win.</p>
+
+      <p><b>Secondary weapons</b> have no stat table yet. The wiki page has only a
+      Weapons and an Armor&nbsp;&amp;&nbsp;Accessories section and never says which one
+      applies &mdash; almost certainly because Astra secondaries are new enough that it
+      hasn't caught up. Since secondaries normally aren't star forced at all (they're a
+      cubing slot), the row ships with <b>SF</b> off and its <b>Tbl</b> set to the
+      hand-maintained placeholder in <code>sf-stats-secondary.js</code>. Fill that file
+      in and flip SF on; until then, switching SF on just reports the missing table
+      rather than pretending the slot is maxed. <code>sf-stats.js</code> is generated and
+      would be overwritten, which is why the placeholder is a separate file.</p>
+
+      <p><b>Known softness.</b> IED is valued linearly in the line's stated percentage,
+      but really stacks as 1&minus;(1&minus;a)(1&minus;b), so an item carrying two IED lines is
+      somewhat overvalued. Flames appear only when <b>flame resets</b> is switched on, since
+      that axis is priced off the meso bonus-stat reset; with it off there is no meso figure
+      for a flame and it stays out of a meso-per-stat ranking, exactly as before.</p>
+    </div>
+  </details>
+
+  <p class="note">
+    Saved in this browser's localStorage under <code>maple_gear_progression</code>.
+    That's per-origin, so opening this file from a different path starts fresh &mdash;
+    use <b>export</b> for anything you don't want to lose.
+  </p>
+
+</div>
+  
+
+  <div id="tab-compare" hidden>
+  <div class="panel">
+    <h2>Compare characters</h2>
+    <div class="bar" style="margin-bottom:8px">
+      <span class="note">compare:</span>
+      <span class="row" id="comparePick" style="flex-wrap:wrap; gap:4px 14px"></span>
+      <button id="cmpRecalc" title="recompute every selected character">recalculate</button>
+      <button id="cmpTglFlame" title="same switch as the one in What to do next: include meso-priced bonus-stat resets">flame resets</button>
+      <span class="spacer"></span>
+      <label class="note" for="cmpRows">rows</label>
+      <select id="cmpRows">
+        <option value="25">25</option><option value="50">50</option><option value="0">all</option>
+      </select>
+    </div>
+    <p class="note err" id="cmpMeta" style="margin:0 0 10px"></p>
+
+    <h2 style="font-size:13px">Cheapest upgrades across the selected characters</h2>
+    <div class="scroll"><table>
+      <thead><tr>
+        <th></th><th>Character</th><th>Slot</th><th>Axis</th><th>Move</th>
+        <th class="num">Est. cost</th><th class="num">&Delta; stat</th>
+        <th class="num">Meso / stat</th><th>Detail</th>
+      </tr></thead>
+      <tbody id="cmpRankBody"></tbody>
+    </table></div>
+
+    <h2 style="font-size:13px; margin-top:16px">Flames &mdash; easiest improvement first</h2>
+    <div class="scroll"><table>
+      <thead><tr>
+        <th></th><th>Character</th><th>Slot</th><th class="num">Lv</th>
+        <th class="num">P(better)</th><th class="num">Rolls to beat</th>
+        <th class="num">&Delta; stat / roll</th>
+      </tr></thead>
+      <tbody id="cmpFlameBody"></tbody>
+    </table></div>
+
+    <p class="note" style="margin:12px 0 0">
+      <b>Meso / stat</b> is each character's own main stat point &mdash; MapleScouter
+      normalises every paste to 1 &mdash; so this ranks who buys a stat point cheapest.
+      That is the right question when a stat point is worth about the same to each of them,
+      which holds for characters at similar progression; it drifts if their totals differ a
+      lot, because then one point is a different share of their damage.
+      <b>Rolls to beat</b> carries no such caveat: it comes from a probability, and
+      probability doesn't care how a character's weights are scaled &mdash; so it compares
+      across characters exactly. Sorted fewest-rolls-first, so the top rows are where flames
+      go furthest; it follows the flame panel's percentile box.
+      Unticking a character filters instantly; ticking one recomputes. Comparing runs every
+      selected character from scratch, so it never happens on its own &mdash; edit anything
+      and this table will say it needs recalculating rather than show stale figures.
+    </p>
+  </div>
+  </div>
+
+</div>
+
+<script src="js/sf-stats.js"></script>
+<script src="js/sf.js"></script>
+<script src="js/cubing.js"></script>
+<script src="js/value.js"></script>
+<script src="js/flames.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

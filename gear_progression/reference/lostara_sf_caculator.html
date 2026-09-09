@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="en" data-lt-installed="true"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>star force calculator</title>
+<meta property="og:title" content="star force calculator">
+<meta property="og:description" content="expected meso cost · gms · by lostara">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#e03d28">
+<link rel="icon" type="image/svg+xml" href="https://lostara.com/sf/assets/lobster.svg">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Maple+Mono:wght@400;700&display=swap');
+
+  :root { --accent: #e03d28; --muted: #888; }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Maple Mono', 'Courier New', monospace;
+    background: #fff;
+    color: #000;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 32px 24px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  h1 { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+  .sub { color: var(--muted); font-size: 12px; margin-bottom: 28px; }
+
+  section { margin-bottom: 24px; }
+  h2 { font-size: 12px; font-weight: 700; border-bottom: 1px solid #000;
+    padding-bottom: 3px; margin-bottom: 12px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+
+  label { display: block; font-size: 12px; margin-bottom: 3px; color: #444; }
+  input[type="number"], select {
+    font-family: inherit;
+    font-size: 13px;
+    border: 1px solid #bbb;
+    padding: 4px 7px;
+    width: 100%;
+    background: #fff;
+    color: #000;
+    appearance: none;
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+  input[type="number"]:focus, select:focus {
+    outline: 1px solid #000;
+    border-color: #000;
+  }
+
+  .check-row { display: flex; align-items: center; gap: 7px; padding-top: 18px; cursor: pointer; }
+  .check-row input { width: 13px; height: 13px; cursor: pointer; accent-color: #000; }
+  .check-row span { font-size: 13px; }
+
+  .mode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+
+  button {
+    font-family: inherit;
+    font-size: 13px;
+    background: #444;
+    color: #fff;
+    border: none;
+    padding: 7px 20px;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+  button:hover { background: #222; }
+
+  .sep { height: 1px; background: #ddd; margin: 24px 0; }
+
+  #results { display: block; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    border: 1px solid #ddd; margin-bottom: 18px; }
+  .stat { padding: 10px 12px; border: 1px solid #ddd; }
+  .stat-val { font-size: 18px; font-weight: 700; }
+  .stat-lbl { font-size: 11px; color: var(--muted); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; border-bottom: 1px solid #000; padding: 5px 7px; font-size: 11px; }
+  td { border-bottom: 1px solid #eee; padding: 4px 7px; }
+  tr:last-child td { border-bottom: none; }
+  .r { text-align: right; font-variant-numeric: tabular-nums; }
+  .red { color: #c00; }
+  .bold { font-weight: 700; }
+  .ul { text-decoration: underline; }
+  .green { color: #080; font-size: 11px; }
+  .dim { color: #aaa; }
+  .sortcol { cursor: pointer; user-select: none; }
+  .sortcol:hover { text-decoration: underline; }
+  .muted { opacity: 0.35; pointer-events: none; }
+
+  /* jimmy mode (dark) */
+  body.jimmy { --accent: #e87070; --muted: #666; background: #111; color: #ddd; }
+  body.jimmy h2 { border-bottom-color: #555; }
+  body.jimmy .sep { background: #2a2a2a; }
+  body.jimmy label { color: #aaa; }
+  body.jimmy input[type="number"], body.jimmy select {
+    background: #1c1c1c; color: #ddd; border-color: #444;
+  }
+  body.jimmy input[type="number"]:focus, body.jimmy select:focus {
+    outline-color: #aaa; border-color: #aaa;
+  }
+  body.jimmy button { background: #444; color: #ddd; }
+  body.jimmy button:hover { background: #666; }
+  body.jimmy .check-row input { accent-color: #ddd; }
+  body.jimmy .stats { border-color: #333; }
+  body.jimmy .stat { border-color: #333; }
+  body.jimmy th { border-bottom-color: #555; }
+  body.jimmy td { border-bottom-color: #2a2a2a; }
+  body.jimmy .dim { color: #555; }
+  body.jimmy .red { color: #e87070; }
+  body.jimmy .green { color: #6abf6a; }
+  body.jimmy #jimmyToggle { color: var(--accent); }
+
+  .toggle-group { display: inline-flex; margin-bottom: 10px; }
+  .toggle-group label { display: flex; }
+  .toggle-group input[type="radio"] { display: none; }
+  .toggle-group label span {
+    font-size: 12px; padding: 3px 10px; cursor: pointer;
+    border: 1px solid #bbb; margin-right: -1px;
+    user-select: none; white-space: nowrap;
+  }
+  .toggle-group label:first-child span { border-radius: 4px 0 0 4px; }
+  .toggle-group label:last-child span { border-radius: 0 4px 4px 0; margin-right: 0; }
+  .toggle-group input:checked + span { background: #222; color: #fff; border-color: #222; position: relative; z-index: 1; }
+  body.jimmy .toggle-group label span { border-color: #555; color: #ddd; }
+  body.jimmy .toggle-group input:checked + span { background: #bbb; color: #111; border-color: #bbb; }
+</style>
+</head>
+<body>
+
+<div style="display:flex; justify-content:space-between; align-items:flex-start;">
+  <div>
+    <h1>star force calculator</h1>
+    <p class="sub">expected meso cost · gms<br>by lostara 🦞<br>contact me for bugs/improvements</p>
+  </div>
+  <button id="jimmyToggle" onclick="toggleJimmy()" style="font-size:11px; padding:4px 10px; margin-top:4px;">jimmy mode</button>
+</div>
+
+<section>
+  <h2>item</h2>
+  <div class="grid">
+    <div>
+      <label for="itemLevel">item level</label>
+      <input type="number" id="itemLevel" value="200" min="1" max="300">
+    </div>
+    <div>
+      <label for="fromStar">from ★</label>
+      <input type="number" id="fromStar" value="0" min="0" max="29">
+    </div>
+    <div>
+      <label for="toStar">to ★</label>
+      <input type="number" id="toStar" value="22" min="1" max="30">
+    </div>
+    <div>
+      <label for="percentile">percentile</label>
+      <input type="number" id="percentile" value="85" min="1" max="99">
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>events &amp; discounts</h2>
+  <div class="grid">
+    <div>
+      <label for="mvpDiscount">mvp discount</label>
+      <select id="mvpDiscount">
+        <option value="0" selected="selected">none</option>
+        <option value="0.03">silver — 3%</option>
+        <option value="0.05">gold — 5%</option>
+        <option value="0.10">diamond+ — 10%</option>
+      </select>
+    </div>
+    <div>
+      <label for="sfEvent">event</label>
+      <select id="sfEvent">
+        <option value="none" selected="selected">none</option>
+        <option value="30off">30% off</option>
+        <option value="30boom">30% boom reduction</option>
+        <option value="ssf">ssf</option>
+      </select>
+    </div>
+    <div>
+      <label class="check-row">
+        <input type="checkbox" id="starCatch" checked="checked">
+        <span>star catch</span>
+      </label>
+    </div>
+    <div>
+      <label class="check-row">
+        <input type="checkbox" id="allStrats">
+        <span>all strategies</span>
+      </label>
+    </div>
+  </div>
+</section>
+
+<section id="enhanceSection">
+  <h2>enhancement mode (15★–21★)</h2>
+  <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+    <button style="font-size:11px; padding:3px 10px;" onclick="applyPreset([0,0,0,0,0,0,0])">111/11/11</button>
+    <button style="font-size:11px; padding:3px 10px;" onclick="applyPreset([3,3,3,0,0,3,3])">444/11/44</button>
+    <button style="font-size:11px; padding:3px 10px;" onclick="applyPreset([3,3,3,3,3,3,3])">444/44/44</button>
+  </div>
+  <div class="mode-grid">
+    <div><label for="mode15">15★ → 16★</label><select id="mode15"><option value="0" selected="selected">mode 1 — standard (×1)</option><option value="1">mode 2 (×1.5)</option><option value="2">mode 3 (×2.5)</option><option value="3">mode 4 — no destroy (×3)</option></select></div>
+    <div><label for="mode16">16★ → 17★</label><select id="mode16"><option value="0" selected="selected">mode 1 — standard (×1)</option><option value="1">mode 2 (×1.5)</option><option value="2">mode 3 (×2.5)</option><option value="3">mode 4 — no destroy (×3)</option></select></div>
+    <div><label for="mode17">17★ → 18★</label><select id="mode17"><option value="0" selected="selected">mode 1 — standard (×1)</option><option value="1">mode 2 (×1.5)</option><option value="2">mode 3 (×2.5)</option><option value="3">mode 4 — no destroy (×3)</option></select></div>
+    <div><label for="mode18">18★ → 19★</label><select id="mode18"><option value="0" selected="selected">mode 1 — standard (×1)</option><option value="1">mode 2 (×2)</option><option value="2">mode 3 (×3.5)</option><option value="3">mode 4 — no destroy (×6.5)</option></select></div>
+    <div><label for="mode19">19★ → 20★</label><select id="mode19"><option value="0" selected="selected">mode 1 — standard (×1)</option><option value="1">mode 2 (×2)</option><option value="2">mode 3 (×3.5)</option><option value="3">mode 4 — no destroy (×6.5)</option></select></div>
+    <div><label for="mode20">20★ → 21★</label><select id="mode20"><option value="0" selected="selected">mode 1 — standard (×1)</option><option value="1">mode 2 (×2)</option><option value="2">mode 3 (×3.5)</option><option value="3">mode 4 — no destroy (×6.5)</option></select></div>
+    <div><label for="mode21">21★ → 22★</label><select id="mode21"><option value="0" selected="selected">mode 1 — standard (×1)</option><option value="1">mode 2 (×2)</option><option value="2">mode 3 (×3.5)</option><option value="3">mode 4 — no destroy (×6.5)</option></select></div>
+  </div>
+</section>
+
+<div id="results">
+  <div class="sep"></div>
+
+  <section>
+    <h2>summary</h2>
+    <div class="stats" id="statGrid">
+    <div class="stat"><div class="stat-val">32.92b</div><div class="stat-lbl">expected total cost</div></div>
+    <div class="stat"><div class="stat-val">53.98b</div><div class="stat-lbl">p85 cost</div></div>
+    <div class="stat"><div class="stat-val">7.38</div><div class="stat-lbl">expected booms</div></div>
+    <div class="stat"><div class="stat-val">12.45</div><div class="stat-lbl">p85 booms</div></div>
+    <div class="stat"><div class="stat-val">0★ → 22★</div><div class="stat-lbl">range</div></div>
+    <div class="stat"><div class="stat-val">lv. 200</div><div class="stat-lbl">item level</div></div>
+  </div>
+  </section>
+
+  <section id="breakdownSection">
+    <h2>per-star breakdown</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>star</th>
+          <th class="r">attempt cost</th>
+          <th class="r">success</th>
+          <th class="r">destroy</th>
+          <th class="r">marginal boom</th>
+          <th class="r">exp. cost</th>
+          <th class="r" id="breakdownPctHead">p85 cost</th>
+          <th class="r">cost/boom</th>
+          <th class="r">cumulative</th>
+        </tr>
+      </thead>
+      <tbody id="breakdown"><tr>
+        <td>0★→1★</td>
+        <td class="r">321.0k</td>
+        <td class="r">99.8%</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">321.8k</td>
+        <td class="r">338.5k</td>
+        <td class="r">—</td>
+        <td class="r">321.8k</td>
+      </tr><tr>
+        <td>1★→2★</td>
+        <td class="r">641.0k</td>
+        <td class="r">94.5%</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">678.3k</td>
+        <td class="r">839.4k</td>
+        <td class="r">—</td>
+        <td class="r">1.00m</td>
+      </tr><tr>
+        <td>2★→3★</td>
+        <td class="r">961.0k</td>
+        <td class="r">89.3%</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">1.08m</td>
+        <td class="r">1.42m</td>
+        <td class="r">—</td>
+        <td class="r">2.08m</td>
+      </tr><tr>
+        <td>3★→4★</td>
+        <td class="r">1.28m</td>
+        <td class="r">89.3%</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">1.44m</td>
+        <td class="r">1.90m</td>
+        <td class="r">—</td>
+        <td class="r">3.51m</td>
+      </tr><tr>
+        <td>4★→5★</td>
+        <td class="r">1.60m</td>
+        <td class="r">84.0%</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">1.91m</td>
+        <td class="r">2.64m</td>
+        <td class="r">—</td>
+        <td class="r">5.42m</td>
+      </tr><tr>
+        <td>5★→6★</td>
+        <td class="r">1.92m</td>
+        <td class="r">78.8%</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">2.44m</td>
+        <td class="r">3.49m</td>
+        <td class="r">—</td>
+        <td class="r">7.86m</td>
+      </tr><tr>
+        <td>6★→7★</td>
+        <td class="r">2.24m</td>
+        <td class="r">73.5%</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">3.05m</td>
+        <td class="r">4.48m</td>
+        <td class="r">—</td>
+        <td class="r">10.91m</td>
+      </tr><tr>
+        <td>7★→8★</td>
+        <td class="r">2.56m</td>
+        <td class="r">68.3%</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">3.75m</td>
+        <td class="r">5.63m</td>
+        <td class="r">—</td>
+        <td class="r">14.66m</td>
+      </tr><tr>
+        <td>8★→9★</td>
+        <td class="r">2.88m</td>
+        <td class="r">63.0%</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">4.57m</td>
+        <td class="r">6.99m</td>
+        <td class="r">—</td>
+        <td class="r">19.23m</td>
+      </tr><tr>
+        <td>9★→10★</td>
+        <td class="r">3.20m</td>
+        <td class="r">57.8%</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">5.54m</td>
+        <td class="r">8.60m</td>
+        <td class="r">—</td>
+        <td class="r">24.77m</td>
+      </tr><tr>
+        <td>10★→11★</td>
+        <td class="r">12.97m</td>
+        <td class="r">52.5%</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">24.70m</td>
+        <td class="r">38.80m</td>
+        <td class="r">—</td>
+        <td class="r">49.47m</td>
+      </tr><tr>
+        <td>11★→12★</td>
+        <td class="r">29.82m</td>
+        <td class="r">47.3%</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">63.11m</td>
+        <td class="r">100.24m</td>
+        <td class="r">—</td>
+        <td class="r">112.58m</td>
+      </tr><tr>
+        <td>12★→13★</td>
+        <td class="r">54.28m</td>
+        <td class="r">42.0%</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">129.24m</td>
+        <td class="r">207.25m</td>
+        <td class="r">—</td>
+        <td class="r">241.82m</td>
+      </tr><tr>
+        <td>13★→14★</td>
+        <td class="r">90.42m</td>
+        <td class="r">36.8%</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">246.03m</td>
+        <td class="r">397.82m</td>
+        <td class="r">—</td>
+        <td class="r">487.85m</td>
+      </tr><tr>
+        <td>14★→15★</td>
+        <td class="r">159.76m</td>
+        <td class="r">31.5%</td>
+        <td class="r">—</td>
+        <td class="r">—</td>
+        <td class="r">507.19m</td>
+        <td class="r">826.04m</td>
+        <td class="r">—</td>
+        <td class="r">995.04m</td>
+      </tr><tr>
+        <td>15★→16★</td>
+        <td class="r">71.32m</td>
+        <td class="r">31.5%</td>
+        <td class="r red">2.06%</td>
+        <td class="r">0.065</td>
+        <td class="r">283.97m</td>
+        <td class="r">485.10m</td>
+        <td class="r">4.35b</td>
+        <td class="r">1.28b</td>
+      </tr><tr>
+        <td>16★→17★</td>
+        <td class="r">84.00m</td>
+        <td class="r">31.5%</td>
+        <td class="r red">2.06%</td>
+        <td class="r">0.069</td>
+        <td class="r">342.76m</td>
+        <td class="r">586.23m</td>
+        <td class="r">4.93b</td>
+        <td class="r">1.62b</td>
+      </tr><tr>
+        <td>17★→18★</td>
+        <td class="r">130.69m</td>
+        <td class="r">15.8%</td>
+        <td class="r red">6.74%</td>
+        <td class="r">0.486</td>
+        <td class="r">1.48b</td>
+        <td class="r">2.52b</td>
+        <td class="r">3.04b</td>
+        <td class="r">3.10b</td>
+      </tr><tr>
+        <td>18★→19★</td>
+        <td class="r">324.06m</td>
+        <td class="r">15.8%</td>
+        <td class="r red">6.74%</td>
+        <td class="r">0.693</td>
+        <td class="r">3.33b</td>
+        <td class="r">5.68b</td>
+        <td class="r">4.81b</td>
+        <td class="r">6.43b</td>
+      </tr><tr>
+        <td>19★→20★</td>
+        <td class="r">578.97m</td>
+        <td class="r">15.8%</td>
+        <td class="r red">8.43%</td>
+        <td class="r">1.238</td>
+        <td class="r">7.06b</td>
+        <td class="r">12.05b</td>
+        <td class="r">5.70b</td>
+        <td class="r">13.49b</td>
+      </tr><tr>
+        <td>20★→21★</td>
+        <td class="r">148.61m</td>
+        <td class="r">31.5%</td>
+        <td class="r red">10.28%</td>
+        <td class="r">1.158</td>
+        <td class="r">4.55b</td>
+        <td class="r">7.43b</td>
+        <td class="r">3.93b</td>
+        <td class="r">18.04b</td>
+      </tr><tr>
+        <td>21★→22★</td>
+        <td class="r">269.60m</td>
+        <td class="r">15.8%</td>
+        <td class="r red">12.64%</td>
+        <td class="r">3.671</td>
+        <td class="r">14.88b</td>
+        <td class="r">25.31b</td>
+        <td class="r">4.05b</td>
+        <td class="r">32.92b</td>
+      </tr></tbody>
+    </table>
+  </section>
+
+  <section id="sparesSection">
+    <h2>spares optimizer</h2>
+    <div class="toggle-group" style="margin-bottom:4px;">
+      <label><input type="radio" name="spareMode" value="cost" checked="checked"><span>exp. cost</span></label>
+      <label><input type="radio" name="spareMode" value="budget"><span>budget</span></label>
+    </div>
+    <p id="spareModeBlurb" class="dim" style="font-size:12px;margin:0 0 10px;">minimize expected cost. optimal if you have unlimited budget</p>
+    <div class="grid" style="margin-bottom:16px;">
+      <div>
+        <label for="sparesY">spares</label>
+        <input type="number" id="sparesY" value="5" min="1">
+      </div>
+      <div>
+        <label for="itemCost">item cost (b)</label>
+        <input type="number" id="itemCost" value="0" min="0" step="0.001">
+      </div>
+      <div>
+        <label for="budget">budget (b)</label>
+        <input type="number" id="budget" min="0" step="0.1" placeholder="optional">
+      </div>
+      <div>
+        <label for="targetPct">target %</label>
+        <input type="number" id="targetPct" min="1" max="99" step="1" placeholder="optional">
+      </div>
+    </div>
+    <p id="sparesTargetStat" class="dim" style="font-size:12px;margin:-8px 0 14px;"></p>
+    <p class="sub" style="margin-bottom:12px;">click a column to apply that policy</p>
+    <div id="sparesPagination" style="margin-bottom:8px;"></div>
+    <table id="sparesTable">
+      <thead id="sparesHead"><tr><th>star</th><th class="r" style="cursor:pointer; user-select:none;" data-y="5" title="apply 5-spare policy">5</th><th class="r" style="cursor:pointer; user-select:none;" data-y="4" title="apply 4-spare policy">4</th><th class="r" style="cursor:pointer; user-select:none;" data-y="3" title="apply 3-spare policy">3</th><th class="r" style="cursor:pointer; user-select:none;" data-y="2" title="apply 2-spare policy">2</th><th class="r" style="cursor:pointer; user-select:none;" data-y="1" title="apply 1-spare policy">1</th></tr></thead>
+      <tbody id="sparesBody"><tr><td>15★→16★</td><td class="r">m2</td><td class="r bold red">m4</td><td class="r bold red">m4</td><td class="r bold red">m4</td><td class="r bold red">m4</td></tr><tr><td>16★→17★</td><td class="r">m2</td><td class="r">m2</td><td class="r bold red">m4</td><td class="r bold red">m4</td><td class="r bold red">m4</td></tr><tr><td>17★→18★</td><td class="r bold red">m4</td><td class="r bold red">m4</td><td class="r bold red">m4</td><td class="r bold red">m4</td><td class="r bold red">m4</td></tr><tr><td>18★→19★</td><td class="r dim">m1</td><td class="r dim">m1</td><td class="r dim">m1</td><td class="r dim">m1</td><td class="r bold red">m4</td></tr><tr><td>19★→20★</td><td class="r dim">m1</td><td class="r dim">m1</td><td class="r dim">m1</td><td class="r dim">m1</td><td class="r bold red">m4</td></tr><tr><td>20★→21★</td><td class="r bold red">m4</td><td class="r bold red">m4</td><td class="r bold red">m4</td><td class="r bold red">m4</td><td class="r bold red">m4</td></tr><tr><td>21★→22★</td><td class="r bold red">m4</td><td class="r bold red">m4</td><td class="r bold red">m4</td><td class="r bold red">m4</td><td class="r bold red">m4</td></tr><tr><td class="bold">exp. cost</td><td class="r">49.29b</td><td class="r">53.76b</td><td class="r">61.50b</td><td class="r">75.71b</td><td class="r">101.84b</td></tr><tr><td class="bold">p85 cost</td><td class="r">79.02b</td><td class="r">86.97b</td><td class="r">99.65b</td><td class="r">120.55b</td><td class="r">150.31b</td></tr></tbody>
+    </table>
+  </section>
+
+  <section id="stratSection" style="display:none">
+    <h2>all strategies</h2>
+    <div style="margin-bottom:12px;">
+      <label for="frontierPoints" style="font-size:12px; color:#444;">frontier points: <span id="frontierPointsVal">15</span></label>
+      <input type="range" id="frontierPoints" value="15" min="3" max="100" style="width:100%; accent-color:#000;">
+    </div>
+    <div class="toggle-group" style="margin-bottom:6px;">
+      <label><input type="radio" name="costMode" value="abs" checked="checked"><span>absolute</span></label>
+      <label><input type="radio" name="costMode" value="rel"><span>extra vs. all-normal</span></label>
+    </div>
+    <div class="toggle-group">
+      <label><input type="radio" name="stratMetric" value="exp" checked="checked"><span>expected</span></label>
+      <label><input type="radio" name="stratMetric" value="pct"><span id="stratPctLabel">p85</span></label>
+    </div>
+    <div class="grid" style="margin-bottom:12px; margin-top:10px;">
+      <div>
+        <label for="stratBudget">budget (b)</label>
+        <input type="number" id="stratBudget" min="0" step="0.1" placeholder="optional">
+      </div>
+      <div>
+        <label for="stratSpares">spares</label>
+        <input type="number" id="stratSpares" value="1" min="1">
+      </div>
+    </div>
+    <p class="sub" style="margin-bottom:12px;"><span id="costModeLabel">cost</span> vs. booms · <span style="color:var(--accent)">●</span> pareto frontier · <span id="currentStratDot" style="color:#1a9a1a">●</span> current</p>
+    <canvas id="frontierCanvas" style="display:block; width:100%; height:260px; margin-bottom:20px;"></canvas>
+    <table id="stratTable">
+      <thead id="stratHead"></thead>
+      <tbody id="stratBody"></tbody>
+    </table>
+  </section>
+</div>
+
+<script>
+const STAR_ENHANCE_MIN   = 15;
+const STAR_ENHANCE_MAX   = 21;
+const STAR_ENHANCE_COUNT = STAR_ENHANCE_MAX - STAR_ENHANCE_MIN + 1; // 7
+const STAR_ENHANCE_MODES = 4;
+const STAR_MAX           = 30;
+const STRAT_MASK_COUNT   = STAR_ENHANCE_MODES ** STAR_ENHANCE_COUNT; // 16384
+
+// ─── standard rates (mode 1) ──────────────────────────────────────────────────
+const RATES = [
+  [0.95, 0.05, 0],       // 0
+  [0.90, 0.10, 0],       // 1
+  [0.85, 0.15, 0],       // 2
+  [0.85, 0.15, 0],       // 3
+  [0.80, 0.20, 0],       // 4
+  [0.75, 0.25, 0],       // 5
+  [0.70, 0.30, 0],       // 6
+  [0.65, 0.35, 0],       // 7
+  [0.60, 0.40, 0],       // 8
+  [0.55, 0.45, 0],       // 9
+  [0.50, 0.50, 0],       // 10
+  [0.45, 0.55, 0],       // 11
+  [0.40, 0.60, 0],       // 12
+  [0.35, 0.65, 0],       // 13
+  [0.30, 0.70, 0],       // 14
+  [0.30, 0.679, 0.021],  // 15
+  [0.30, 0.679, 0.021],  // 16
+  [0.15, 0.782, 0.068],  // 17
+  [0.15, 0.782, 0.068],  // 18
+  [0.15, 0.765, 0.085],  // 19
+  [0.30, 0.595, 0.105],  // 20
+  [0.15, 0.7225, 0.1275],// 21
+  [0.15, 0.68, 0.17],    // 22
+  [0.10, 0.72, 0.18],    // 23
+  [0.10, 0.72, 0.18],    // 24
+  [0.10, 0.72, 0.18],    // 25
+  [0.07, 0.744, 0.186],  // 26
+  [0.05, 0.76, 0.19],    // 27
+  [0.03, 0.776, 0.194],  // 28
+  [0.01, 0.792, 0.198],  // 29
+];
+
+// ─── enhancement mode rates ───────────────────────────────────────────────────
+// ENHANCE_MODES[star - STAR_ENHANCE_MIN][modeIndex 0-3] = [success, fail, destroy, costMultiplier]
+// stars 15-17: success unchanged, destroy reduces. cost ×1/1.5/2.5/3.
+// stars 15-16: destroy reduction fractions extrapolated from measured 17→18 data.
+// stars 18-21: success also decreases. cost ×1/2/3.5/6.5. (measured)
+const ENHANCE_MODES = [
+  // star 15
+  [[0.30,0.679,0.021,1.0],[0.30,0.68688,0.01313,1.5],[0.30,0.69475,0.00525,2.5],[0.30,0.70,0.0,3.0]],
+  // star 16
+  [[0.30,0.679,0.021,1.0],[0.30,0.68688,0.01313,1.5],[0.30,0.69475,0.00525,2.5],[0.30,0.70,0.0,3.0]],
+  // star 17 (measured)
+  [[0.15,0.782,0.068,1.0],[0.15,0.8075,0.0425,1.5],[0.15,0.833,0.017,2.5],[0.15,0.85,0.0,3.0]],
+  // star 18 (measured)
+  [[0.15,0.782,0.068,1.0],[0.12,0.836,0.044,2.0],[0.10,0.882,0.018,3.5],[0.08,0.92,0.0,6.5]],
+  // star 19 (measured)
+  [[0.15,0.765,0.085,1.0],[0.12,0.8184,0.0616,2.0],[0.10,0.864,0.036,3.5],[0.08,0.92,0.0,6.5]],
+  // star 20 (measured)
+  [[0.30,0.595,0.105,1.0],[0.25,0.675,0.075,2.0],[0.20,0.76,0.04,3.5],[0.15,0.85,0.0,6.5]],
+  // star 21 (measured)
+  [[0.15,0.7225,0.1275,1.0],[0.12,0.792,0.088,2.0],[0.10,0.855,0.045,3.5],[0.08,0.92,0.0,6.5]],
+];
+
+// mode dropdown labels: [old-tier 15-17, new-tier 18-21]
+const MODE_LABELS = [
+  ['mode 1 — standard (×1)',   'mode 1 — standard (×1)'],
+  ['mode 2 (×1.5)',            'mode 2 (×2)'],
+  ['mode 3 (×2.5)',            'mode 3 (×3.5)'],
+  ['mode 4 — no destroy (×3)', 'mode 4 — no destroy (×6.5)'],
+];
+
+(function initSelects() {
+  for (let s = STAR_ENHANCE_MIN; s <= STAR_ENHANCE_MAX; s++) {
+    const sel = document.getElementById('mode' + s);
+    const tier = s >= 18 ? 1 : 0;
+    MODE_LABELS.forEach((pair, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = pair[tier];
+      sel.appendChild(opt);
+    });
+  }
+})();
+
+function getModeIndex(s) {
+  if (s < STAR_ENHANCE_MIN || s > STAR_ENHANCE_MAX) return 0;
+  return parseInt(document.getElementById('mode' + s).value);
+}
+
+function getRates(s, modeIdx, boomOff, catching = false) {
+  let [ps, pf, pd] = (s >= STAR_ENHANCE_MIN && s <= STAR_ENHANCE_MAX)
+    ? ENHANCE_MODES[s - STAR_ENHANCE_MIN][modeIdx]
+    : RATES[s];
+  // 30% boom reduction: remainder goes to fail
+  if (boomOff && s <= STAR_ENHANCE_MAX && pd > 0) {
+    const reduction = pd * 0.30;
+    pd -= reduction;
+    pf += reduction;
+  }
+  if (catching && ps < 1) {
+    const psNew = ps * 1.05;
+    const scale  = (1 - psNew) / (1 - ps);
+    pf = pf * scale;
+    pd = pd * scale;
+    ps = psNew;
+  }
+  return [ps, pf, pd];
+}
+
+// ─── recovery star (gms) ──────────────────────────────────────────────────────
+function recoveryStar(s) {
+  if (s <= 19) return 12;
+  if (s === 20) return 15;
+  if (s <= 22) return 17;
+  if (s <= 25) return 19;
+  return 20;
+}
+
+// ─── cost formula ─────────────────────────────────────────────────────────────
+// Returns raw (pre-rounding) base cost
+function rawCost(S, L) {
+  if (S <= 9)  return 1000 + Math.floor(L**3 * (S+1) / 25);
+  if (S === 10) return 1000 + Math.floor(L**3 * 11**2.7 / 400);
+  if (S === 11) return 1000 + Math.floor(L**3 * 12**2.7 / 220);
+  if (S === 12) return 1000 + Math.floor(L**3 * 13**2.7 / 150);
+  if (S === 13) return 1000 + Math.floor(L**3 * 14**2.7 / 110);
+  if (S === 14) return 1000 + Math.floor(L**3 * 15**2.7 / 75);
+  if (S === 15) return 1000 + Math.floor(L**3 * 16**2.7 / 200);
+  if (S === 16) return 1000 + Math.floor(L**3 * 17**2.7 / 200);
+  if (S === 17) return 1000 + Math.floor(L**3 * 18**2.7 / 150);
+  if (S === 18) return 1000 + Math.floor(L**3 * 19**2.7 / 70);
+  if (S === 19) return 1000 + Math.floor(L**3 * 20**2.7 / 45);
+  if (S === 20) return 1000 + Math.floor(L**3 * 21**2.7 / 200);
+  if (S === 21) return 1000 + Math.floor(L**3 * 22**2.7 / 125);
+  return 1000 + Math.floor(L**3 * (S+1)**2.7 / 200);
+}
+
+function attemptCost(s, L, mvp, costOff, modeIdx) {
+  const raw = rawCost(s, L);
+  const mult = (s >= STAR_ENHANCE_MIN && s <= STAR_ENHANCE_MAX) ? ENHANCE_MODES[s - STAR_ENHANCE_MIN][modeIdx][3] : 1.0;
+  const mvpFactor = s <= 16 ? (1 - mvp) : 1;
+  const totalMult = mult * (costOff ? 0.70 : 1) * mvpFactor;
+  return Math.round(raw * totalMult / 100) * 100;
+}
+
+// ─── markov chain solver ──────────────────────────────────────────────────────
+// Returns { X, D, V, DVar } where X[s] = expected cost, D[s] = expected destructions,
+// V[s] = variance of cost, DVar[s] = variance of destructions, all to advance from
+// s★ to (s+1)★.
+// Variance derivation: law of total variance on the one-step decomposition.
+// No-boom: Var = c²(1−p)/p² (geometric). Boom: recursive formula below.
+//
+// General recursion for a per-attempt reward T with deterministic add `c`,
+// extra deterministic add `extra` on boom, and recovery r.v. R (mean ER, var VarR):
+//   mu = (c + pd·(extra+ER)) / ps
+//   K  = extra + ER + mu
+//   Var = [pf·mu² + pd·VarR + pd·K² − (pf·mu + pd·K)²] / ps
+// (cost: c=cost, extra=0, R=recX; booms: c=0, extra=1, R=recD)
+function solve(L, mvp, costOff, boomOff, catching, modesByStarFn) {
+  const X = new Array(STAR_MAX).fill(0);
+  const D = new Array(STAR_MAX).fill(0);
+  const V = new Array(STAR_MAX).fill(0);
+  const DVar = new Array(STAR_MAX).fill(0);
+  for (let s = 0; s < STAR_MAX; s++) {
+    const m = modesByStarFn(s);
+    const [ps, , pd] = getRates(s, m, boomOff, catching);
+    const cost = attemptCost(s, L, mvp, costOff, m);
+    const r = recoveryStar(s);
+    const recX = X.slice(Math.min(r, s), s).reduce((a, v) => a + v, 0);
+    const recD = D.slice(Math.min(r, s), s).reduce((a, v) => a + v, 0);
+    const recV = V.slice(Math.min(r, s), s).reduce((a, v) => a + v, 0);
+    const recDVar = DVar.slice(Math.min(r, s), s).reduce((a, v) => a + v, 0);
+    if (pd === 0) {
+      X[s] = cost / ps;
+      D[s] = 0;
+      V[s] = cost * cost * (1 - ps) / (ps * ps);
+      DVar[s] = 0;
+    } else {
+      X[s] = (cost + pd * recX) / ps;
+      D[s] = pd * (1 + recD) / ps;
+      // Var[s] = (c² + 2c·μ·(1−p) − p·μ² + pd·(recX² + 2·recX·(c+μ) + recV)) / p
+      V[s] = (cost*cost + 2*cost*X[s]*(1-ps) - ps*X[s]*X[s]
+              + pd*(recX*recX + 2*recX*(cost+X[s]) + recV)) / ps;
+      const pf = 1 - ps - pd;
+      const K = 1 + recD + D[s];
+      const pfMuPdK = pf*D[s] + pd*K;
+      DVar[s] = (pf*D[s]*D[s] + pd*recDVar + pd*K*K - pfMuPdK*pfMuPdK) / ps;
+    }
+  }
+  return { X, D, V, DVar };
+}
+
+function sumArr(arr, from, to) {
+  return arr.slice(from, to).reduce((a, v) => a + v, 0);
+}
+
+// ─── all strategies ───────────────────────────────────────────────────────────
+let stratData = [];
+let stratFrontier = [];
+let stratDisplay = [];
+let stratSortCol = 'cost';
+let stratSortDir = 'asc';
+let stratBaseline = 0;
+let stratPctBaseline = 0;
+let stratCacheKey = null;
+let stratBudgetCacheKey = null;
+let calcTimer = null;
+function scheduleCalculate() { clearTimeout(calcTimer); calcTimer = setTimeout(calculate, 200); }
+
+let lastSparesPolSp = null;
+let lastSparesEnhStars = [];
+let sparesPage = 0;
+let rerenderSpares = null;
+
+function computeAllStrats(L, mvp, costOff, boomOff, catching, from, to) {
+  stratData = [];
+  for (let mask = 0; mask < STRAT_MASK_COUNT; mask++) {
+    const modes = new Array(STAR_ENHANCE_COUNT);
+    let m = mask;
+    for (let i = 0; i < STAR_ENHANCE_COUNT; i++) { modes[i] = m & 3; m >>= 2; }
+    const { X, D, V } = solve(L, mvp, costOff, boomOff, catching,
+      s => (s >= STAR_ENHANCE_MIN && s <= STAR_ENHANCE_MAX) ? modes[s - STAR_ENHANCE_MIN] : 0);
+    const cost     = sumArr(X, from, to);
+    const variance = sumArr(V, from, to);
+    const booms    = sumArr(D, from, to);
+    stratData.push({ modes, cost, variance, booms, ratio: booms > 0 ? cost / booms : null });
+  }
+  stratBaseline = stratData[0].cost; // mask=0 = all normal
+}
+
+function getCostOffset() {
+  return document.querySelector('input[name="costMode"]:checked')?.value === 'rel' ? stratBaseline : 0;
+}
+function getPctOffset() {
+  return document.querySelector('input[name="costMode"]:checked')?.value === 'rel' ? stratPctBaseline : 0;
+}
+
+function renderStratTable(frontier = stratFrontier) {
+  const hasPct = frontier.length > 0 && frontier[0].pctCost != null
+    && document.querySelector('input[name="stratMetric"]:checked')?.value === 'pct';
+  const offset = hasPct ? getPctOffset() : getCostOffset();
+  const rel = offset > 0;
+  const col = stratSortCol, dir = stratSortDir;
+  const costOf = r => hasPct ? (r.pctCost ?? r.cost) : r.cost;
+  const hasSuccessPct = frontier.some(r => r.successPct != null);
+  const bestSuccessPct = hasSuccessPct ? Math.max(...frontier.map(r => r.successPct ?? -1)) : -1;
+  const sorted = [...frontier].sort((a, b) => {
+    let va, vb;
+    if (col === 'cost') { va = costOf(a); vb = costOf(b); }
+    else if (col === 'success') { va = a.successPct ?? -1; vb = b.successPct ?? -1; }
+    else { va = a[col]; vb = b[col]; }
+    if (va === null) va = dir === 'asc' ? Infinity : -Infinity;
+    if (vb === null) vb = dir === 'asc' ? Infinity : -Infinity;
+    return dir === 'asc' ? va - vb : vb - va;
+  });
+  const costLbl = (hasPct ? `p${frontier[0].pct ?? ''}` : 'exp.') + (rel ? ' extra cost' : ' cost');
+  const ratioLbl = (hasPct ? `p${frontier[0].pct ?? ''}` : 'exp.') + (rel ? ' extra/boom' : ' cost/boom');
+  document.getElementById('costModeLabel').textContent = costLbl;
+
+  // build thead dynamically
+  const cols = [
+    { id: 'modesCol', label: '15★ 16★ 17★ 18★ 19★ 20★ 21★', sortable: false, style: 'font-size:10px; color:var(--muted)' },
+    { id: 'costColHead', label: costLbl, sortable: true, col: 'cost' },
+    { label: 'booms', sortable: true, col: 'booms' },
+    { id: 'ratioColHead', label: ratioLbl, sortable: true, col: 'ratio' },
+  ];
+  if (hasSuccessPct) cols.push({ label: 'success %', sortable: true, col: 'success' });
+  document.getElementById('stratHead').innerHTML = '<tr>' + cols.map(c => {
+    const sort = c.sortable ? ' class="r sortcol"' : ' class="r"';
+    const dc = c.col ? ` data-col="${c.col}"` : '';
+    const id = c.id ? ` id="${c.id}"` : '';
+    const st = c.style ? ` style="${c.style}"` : '';
+    const lbl = c.sortable && c.col === col ? `${c.label} ${dir === 'asc' ? '▲' : '▼'}` : c.label;
+    return `<th${id}${sort}${dc}${st}>${lbl}</th>`;
+  }).join('') + '</tr>';
+
+  document.getElementById('stratBody').innerHTML = sorted.map(r => {
+    const c = costOf(r) - offset;
+    const ratio = r.booms > 0 ? c / r.booms : null;
+    const modesAttr = r.modes.join(',');
+    const isBest = hasSuccessPct && r.successPct === bestSuccessPct && bestSuccessPct > 0;
+    const rowStyle = isBest ? ' style="cursor:pointer; outline:1px solid #1a9a1a;"' : ' style="cursor:pointer;"';
+    const spCell = hasSuccessPct
+      ? `<td class="r${r.successPct != null && r.successPct >= 0.7 ? ' green' : r.successPct != null && r.successPct < 0.15 ? ' red' : ''}">${r.successPct != null ? (r.successPct * 100).toFixed(1) + '%' : '—'}</td>`
+      : '';
+    return `<tr${rowStyle} data-modes="${modesAttr}">
+    <td class="dim r">${r.modes.map(m => m + 1).join(' ')}</td>
+    <td class="r">${fm(c)}</td>
+    <td class="r">${r.booms.toFixed(3)}</td>
+    <td class="r">${ratio !== null ? fm(ratio) : '—'}</td>
+    ${spCell}
+  </tr>`;
+  }).join('');
+
+  document.querySelectorAll('#stratHead .sortcol').forEach(th => {
+    th.addEventListener('click', () => {
+      const c = th.dataset.col;
+      stratSortDir = stratSortCol === c ? (stratSortDir === 'asc' ? 'desc' : 'asc') : 'asc';
+      stratSortCol = c;
+      renderStratTable(stratDisplay);
+    });
+  });
+}
+
+function simplifyFrontier(frontier, n) {
+  if (frontier.length <= n) return frontier;
+  const result = [frontier[0]];
+  const step = (frontier.length - 1) / (n - 1);
+  for (let i = 1; i < n - 1; i++) result.push(frontier[Math.round(i * step)]);
+  result.push(frontier[frontier.length - 1]);
+  return result;
+}
+
+function computeFrontier() {
+  const sorted = [...stratData].sort((a, b) => a.booms !== b.booms ? a.booms - b.booms : a.cost - b.cost);
+  const pts = [];
+  let minCost = Infinity;
+  for (const d of sorted) {
+    if (d.cost < minCost) { pts.push(d); minCost = d.cost; }
+  }
+  return pts;
+}
+
+function renderFrontierGraph(displayFrontier) {
+  const frontier = displayFrontier;
+  const canvas = document.getElementById('frontierCanvas');
+  if (!canvas || !stratData.length || canvas.offsetWidth === 0) return;
+  const hasPct = frontier.length > 0 && frontier[0].pctCost != null
+    && document.querySelector('input[name="stratMetric"]:checked')?.value === 'pct';
+  const costOf = d => hasPct ? (d.pctCost ?? d.cost) : d.cost;
+  const offset = hasPct ? getPctOffset() : getCostOffset();
+  const rel = offset > 0;
+  const jimmy = document.body.classList.contains('jimmy');
+  const C = {
+    bg:      jimmy ? '#111'              : '#fff',
+    grid:    jimmy ? '#2a2a2a'           : '#eee',
+    axis:    jimmy ? '#555'              : '#bbb',
+    label:   jimmy ? '#888'              : '#666',
+    tick:    jimmy ? '#888'              : '#888',
+    dot:     jimmy ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)',
+    line:    jimmy ? '#ccc'              : '#000',
+    frontier:jimmy ? '#e87070'           : '#e03d28',
+  };
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const PAD = { top: 16, right: 16, bottom: 44, left: 68 };
+  const PW = W - PAD.left - PAD.right;
+  const PH = H - PAD.top  - PAD.bottom;
+
+  const bMin = Math.min(...stratData.map(d => d.booms));
+  const bMax = Math.max(...stratData.map(d => d.booms));
+  const pctVal = hasPct ? (frontier[0]?.pct ?? 85) : 0;
+  const allCostOf = d => hasPct ? lognormalPct(d.cost, d.variance, pctVal) : d.cost;
+  const cMin = Math.min(...stratData.map(d => allCostOf(d))) - offset;
+  const cMax = Math.max(...stratData.map(d => allCostOf(d))) - offset;
+  const bRange = bMax - bMin || 1, cRange = cMax - cMin || 1;
+
+  const px = b => PAD.left + (b - bMin) / bRange * PW;
+  const py = c => PAD.top  + (1 - (c - cMin) / cRange) * PH;
+
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.font = `10px 'Maple Mono', monospace`;
+  for (let i = 0; i <= 4; i++) {
+    const c = cMin + cRange * i / 4;
+    const y = py(c);
+    ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + PW, y); ctx.stroke();
+    ctx.fillStyle = C.tick; ctx.textAlign = 'right';
+    ctx.fillText(fm(c), PAD.left - 5, y + 3);
+
+    const b = bMin + bRange * i / 4;
+    const x = px(b);
+    ctx.strokeStyle = C.grid;
+    ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top + PH); ctx.stroke();
+    ctx.fillStyle = C.tick; ctx.textAlign = 'center';
+    ctx.fillText(b.toFixed(2), x, PAD.top + PH + 13);
+  }
+
+  ctx.strokeStyle = C.axis; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, PAD.top); ctx.lineTo(PAD.left, PAD.top + PH); ctx.lineTo(PAD.left + PW, PAD.top + PH);
+  ctx.stroke();
+
+  ctx.fillStyle = C.label; ctx.font = `11px 'Maple Mono', monospace`;
+  ctx.textAlign = 'center';
+  ctx.fillText('booms', PAD.left + PW / 2, H - 6);
+  ctx.save();
+  ctx.translate(12, PAD.top + PH / 2);
+  ctx.rotate(-Math.PI / 2);
+  const yAxisLabel = hasPct
+    ? `p${frontier[0].pct ?? ''} ${rel ? 'extra cost' : 'cost'}`
+    : (rel ? 'extra cost' : 'cost');
+  ctx.fillText(yAxisLabel, 0, 0);
+  ctx.restore();
+
+  ctx.fillStyle = C.dot;
+  for (const d of stratData) {
+    ctx.fillRect(px(d.booms) - 1.5, py(allCostOf(d) - offset) - 1.5, 3, 3);
+  }
+
+  ctx.strokeStyle = C.line; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  frontier.forEach((d, i) => {
+    i === 0 ? ctx.moveTo(px(d.booms), py(costOf(d) - offset)) : ctx.lineTo(px(d.booms), py(costOf(d) - offset));
+  });
+  ctx.stroke();
+
+  ctx.fillStyle = C.frontier;
+  for (const d of frontier) {
+    ctx.beginPath();
+    ctx.arc(px(d.booms), py(costOf(d) - offset), 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // current strategy marker
+  let curMask = 0;
+  for (let i = 0; i < STAR_ENHANCE_COUNT; i++) curMask |= getModeIndex(STAR_ENHANCE_MIN + i) << (i * 2);
+  if (hasPct) {
+    const curModes = Array.from({length: STAR_ENHANCE_COUNT}, (_, i) => getModeIndex(STAR_ENHANCE_MIN + i));
+    const curInFrontier = frontier.find(d => d.modes.every((m, j) => m === curModes[j]));
+    if (curInFrontier) {
+      ctx.fillStyle = jimmy ? '#4a9eff' : '#1a9a1a';
+      ctx.beginPath();
+      ctx.arc(px(curInFrontier.booms), py(costOf(curInFrontier) - offset), 5.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (curMask < stratData.length) {
+    const cur = stratData[curMask];
+    const cx = px(cur.booms), cy = py(cur.cost - offset);
+    ctx.fillStyle = jimmy ? '#4a9eff' : '#1a9a1a';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 5.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// ─── spares optimizer ────────────────────────────────────────────────────────
+// V[s][y] = min expected cost to reach `to` from s with y items remaining
+function solveSpares(L, mvp, costOff, boomOff, catching, to, maxY, itemCost = 0) {
+  const V   = Array.from({length: STAR_MAX + 1}, () => new Array(maxY + 1).fill(Infinity));
+  const pol = Array.from({length: STAR_MAX + 1}, () => new Uint8Array(maxY + 1));
+  for (let y = 0; y <= maxY; y++) V[to][y] = 0;
+  for (let y = 1; y <= maxY; y++) {
+    for (let s = to - 1; s >= 0; s--) {
+      const r = recoveryStar(s);
+      const nM = (s >= STAR_ENHANCE_MIN && s <= STAR_ENHANCE_MAX) ? STAR_ENHANCE_MODES : 1;
+      let best = Infinity, bestM = 0;
+      for (let m = 0; m < nM; m++) {
+        const [ps, , pd] = getRates(s, m, boomOff, catching);
+        const cost = attemptCost(s, L, mvp, costOff, m);
+        const recTerm = pd === 0 ? 0 : pd * (y >= 2 ? (itemCost + V[r][y - 1]) : Infinity);
+        const num = cost + ps * V[s + 1][y] + recTerm;
+        const val = isFinite(num) ? num / (ps + pd) : Infinity;
+        if (val < best) { best = val; bestM = m; }
+      }
+      V[s][y] = best; pol[s][y] = bestM;
+    }
+  }
+  // Second pass: compute Q[s][y] = E[cost²] under the optimal policy.
+  // One-step decomposition (ps+pd)*Q = (1-pd)*c² + 2*ps*c*V[s+1][y] + ps*Q[s+1][y]
+  //                                   + 2*pf*c*V[s][y]
+  //                                   + pd*((c+ic)² + 2*(c+ic)*V[r][y-1] + Q[r][y-1])
+  const Q = Array.from({length: STAR_MAX + 1}, () => new Array(maxY + 1).fill(0));
+  for (let y = 1; y <= maxY; y++) {
+    for (let s = to - 1; s >= 0; s--) {
+      if (!isFinite(V[s][y])) { Q[s][y] = Infinity; continue; }
+      const m  = pol[s][y];
+      const [ps, , pd] = getRates(s, m, boomOff, catching);
+      const c  = attemptCost(s, L, mvp, costOff, m);
+      const pf = 1 - ps - pd;
+      const muS = V[s][y], muN = V[s + 1][y], QN = Q[s + 1][y];
+      if (pd === 0) {
+        Q[s][y] = (c*c + 2*ps*c*muN + ps*QN + 2*pf*c*muS) / ps;
+      } else {
+        const r = recoveryStar(s), ic = itemCost, cic = c + ic;
+        const muR = V[r][y - 1], QR = Q[r][y - 1];
+        Q[s][y] = (c*c*(1-pd) + 2*ps*c*muN + ps*QN + 2*pf*c*muS
+                   + pd*(cic*cic + 2*cic*muR + QR)) / (ps + pd);
+      }
+    }
+  }
+  return { V, pol, Q };
+}
+
+// Budget-constrained optimizer: maximize P(reaching `to` from `from` within `budget` mesos
+// and `maxY` spare items). Uses a 3-D DP over (star, items, discretized-budget).
+// Returns probAtBudget[y] = P(success | y spares, full budget)
+//     and polDisplay[s][y] = budget-optimal mode at (s, y) when budget is full.
+function solveBudget(L, mvp, costOff, boomOff, catching, from, to, maxY, itemCost, budget, K = 1000, fixedModesFn = null) {
+  const unit = budget / K;
+  // Two rolling Float64 layers, each [star][budget_unit].
+  const layers = [
+    Array.from({length: to + 1}, () => new Float64Array(K + 1)),
+    Array.from({length: to + 1}, () => new Float64Array(K + 1)),
+  ];
+  const polDisplay = Array.from({length: to + 1}, () => new Uint8Array(maxY + 1));
+  const probAtBudget = new Array(maxY + 1).fill(0);
+  const successCurves = new Array(maxY + 1);
+  const ic_k = Math.ceil(itemCost / unit);
+  let cur = 0;  // cur^1 = previous y layer
+
+  for (let y = 1; y <= maxY; y++) {
+    const C = layers[cur];       // current y
+    const P = layers[cur ^ 1];   // y-1 layer
+    for (let s = 0; s <= to; s++) C[s].fill(0);
+    C[to].fill(1);  // already at target — success regardless of remaining budget
+
+    for (let s = to - 1; s >= 0; s--) {
+      const r   = recoveryStar(s);
+      const nM  = (s >= STAR_ENHANCE_MIN && s <= STAR_ENHANCE_MAX) ? STAR_ENHANCE_MODES : 1;
+      for (let k = 1; k <= K; k++) {
+        let bestP = 0, bestM = 0;
+        for (let m = 0; m < nM; m++) {
+          if (fixedModesFn !== null && fixedModesFn(s) !== m) continue;
+          const [ps, , pd] = getRates(s, m, boomOff, catching);
+          const c_k = Math.ceil(attemptCost(s, L, mvp, costOff, m) / unit);
+          if (c_k > k) continue;
+          const k2   = k - c_k;
+          const pf   = 1 - ps - pd;
+          const boom = (pd > 0 && y >= 2) ? pd * P[r][Math.max(0, k2 - ic_k)] : 0;
+          const p_m  = ps * C[s + 1][k2] + pf * C[s][k2] + boom;
+          if (p_m > bestP) { bestP = p_m; bestM = m; }
+        }
+        C[s][k] = bestP;
+        if (k === K) polDisplay[s][y] = bestM;
+      }
+    }
+    probAtBudget[y] = C[from][K];
+    successCurves[y] = C[from].slice();
+    cur ^= 1;
+  }
+  return { probAtBudget, polDisplay, successCurves };
+}
+
+// Unconstrained optimal (infinite booms allowed) — process increasing like solve(),
+// using cumulative recovery cost already computed for earlier stars.
+function solveUnconstrained(L, mvp, costOff, boomOff, catching, to, itemCost = 0) {
+  const X   = new Array(STAR_MAX + 1).fill(0); // X[s] = optimal expected cost to advance s★→(s+1)★
+  const pol = new Array(STAR_MAX + 1).fill(0);
+  for (let s = 0; s < to; s++) {
+    const r    = recoveryStar(s);
+    const cumX = X.slice(Math.min(r, s), s).reduce((a, v) => a + v, 0);
+    const nM   = (s >= STAR_ENHANCE_MIN && s <= STAR_ENHANCE_MAX) ? STAR_ENHANCE_MODES : 1;
+    let best = Infinity, bestM = 0;
+    for (let m = 0; m < nM; m++) {
+      const [ps, , pd] = getRates(s, m, boomOff, catching);
+      const cost = attemptCost(s, L, mvp, costOff, m);
+      const val = pd === 0 ? cost / ps : (cost + pd * (itemCost + cumX)) / ps;
+      if (val < best) { best = val; bestM = m; }
+    }
+    X[s] = best; pol[s] = bestM;
+  }
+  // V[s] = total expected cost from s★ to to★
+  const V = new Array(STAR_MAX + 1).fill(0);
+  for (let s = to - 1; s >= 0; s--) V[s] = V[s + 1] + X[s];
+  return { V, pol };
+}
+
+function renderSparesTable(from, to, sparesY, Vsp, polSp, pct, sparesPctCosts, lognProbs, dpProbs, budget = 0, budgetNeeded = null, targetP = null) {
+  const pageSize = 10;
+  const totalPages = Math.ceil(sparesY / pageSize);
+  sparesPage = Math.min(Math.max(0, sparesPage), totalPages - 1);
+  const maxCol = sparesY - sparesPage * pageSize;
+  const minCol = Math.max(1, maxCol - (pageSize - 1));
+  const enhStars = [];
+  for (let s = Math.max(from, 15); s <= to - 1; s++) enhStars.push(s);
+
+  lastSparesPolSp = polSp;
+  lastSparesEnhStars = enhStars;
+
+  const thStyle = 'cursor:pointer; user-select:none;';
+  let head = '<tr><th>star</th>';
+  for (let y = maxCol; y >= minCol; y--) head += `<th class="r" style="${thStyle}" data-y="${y}" title="apply ${y}-spare policy">${y}</th>`;
+  head += '</tr>';
+  document.getElementById('sparesHead').innerHTML = head;
+
+  function mCell(m, ok) {
+    if (!ok) return '<td class="r dim">—</td>';
+    const cls = [' dim', '', ' bold', ' bold red'][m] ?? '';
+    return `<td class="r${cls}">m${m + 1}</td>`;
+  }
+
+  const colOk = y => dpProbs ? dpProbs[y] > 0 : isFinite(Vsp[from][y]);
+
+  let rows = '';
+  if (enhStars.length === 0) {
+    rows = `<tr><td colspan="${maxCol - minCol + 2}" class="dim">no enhancement stars in range</td></tr>`;
+  } else {
+    for (const s of enhStars) {
+      rows += `<tr><td>${s}★→${s+1}★</td>`;
+      for (let y = maxCol; y >= minCol; y--) {
+        rows += s >= 22 ? '<td class="r dim">—</td>' : mCell(polSp[s][y], colOk(y));
+      }
+      rows += '</tr>';
+    }
+  }
+  rows += '<tr><td class="bold">exp. cost</td>';
+  for (let y = maxCol; y >= minCol; y--) {
+    const v = Vsp[from][y];
+    const overBudget = dpProbs && budget > 0 && isFinite(v) && v > budget;
+    rows += `<td class="r${overBudget ? ' red' : ''}">${isFinite(v) ? fm(v) : '—'}</td>`;
+  }
+  rows += '</tr>';
+  if (!dpProbs && sparesPctCosts) {
+    rows += `<tr><td class="bold">p${pct} cost</td>`;
+    for (let y = maxCol; y >= minCol; y--) {
+      const v = sparesPctCosts[y];
+      rows += `<td class="r">${v != null && isFinite(v) ? fm(v) : '—'}</td>`;
+    }
+    rows += '</tr>';
+  }
+  if (lognProbs) {
+    rows += '<tr><td class="bold">p(≤ budget)</td>';
+    for (let y = maxCol; y >= minCol; y--) {
+      const p = lognProbs[y];
+      const cls = p >= 0.7 ? ' green' : p < 0.15 ? ' red' : '';
+      rows += `<td class="r${cls}">${p != null && isFinite(p) ? (p * 100).toFixed(1) + '%' : '—'}</td>`;
+    }
+    rows += '</tr>';
+  }
+  if (dpProbs) {
+    rows += '<tr><td class="bold">success %</td>';
+    for (let y = maxCol; y >= minCol; y--) {
+      const p = dpProbs[y];
+      const cls = p >= 0.7 ? ' green' : p < 0.15 ? ' red' : '';
+      rows += `<td class="r${cls}">${p != null && isFinite(p) ? (p * 100).toFixed(1) + '%' : '—'}</td>`;
+    }
+    rows += '</tr>';
+  }
+  if (budgetNeeded && targetP !== null) {
+    const pctLabel = Math.round(targetP * 100);
+    rows += `<tr><td class="bold">budget for ${pctLabel}%</td>`;
+    for (let y = maxCol; y >= minCol; y--) {
+      const v = budgetNeeded[y];
+      rows += `<td class="r">${v != null && isFinite(v) ? fm(v) : '—'}</td>`;
+    }
+    rows += '</tr>';
+  }
+  document.getElementById('sparesBody').innerHTML = rows;
+
+  const statEl = document.getElementById('sparesTargetStat');
+  if (statEl) {
+    if (targetP !== null && budget > 0) {
+      const pctLabel = Math.round(targetP * 100);
+      const parts = [];
+      if (budgetNeeded) {
+        const b = budgetNeeded[sparesY];
+        parts.push(b != null && isFinite(b)
+          ? `with ${sparesY} spares: ${fm(b)} for ${pctLabel}%`
+          : `with ${sparesY} spares: budget too low for ${pctLabel}%`);
+      }
+      const probs = dpProbs || lognProbs;
+      if (probs) {
+        let minSpares = null;
+        for (let y = 1; y <= sparesY; y++) {
+          if (probs[y] != null && probs[y] >= targetP) { minSpares = y; break; }
+        }
+        parts.push(minSpares != null
+          ? `with ${fm(budget)}: ${minSpares} spares for ${pctLabel}%`
+          : `with ${fm(budget)}: not enough spares for ${pctLabel}%`);
+      }
+      statEl.textContent = parts.join('  ·  ');
+    } else {
+      statEl.textContent = '';
+    }
+  }
+
+  const pagDiv = document.getElementById('sparesPagination');
+  if (pagDiv) {
+    if (totalPages > 1) {
+      const btnStyle = 'font-size:11px; padding:3px 10px;';
+      const prevDis = sparesPage === 0 ? ' disabled' : '';
+      const nextDis = sparesPage === totalPages - 1 ? ' disabled' : '';
+      pagDiv.innerHTML = `<span style="font-size:12px; display:inline-flex; align-items:center; gap:8px;">
+        <button class="sp-prev" style="${btnStyle}"${prevDis}>← prev</button>
+        <span>page ${sparesPage + 1} of ${totalPages}</span>
+        <button class="sp-next" style="${btnStyle}"${nextDis}>next →</button>
+      </span>`;
+      pagDiv.querySelector('.sp-prev').onclick = () => { sparesPage--; if (rerenderSpares) rerenderSpares(); };
+      pagDiv.querySelector('.sp-next').onclick = () => { sparesPage++; if (rerenderSpares) rerenderSpares(); };
+    } else {
+      pagDiv.innerHTML = '';
+    }
+  }
+}
+
+// ─── analytical percentile via log-normal moment-matching ─────────────────────
+// Star-force costs are positive and right-skewed, so log-normal fits well.
+// We match exact mean+variance (from the Markov chain) to a log-normal and read
+// off any percentile analytically — no simulation needed.
+function normalQuantile(p) {
+  // Rational approximation (Abramowitz & Stegun 26.2.17), max error ~4.5e-4
+  if (p <= 0) return -Infinity;
+  if (p >= 1) return Infinity;
+  const a = [2.515517, 0.802853, 0.010328];
+  const b = [1.432788, 0.189269, 0.001308];
+  const t = Math.sqrt(-2 * Math.log(p < 0.5 ? p : 1 - p));
+  const z = t - (a[0] + t*(a[1] + t*a[2])) / (1 + t*(b[0] + t*(b[1] + t*b[2])));
+  return p < 0.5 ? -z : z;
+}
+
+function lognormalPct(mu, variance, pct) {
+  if (variance <= 0 || mu <= 0) return mu;
+  const cv2 = variance / (mu * mu);
+  const sig2 = Math.log(1 + cv2);
+  const muLn = Math.log(mu) - sig2 / 2;
+  return Math.exp(muLn + normalQuantile(pct / 100) * Math.sqrt(sig2));
+}
+
+function normalCDF(z) {
+  const p = 0.2316419;
+  const b = [0.319381530, -0.356563782, 1.781477937, -1.821255978, 1.330274429];
+  const t = 1 / (1 + p * Math.abs(z));
+  const poly = t*(b[0]+t*(b[1]+t*(b[2]+t*(b[3]+t*b[4]))));
+  const cdf = 1 - poly * Math.exp(-z*z/2) / Math.sqrt(2*Math.PI);
+  return z >= 0 ? cdf : 1 - cdf;
+}
+
+function lognormalCDF(mu, variance, x) {
+  if (x <= 0) return 0;
+  if (variance <= 0 || mu <= 0) return x >= mu ? 1 : 0;
+  const cv2 = variance / (mu * mu);
+  const sig2 = Math.log(1 + cv2);
+  const muLn = Math.log(mu) - sig2 / 2;
+  return normalCDF((Math.log(x) - muLn) / Math.sqrt(sig2));
+}
+
+
+
+// ─── calculate ────────────────────────────────────────────────────────────────
+function calculate() {
+  const L       = parseInt(document.getElementById('itemLevel').value);
+  const from    = parseInt(document.getElementById('fromStar').value);
+  const to      = parseInt(document.getElementById('toStar').value);
+  const mvp      = parseFloat(document.getElementById('mvpDiscount').value);
+  const sfEvent   = document.getElementById('sfEvent').value;
+  const costOff   = sfEvent === '30off' || sfEvent === 'ssf';
+  const boomOff   = sfEvent === '30boom' || sfEvent === 'ssf';
+  const catching  = document.getElementById('starCatch').checked;
+
+  if (isNaN(L) || isNaN(from) || isNaN(to) || from >= to || from < 0 || to > STAR_MAX) {
+    document.getElementById('statGrid').innerHTML =
+      '<div class="stat"><div class="stat-val">—</div><div class="stat-lbl">invalid range</div></div>';
+    document.getElementById('breakdown').innerHTML = '';
+    return;
+  }
+
+  const allStrats = document.getElementById('allStrats').checked;
+  const sparesY   = Math.max(1, parseInt(document.getElementById('sparesY').value) || 5);
+  const itemCost  = (parseFloat(document.getElementById('itemCost').value) || 0) * 1e9;
+  const pct = Math.max(1, Math.min(99, parseInt(document.getElementById('percentile').value) || 85));
+  const curMode = s => getModeIndex(s);
+  const { X, D, V, DVar } = solve(L, mvp, costOff, boomOff, catching, curMode);
+  const grand      = sumArr(X, from, to);
+  const totalVar   = sumArr(V, from, to);
+  const totalBooms = sumArr(D, from, to);
+  const totalBoomsVar = sumArr(DVar, from, to);
+
+  const pctCost = lognormalPct(grand, totalVar, pct);
+  const pctBooms = lognormalPct(totalBooms, totalBoomsVar, pct);
+  const stratPctLbl = document.getElementById('stratPctLabel');
+  if (stratPctLbl) stratPctLbl.textContent = 'p' + pct;
+
+  // summary
+  document.getElementById('statGrid').innerHTML = `
+    <div class="stat"><div class="stat-val">${fm(grand)}</div><div class="stat-lbl">expected total cost</div></div>
+    <div class="stat"><div class="stat-val">${fm(pctCost)}</div><div class="stat-lbl">p${pct} cost</div></div>
+    <div class="stat"><div class="stat-val">${totalBooms.toFixed(2)}</div><div class="stat-lbl">expected booms</div></div>
+    <div class="stat"><div class="stat-val">${pctBooms.toFixed(2)}</div><div class="stat-lbl">p${pct} booms</div></div>
+    <div class="stat"><div class="stat-val">${from}★ → ${to}★</div><div class="stat-lbl">range</div></div>
+    <div class="stat"><div class="stat-val">lv. ${L}</div><div class="stat-lbl">item level</div></div>
+  `;
+
+  // per-star breakdown
+  document.getElementById('breakdownPctHead').textContent = 'p' + pct + ' cost';
+  const starPctCosts = Array.from({ length: to - from }, (_, i) => lognormalPct(X[from + i], V[from + i], pct));
+  let cum = 0;
+  document.getElementById('breakdown').innerHTML =
+    Array.from({ length: to - from }, (_, i) => {
+      const s = from + i;
+      const m = curMode(s);
+      const [ps, , pd] = getRates(s, m, boomOff, catching);
+      const cost = attemptCost(s, L, mvp, costOff, m);
+      cum += X[s];
+      const tag = (s >= STAR_ENHANCE_MIN && s <= STAR_ENHANCE_MAX && m > 0) ? ` m${m+1}` : '';
+      return `<tr>
+        <td>${s}★→${s+1}★${tag}</td>
+        <td class="r">${fm(cost)}</td>
+        <td class="r">${(ps*100).toFixed(1)}%</td>
+        <td class="r${pd > 0 ? ' red' : ''}">${pd > 0 ? (pd*100).toFixed(2)+'%' : '—'}</td>
+        <td class="r">${D[s] > 0 ? D[s].toFixed(3) : '—'}</td>
+        <td class="r">${fm(X[s])}</td>
+        <td class="r">${fm(starPctCosts[i])}</td>
+        <td class="r">${D[s] > 0 ? fm(X[s] / D[s]) : '—'}</td>
+        <td class="r">${fm(cum)}</td>
+      </tr>`;
+    }).join('');
+
+  // spares optimizer (always runs)
+  const { V: Vsp, pol: polSp, Q: Qsp } = solveSpares(L, mvp, costOff, boomOff, catching, to, sparesY, itemCost);
+  const sparesPctCosts = {};
+  for (let y = 1; y <= sparesY; y++) {
+    const mu = Vsp[from][y];
+    sparesPctCosts[y] = isFinite(mu) ? lognormalPct(mu, Qsp[from][y] - mu * mu, pct) : Infinity;
+  }
+  const spareMode = document.querySelector('input[name="spareMode"]:checked')?.value ?? 'cost';
+  const budgetInput = parseFloat(document.getElementById('budget').value);
+  const budget = isFinite(budgetInput) && budgetInput > 0 ? budgetInput * 1e9 : 0;
+
+  let lognProbs = null, dpProbs = null, polBudget = null, dpSuccessCurves = null;
+  if (budget > 0) {
+    // budget DP always runs when budget is set — gives accurate p(≤ budget) for all star ranges
+    ({ probAtBudget: dpProbs, polDisplay: polBudget, successCurves: dpSuccessCurves } =
+      solveBudget(L, mvp, costOff, boomOff, catching, from, to, sparesY, itemCost, budget));
+    // lognormal additionally for cost mode (more precise for ≤22 targets with finite expected cost)
+    lognProbs = {};
+    for (let y = 1; y <= sparesY; y++) {
+      const mu = Vsp[from][y];
+      lognProbs[y] = isFinite(mu) ? lognormalCDF(mu, Qsp[from][y] - mu * mu, budget) : null;
+    }
+  }
+
+  const targetPctInput = parseFloat(document.getElementById('targetPct').value);
+  const targetP = isFinite(targetPctInput) && targetPctInput > 0 && targetPctInput < 100
+    ? targetPctInput / 100 : null;
+  let budgetNeeded = null;
+  if (targetP !== null && dpSuccessCurves) {
+    // Reuse curves from the budget DP (unit = budget/1000) for accurate crossover search.
+    // A separate coarser DP would overestimate attempt costs via ceil-rounding and inflate results.
+    const unit = budget / 1000;
+    budgetNeeded = {};
+    for (let y = 1; y <= sparesY; y++) {
+      const curve = dpSuccessCurves[y];
+      if (!curve) { budgetNeeded[y] = null; continue; }
+      let found = null;
+      for (let k = 1; k <= 1000; k++) {
+        if (curve[k] >= targetP) { found = k * unit; break; }
+      }
+      budgetNeeded[y] = found;
+    }
+  }
+
+  // cost mode: merge lognormal (finite mu) with dpProbs fallback (infinite mu / target 22+)
+  const mergedProbs = (() => {
+    if (spareMode !== 'cost' || !dpProbs) return lognProbs;
+    if (!lognProbs) return dpProbs;
+    const m = {};
+    for (let y = 1; y <= sparesY; y++) m[y] = lognProbs[y] !== null ? lognProbs[y] : dpProbs[y];
+    return m;
+  })();
+
+  // for 22+ targets exp. cost is always ∞ (finite-spare DP can't converge); always use budget display
+  const costOptimalAvailable = isFinite(Vsp[from][sparesY]);
+  const useBudgetDisplay = spareMode === 'budget' || !costOptimalAvailable;
+  const dispPol  = (useBudgetDisplay && polBudget) ? polBudget : polSp;
+  const showLogn = !useBudgetDisplay ? mergedProbs : null;
+  const showDp   = useBudgetDisplay ? dpProbs : null;
+  document.getElementById('spareModeBlurb').textContent = !costOptimalAvailable
+    ? (budget > 0 ? 'exp. cost undefined for 22+ — showing success % with budget-optimal strategies'
+                  : 'exp. cost undefined for 22+ — set a budget (b) to see success % and strategies')
+    : spareMode === 'cost'
+      ? 'minimize expected cost. optimal if you have unlimited budget'
+      : 'maximize chance of finishing within your budget. set budget (b) below';
+  rerenderSpares = () => renderSparesTable(from, to, sparesY, Vsp, dispPol, pct, sparesPctCosts, showLogn, showDp, budget, budgetNeeded, targetP);
+  rerenderSpares();
+
+  // all strategies vs per-star breakdown
+  const stratSection     = document.getElementById('stratSection');
+  const breakdownSection = document.getElementById('breakdownSection');
+  const sparesSection    = document.getElementById('sparesSection');
+  const enhanceSection   = document.getElementById('enhanceSection');
+  if (allStrats) {
+    breakdownSection.style.display = 'none';
+    sparesSection.style.display = 'none';
+    stratSection.style.display = '';
+    const cacheKey = `${L}|${from}|${to}|${mvp}|${sfEvent}|${catching}`;
+    if (cacheKey !== stratCacheKey) {
+      computeAllStrats(L, mvp, costOff, boomOff, catching, from, to);
+      stratFrontier = computeFrontier();
+      stratCacheKey = cacheKey;
+      stratBudgetCacheKey = null;
+    }
+    const fpSlider = document.getElementById('frontierPoints');
+    fpSlider.max = stratFrontier.length;
+    if (parseInt(fpSlider.value) > stratFrontier.length) fpSlider.value = stratFrontier.length;
+    document.getElementById('frontierPointsVal').textContent = fpSlider.value;
+    const frontierPoints = Math.max(3, parseInt(fpSlider.value) || 15);
+    stratDisplay = simplifyFrontier(stratFrontier, frontierPoints);
+    stratPctBaseline = lognormalPct(stratData[0].cost, stratData[0].variance, pct);
+    stratDisplay.forEach(d => {
+      d.pctCost = lognormalPct(d.cost, d.variance, pct);
+      d.pct = pct;
+    });
+
+    const stratBudgetInput = parseFloat(document.getElementById('stratBudget').value);
+    const stratBudget = isFinite(stratBudgetInput) && stratBudgetInput > 0 ? stratBudgetInput * 1e9 : 0;
+    const stratSparesN = Math.max(1, parseInt(document.getElementById('stratSpares').value) || 1);
+    const budgetCacheKey = `${cacheKey}|${stratBudget}|${stratSparesN}|${itemCost}`;
+    if (stratBudget > 0) {
+      if (budgetCacheKey !== stratBudgetCacheKey) {
+        for (const d of stratFrontier) {
+          const mFn = s => (s >= STAR_ENHANCE_MIN && s <= STAR_ENHANCE_MAX) ? d.modes[s - STAR_ENHANCE_MIN] : 0;
+          const { probAtBudget } = solveBudget(L, mvp, costOff, boomOff, catching, from, to, stratSparesN, itemCost, stratBudget, 500, mFn);
+          d.successPct = probAtBudget[stratSparesN];
+        }
+        stratBudgetCacheKey = budgetCacheKey;
+      }
+    } else {
+      if (stratBudgetCacheKey !== null) {
+        stratFrontier.forEach(d => { delete d.successPct; });
+        stratBudgetCacheKey = null;
+      }
+    }
+
+    renderFrontierGraph(stratDisplay);
+    renderStratTable(stratDisplay);
+  } else {
+    breakdownSection.style.display = '';
+    sparesSection.style.display = '';
+    stratSection.style.display = 'none';
+  }
+}
+
+// jimmy mode
+function applyPreset(modes) {
+  for (let i = 0; i < STAR_ENHANCE_COUNT; i++) {
+    const sel = document.getElementById('mode' + (STAR_ENHANCE_MIN + i));
+    if (sel) sel.value = modes[i];
+  }
+  calculate();
+}
+
+function updateCurrentDot() {
+  const dot = document.getElementById('currentStratDot');
+  if (dot) dot.style.color = document.body.classList.contains('jimmy') ? '#4a9eff' : '#1a9a1a';
+}
+function toggleJimmy() {
+  const on = document.body.classList.toggle('jimmy');
+  localStorage.setItem('jimmy', on ? '1' : '');
+  updateCurrentDot();
+  if (stratDisplay.length) { renderFrontierGraph(stratDisplay); renderStratTable(stratDisplay); }
+}
+if (localStorage.getItem('jimmy')) { document.body.classList.add('jimmy'); updateCurrentDot(); }
+
+// wire up auto-update on any input change
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('input, select').forEach(el => {
+    el.addEventListener('change', calculate);
+    if (el.type === 'number') el.addEventListener('input', scheduleCalculate);
+    if (el.type === 'range') el.addEventListener('input', calculate);
+    if (el.id === 'frontierPoints') el.addEventListener('input', () => {
+      document.getElementById('frontierPointsVal').textContent = el.value;
+    });
+  });
+  document.querySelectorAll('input[name="costMode"], input[name="stratMetric"]').forEach(r => {
+    r.addEventListener('change', () => {
+      if (stratDisplay.length) {
+        renderFrontierGraph(stratDisplay);
+        renderStratTable(stratDisplay);
+      }
+    });
+  });
+
+  document.getElementById('stratBody').addEventListener('click', e => {
+    const tr = e.target.closest('tr[data-modes]');
+    if (!tr) return;
+    const modes = tr.dataset.modes.split(',').map(Number);
+    for (let i = 0; i < STAR_ENHANCE_COUNT; i++) {
+      const sel = document.getElementById('mode' + (STAR_ENHANCE_MIN + i));
+      if (sel) sel.value = modes[i];
+    }
+    calculate();
+  });
+
+  document.getElementById('sparesHead').addEventListener('click', e => {
+    const th = e.target.closest('th[data-y]');
+    if (!th || !lastSparesPolSp) return;
+    const y = th.dataset.y;
+    for (const s of lastSparesEnhStars) {
+      const m = lastSparesPolSp[s][parseInt(y)];
+      const sel = document.getElementById('mode' + s);
+      if (sel && m != null) sel.value = m;
+    }
+    calculate();
+  });
+
+  calculate();
+});
+
+// format mesos
+function fm(n) {
+  if (Math.abs(n) >= 1e9) return (n/1e9).toFixed(2)+'b';
+  if (Math.abs(n) >= 1e6) return (n/1e6).toFixed(2)+'m';
+  if (Math.abs(n) >= 1e3) return (n/1e3).toFixed(1)+'k';
+  return Math.round(n).toString();
+}
+</script>
+<script type="module" src="lostara_sf_caculator_files/v4513226cdae34746b4dedf0b4dfa099e1781791509496_cFoa" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;1bb67165e11743fda4614927b8404957&quot;,&quot;r&quot;:1}" crossorigin="anonymous"></script>
+
+
+</body></html>

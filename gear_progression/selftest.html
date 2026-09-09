@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Gear Progression — self test</title>
+<style>
+  body { margin:0; background:#12141a; color:#e6e8ee; padding:20px;
+         font:13px/1.5 ui-monospace,Consolas,monospace; }
+  h1 { font-size:15px; margin:0 0 4px; }
+  h2 { font-size:12px; color:#8b93a7; text-transform:uppercase; letter-spacing:1px;
+       margin:22px 0 8px; }
+  table { border-collapse:collapse; width:100%; max-width:1100px; }
+  td { padding:2px 8px; border-top:1px solid #2c313d; vertical-align:top; }
+  .pass { color:#54c98a; } .fail { color:#e46b6b; font-weight:600; }
+  .num { text-align:right; font-variant-numeric:tabular-nums; }
+  .dim { color:#5b6376; }
+  #summary { padding:10px 14px; border-radius:6px; margin:14px 0;
+             border:1px solid #2c313d; background:#1a1d26; max-width:1100px; }
+  #summary.ok  { border-color:#2f6b48; color:#54c98a; }
+  #summary.bad { border-color:#5c3131; color:#e46b6b; }
+  p { max-width:1100px; color:#8b93a7; }
+</style>
+</head>
+<body>
+<h1>Gear Progression — self test</h1>
+<p class="dim">Exercises the real sf.js / cubing.js / value.js in a browser, over
+<code>file://</code>, which is where the tool actually runs. Open this after any edit.</p>
+
+<div id="summary">running…</div>
+<div id="out"></div>
+
+<script src="js/sf-stats.js"></script>
+<script src="js/sf.js"></script>
+<script src="js/cubing.js"></script>
+<script src="js/value.js"></script>
+<script src="js/flames.js"></script>
+<script>
+const results = [];
+let group = '';
+
+function section(name) { group = name; }
+function check(name, got, want, tol) {
+  let ok, shown = String(got);
+  if (typeof want === 'function') {
+    ok = want(got);
+    want = '(predicate)';
+  } else if (typeof want === 'number' && typeof got === 'number' && tol != null) {
+    ok = Math.abs(got - want) <= tol;
+    shown = Number.isInteger(got) ? String(got) : got.toFixed(10).replace(/0+$/, '');
+  } else {
+    ok = got === want;
+  }
+  results.push({ group, name, ok, got: shown, want: String(want) });
+}
+function info(name, value) { results.push({ group, name, info: true, got: String(value) }); }
+
+const CFG = Object.assign({}, SF_DEFAULTS);   // ssf, star catch, mvp 0, itemCost 0
+
+/* ---------- generated stat tables ---------- */
+section('sf-stats.js (generated from the wiki page)');
+check('sfBracket(140)', sfBracket(140), 1);
+check('sfBracket(150)', sfBracket(150), 2);
+check('sfBracket(160)', sfBracket(160), 3);
+check('sfBracket(200)', sfBracket(200), 4);
+check('sfBracket(250)', sfBracket(250), 5);
+check('armor cap lv150 = 30★', sfCap(150, 'armor'), 30);
+check('armor cap lv130 = 20★', sfCap(130, 'armor'), 20);
+check('weapon cap lv150 = 25★', sfCap(150, 'weapon'), 25);
+check('gloves read the armor caps', sfCap(150, 'gloves'), 30);
+check('16★ armor class stat, lv150 bracket', SF_STATS_ARMOR[16].stat[2], 11);
+check('16★ armor attack, lv150 bracket', SF_STATS_ARMOR[16].att[2], 9);
+check('19★ armor attack, lv250 bracket', SF_STATS_ARMOR[19].att[5], 17);
+check('23★ armor grants no class stat', SF_STATS_ARMOR[23].stat, undefined);
+check('30★ armor exists', typeof SF_STATS_ARMOR[30], 'object');
+check('weapon table stops at 25★', SF_STATS_WEAPON[26], undefined);
+check('weapon <16★ attack is a formula',
+  typeof SF_STATS_WEAPON[1].att[2], 'object');
+
+/* ---------- MapleScouter parsing ---------- */
+section('value.js');
+const parsed = parseScouter(SCOUTER_EXAMPLE);
+const w = buildWeights(parsed, { iedVariant: 300 });
+check('main stat detected', w.mainStat, 'INT');
+check('class stat per point = INT + LUK', w.statPerPoint, 1.1, 1e-9);
+check('1% INT', w.mainPct, 12.21, 1e-9);
+check('1% all stat', w.allStatPct, 13.84, 1e-9);
+check('1% att uses M.Attack%', w.attPct, 53.59, 1e-9);
+check('1% boss', w.boss, 12.53, 1e-9);
+check('flat M.Attack', w.matt, 2.99, 1e-9);
+check('flat Attack absent for a mage', w.att, 0, 1e-9);
+check('ied @300', w.ied, 3.8, 1e-9);
+check('ied @380', buildWeights(parsed, { iedVariant: 380 }).ied, 4.86, 1e-9);
+check('nothing unrecognised in the example', scouterUnknownRows(parsed).length, 0);
+check('empty paste flagged', buildWeights(parseScouter('')).empty, true);
+
+/* ---------- oracles from the plan ---------- */
+section('valuation oracles');
+check('12% main stat line = 146.52', 12 * w.mainPct, 146.52, 0.005);
+check('lv150 armor 16★ step = 39.01', sfStatValue(16, 150, 'hat', w), 39.01, 0.005);
+info('  breakdown', `stat 11 × ${w.statPerPoint} = ${(11*w.statPerPoint).toFixed(2)}`
+   + `, matt 9 × ${w.matt} = ${(9*w.matt).toFixed(2)}`);
+check('lv150 armor 23★ step is attack only',
+  sfStatValue(23, 150, 'hat', w), 18 * w.matt, 1e-9);
+
+/* ---------- secondary placeholder ----------
+   Must come after `w` exists: these were originally above the value.js block,
+   where reading `w` hit its const temporal dead zone and threw. */
+section('secondaries use the armor table');
+// Settled by measurement, not inference: a lv200 secondary at 20 stars has cumulative
+// +115 stat and +70 attack. The weapon table gives the same 115 stat, so it is the flat
+// 70 attack that decides it -- weapons compute attack from their own base instead.
+(function () {
+  const b = sfBracket(200);
+  let stat = 0, att = 0;
+  for (let s = 1; s <= 20; s++) {
+    const row = SF_STATS_ARMOR[s];
+    if (row && row.stat) stat += row.stat[b];
+    if (row && row.att) att += row.att[b];
+  }
+  check('lv200 armor table, cumulative stat over 1-20', stat, 115);
+  check('  ... and attack', att, 70);
+})();
+check('a secondary reads the armor table', sfTableFor('secondary'), SF_STATS_ARMOR);
+check('sfTableFor routes weapon', sfTableFor('weapon'), SF_STATS_WEAPON);
+check('sfTableFor routes gloves to armor', sfTableFor('gloves'), SF_STATS_ARMOR);
+check('a secondary now values its stars', sfStatValue(20, 200, 'secondary', w) > 0, true);
+check('  ... identically to armor',
+  sfStatValue(20, 200, 'secondary', w), sfStatValue(20, 200, 'armor', w), 1e-12);
+check('no table is reported empty', sfTableEmpty('secondary'), false);
+check('nor for armor', sfTableEmpty('armor'), false);
+// caps follow armor too, so a lv130 shield stops at 20 and a lv200 one at 30
+check('a lv130 shield caps at 20', sfCap(130, 'secondary'), 20);
+check('a lv200 secondary caps at 30', sfCap(200, 'secondary'), 30);
+
+// An Astra secondary buys its spares at 1b each, which is what itemCost means.
+check('two secondary kinds', Object.keys(SECONDARY_KINDS).length, 2);
+check('astra charges 1b a spare', SECONDARY_KINDS.astra.itemCost, 1e9);
+check('an ordinary secondary charges nothing', SECONDARY_KINDS.none.itemCost, undefined);
+(function () {
+  const base = { mvp: 0, event: 'ssf', catching: true, itemCost: 0,
+                 modes: SF_MODE_PRESETS['444/11/44'] };
+  const astra = Object.assign({}, base, { itemCost: SECONDARY_KINDS.astra.itemCost });
+  check('paying for spares costs more',
+    sfClimb(130, 15, 20, astra).cost > sfClimb(130, 15, 20, base).cost, true);
+  check('  ... and the percentile follows',
+    sfClimbAtPct(sfClimb(130, 15, 20, astra), 85)
+    > sfClimbAtPct(sfClimb(130, 15, 20, base), 85), true);
+  // a fully guarded climb never booms, so the fee cannot bite
+  const safe = Object.assign({}, base, { modes: SF_MODE_PRESETS['444/44/44'] });
+  const safeAstra = Object.assign({}, safe, { itemCost: 1e9 });
+  check('with no booms the 1b never applies',
+    sfClimb(130, 15, 20, safeAstra).cost, sfClimb(130, 15, 20, safe).cost, 1e-9);
+})();
+
+section('cubing.js pool integrity');
+check('no pool table errors at load', CUBE_POOL_ERRORS.length, 0);
+for (const cat of CUBE_CATEGORIES) {
+  for (const tier of ['unique', 'leg']) {
+    const s = CUBE_POOLS[cat][tier].reduce((a, [, , p]) => a + p, 0);
+    check(`${cat}.${tier} sums to 1`, s, 1, 1e-12);
+  }
+}
+section('cubing.js combo distributions');
+for (const cat of CUBE_CATEGORIES) {
+  for (const ct of ['black', 'red']) {
+    const t = cubeCombos(ct, cat).reduce((a, c) => a + c.prob, 0);
+    check(`${cat}/${ct} combos sum to 1`, t, 1, 1e-12);
+  }
+}
+
+/* ---------- parity with cubing.py ---------- */
+section('parity with cubing.py');
+// cubing.py's committed example: secondary, red cube, ATT>=21 and BOSS>=30.
+// Its create_desired_values() fills every key with 0, so they are reproduced here
+// to match its semantics exactly. The secondary pool is untouched by the hat fix,
+// which is what makes this a valid cross-tool assertion.
+const pyDesired = { stats:0, all_stats:0, hp:0, 'crit DMG':0, cd:0,
+                    drop:0, meso:0, att:21, boss:30, ied:0 };
+check("cubing.py example probability",
+  cubeProb('red', 'secondary', pyDesired), 0.0003436065, 5e-11);
+info('  expected cubes', (1 / cubeProb('red', 'secondary', pyDesired)).toFixed(0)
+   + ' (cubing.py prints 2,910)');
+check('empty target gives 0', cubeProb('black', 'hat', {}), 0);
+check('all-zero target is certain',
+  cubeProb('black', 'weapon', { att: 0 }), 1, 1e-12);
+
+section('cubing.js monotonicity');
+const pA = cubeProb('black', 'emblem', { att: 12 });
+const pB = cubeProb('black', 'emblem', { att: 21 });
+const pC = cubeProb('black', 'emblem', { att: 24 });
+check('P(att>=12) > P(att>=21)', pA > pB, true);
+check('P(att>=21) > P(att>=24)', pB > pC, true);
+check('black beats red for tier-3 lines',
+  cubeProb('black', 'emblem', { att: 24 }) > cubeProb('red', 'emblem', { att: 24 }), true);
+
+/* ---------- cube target scan ---------- */
+section('cubeTargetScan');
+const curVal = cubeCurrentValue([['ATT', 9], ['Zero', 0], ['Zero', 0]], w);
+check('one 9% att line values as 9 × attPct', curVal, 9 * w.attPct, 1e-9);
+const scan = cubeTargetScan('black', 'emblem', w, curVal, 5);
+check('returns candidates', scan.length > 0, true);
+check('every gain is positive', scan.every(t => t.gain > 0), true);
+check('E[value|>=V] >= V', scan.every(t => t.expectedValue >= t.threshold - 1e-9), true);
+check('probabilities are valid', scan.every(t => t.prob > 0 && t.prob <= 1), true);
+check('per = cost / gain', scan.every(t => Math.abs(t.per - t.cost / t.gain) < 1e-6), true);
+check('Pareto ladder: gain strictly increases',
+  scan.every((t, i) => i === 0 || t.gain > scan[i-1].gain), true);
+check('Pareto ladder: per worsens as gain grows',
+  scan.every((t, i) => i === 0 || t.per >= scan[i-1].per - 1e-9), true);
+check('nothing offered when already at the ceiling',
+  cubeTargetScan('black', 'emblem', w, 1e9, 5).length, 0);
+
+/* ---------- level shifts values, never probabilities ---------- */
+section('cubing.js level-invariant probabilities');
+// The lv160+ rule adds +1 per line and leaves the odds untouched, so the chance of
+// 33% on a 160 item is *identically* the chance of 30% on a 150 one -- same three
+// lines, each worth one more. Verified against every armour pool.
+function pStat(ct, cat, lvl, thresh) {
+  return cubeCombos(ct, cat, lvl)
+    .filter(c => (c.sums.main_stats || 0) + (c.sums.all_stats || 0) >= thresh)
+    .reduce((a, c) => a + c.prob, 0);
+}
+for (const cat of ['hat', 'top', 'bottom', 'shoes', 'acc', 'heart']) {
+  for (const ct of ['black', 'red']) {
+    check(`${cat}/${ct}: P(>=33 @160) = P(>=30 @150)`,
+      pStat(ct, cat, 160, 33), pStat(ct, cat, 150, 30), 1e-15);
+  }
+}
+// It holds because the bump is per LINE, not a shift of the whole distribution: a
+// roll of two stat lines plus a Zero gains only +2, so the equivalence is per
+// composition. At thresholds two lines can reach, +3 over-corrects and the
+// probabilities genuinely differ -- which is correct, not a bug.
+check('two-line thresholds are NOT +3 equivalent',
+  Math.abs(pStat('black', 'hat', 160, 24) - pStat('black', 'hat', 150, 21)) > 1e-6, true);
+check('a Zero line does not gain a point',
+  pStat('black', 'hat', 160, 26) > 0 && pStat('black', 'hat', 160, 27) < pStat('black', 'hat', 160, 26), true);
+
+/* ---------- reveal cost on top of the cube ---------- */
+section('cubing.js reveal cost');
+// cubes_CDdL.js: getRevealCostConstant steps 0 / 0.5 / 2.5 / 20 at lv 30 / 70 / 120,
+// and the fee is constant * level^2 charged once per cube on top of the cube itself.
+check('below 30 is free', cubeRevealCost(20), 0);
+check('lv50 uses the 0.5 constant', cubeRevealCost(50), 0.5 * 2500, 1e-9);
+check('lv100 uses the 2.5 constant', cubeRevealCost(100), 2.5 * 10000, 1e-9);
+check('lv140 = 20 x level^2', cubeRevealCost(140), 392000, 1e-9);
+check('lv150 = 450k', cubeRevealCost(150), 450000, 1e-9);
+check('lv250 = 1.25m', cubeRevealCost(250), 1250000, 1e-9);
+check('red per use at lv150', cubeCostPerUse('red', 150), 12000000 + 450000, 1e-9);
+check('black per use at lv150', cubeCostPerUse('black', 150), 22000000 + 450000, 1e-9);
+check('level 0 falls back to the bare cube cost',
+  cubeCostPerUse('black', 0), CUBE_COST.black, 1e-9);
+check('reveal makes higher-level cubing dearer',
+  cubeCostPerUse('red', 250) > cubeCostPerUse('red', 150), true);
+// the fee is flat per cube, so it weighs proportionally heavier on the cheap cube
+check('reveal hurts red proportionally more',
+  cubeRevealCost(250) / CUBE_COST.red > cubeRevealCost(250) / CUBE_COST.black, true);
+
+/* ---------- flameable slots ---------- */
+section('flames.js flameable set');
+check('secondary is not flameable', FLAMEABLE.has('secondary'), false);
+check('medal is flameable', FLAMEABLE.has('medal'), true);
+check('weapon is flameable', FLAMEABLE.has('weapon'), true);
+check('accessories are flameable',
+  ['face','eye','ear','pend1','pend2'].every(k => FLAMEABLE.has(k)), true);
+// shoulder is the odd one out: part of the armour set, but takes no flames
+check('shoulder is not flameable', FLAMEABLE.has('shoulder'), false);
+check('the rest of the armour set is',
+  ['hat','top','bottom','shoes','gloves','cape','belt'].every(k => FLAMEABLE.has(k)), true);
+check('pocket is flameable', FLAMEABLE.has('pocket'), true);
+check('emblem is not', FLAMEABLE.has('emblem'), false);
+// rings are held out pending confirmation; flip this when they are added
+check('rings still excluded', FLAMEABLE.has('ring1'), false);
+check('fifteen flameable slots', FLAMEABLE.size, 15);
+
+/* ---------- stat lines are one currency ---------- */
+section('cubing.js scores stat compositions equally');
+// Before this, all_stats scored 13.84 against main_stats' 12.21, so the scan saw
+// 13+10+7 and 10+10+10 as different goals and offered lateral rerolls between
+// them. Worse, 27% all-stat outscored 30% main-stat and was recommended as an
+// upgrade over a strictly better item.
+const v30a = cubeValue({ main_stats: 30 }, w);
+const v30b = cubeValue({ main_stats: 20, all_stats: 10 }, w);
+const v30c = cubeValue({ main_stats: 13, all_stats: 17 }, w);
+const v30d = cubeValue({ all_stats: 30 }, w);
+check('30% as main only', v30a, 30 * w.mainPct, 1e-9);
+check('30% split 20/10 scores the same', v30b, v30a, 1e-9);
+check('30% split 13/17 scores the same', v30c, v30a, 1e-9);
+check('30% as all-stat only scores the same', v30d, v30a, 1e-9);
+check('27% all-stat no longer beats 30% main',
+  cubeValue({ all_stats: 27 }, w) < v30a, true);
+check('33% still beats 30%', cubeValue({ main_stats: 33 }, w) > v30a, true);
+
+// an item already at 30% must not be offered another 30%
+const topLadder = cubeTargetScanAll('top', w, v30a, 8);
+check('no target merely restates 30%',
+  topLadder.every(t => t.threshold > v30a + 1e-9), true);
+check('every offered rung is a real percentage step up',
+  topLadder.every(t => Math.round(t.threshold / w.mainPct) > 30), true);
+check('an item at the ceiling is offered nothing',
+  cubeTargetScanAll('top', w, 1e9, 5).length, 0);
+
+/* ---------- example roll formatting ---------- */
+section('cubing.js example roll text');
+check('stat lines are summed',
+  cubeExampleText({ all_stats: 10, main_stats: 20 }), 'stat 30');
+check('a lone main stat line still reads as stat',
+  cubeExampleText({ main_stats: 39 }), 'stat 39');
+check('Zero is dropped',
+  cubeExampleText({ main_stats: 12, Zero: 0 }), 'stat 12');
+check('non-stat lines stay separate and ordered',
+  cubeExampleText({ IED: 30, ATT: 9 }), 'ATT 9, IED 30');
+check('stat total leads, others follow in group order',
+  cubeExampleText({ HP: 12, all_stats: 7, main_stats: 10 }), 'stat 17, HP 12');
+check('cooldown survives as its own line',
+  cubeExampleText({ CD: -2, main_stats: 24 }), 'stat 24, CD -2');
+check('empty rolls give an empty string', cubeExampleText({}), '');
+check('null is safe', cubeExampleText(null), '');
+
+/* ---------- both cube types on one ladder ---------- */
+section('cubing.js cube-type comparison');
+const embCur = cubeCurrentValue([['ATT', 9], ['Zero', 0], ['Zero', 0]], w);
+const merged = cubeTargetScanAll('emblem', w, embCur, 6);
+check('cube types are black and red', CUBE_TYPES.join(','), 'black,red');
+check('merged ladder returns rows', merged.length > 0, true);
+check('every rung names its cube',
+  merged.every(t => t.cubeType === 'black' || t.cubeType === 'red'), true);
+check('still a Pareto ladder after merging',
+  merged.every((t, i) => i === 0 || t.gain > merged[i-1].gain), true);
+check('per still worsens up the ladder',
+  merged.every((t, i) => i === 0 || t.per >= merged[i-1].per - 1e-9), true);
+// line 1 is prime for both cubes, so easy targets cost red's 12m rather than 22m
+check('merging beats either cube alone',
+  merged[0].per <= Math.min(
+    cubeTargetScan('black', 'emblem', w, embCur, 1)[0].per,
+    cubeTargetScan('red', 'emblem', w, embCur, 1)[0].per) + 1e-9, true);
+check('red wins the cheapest emblem rung', merged[0].cubeType, 'red');
+check('red cube costs less than black', CUBE_COST.red < CUBE_COST.black, true);
+check('constraints still apply to the merged scan',
+  cubeTargetScanAll('emblem', w, 0, 5, { cd: -2 }).length, 0);
+check('level bump reaches the merged scan',
+  Math.max(...cubeTargetScanAll('emblem', w, embCur, 9, null, 160).map(t => t.threshold)) >
+  Math.max(...cubeTargetScanAll('emblem', w, embCur, 9, null, 150).map(t => t.threshold)), true);
+
+/* ---------- item level 151+ line values ---------- */
+section('cubing.js lv151+ line values (StrategyWiki)');
+// The threshold is 151, not 160 -- lv150 gear sits just below it.
+check('lv140 main stat stays 12',  cubeLineValue('main_stats', 12, 140), 12);
+check('lv150 main stat stays 12',  cubeLineValue('main_stats', 12, 150), 12);
+check('lv151 main stat becomes 13', cubeLineValue('main_stats', 12, 151), 13);
+check('lv160 main stat becomes 13', cubeLineValue('main_stats', 12, 160), 13);
+check('lv160 unique main stat 9 -> 10', cubeLineValue('main_stats', 9, 160), 10);
+check('lv160 ATT 12 -> 13',        cubeLineValue('ATT', 12, 160), 13);
+check('lv160 ATT 9 -> 10',         cubeLineValue('ATT', 9, 160), 10);
+check('lv160 all stat 9 -> 10',    cubeLineValue('all_stats', 9, 160), 10);
+check('lv160 all stat 6 -> 7',     cubeLineValue('all_stats', 6, 160), 7);
+// value baked into the line name, so it does not scale
+check('IED 40 does not bump',      cubeLineValue('IED', 40, 250), 40);
+check('BOSS 40 does not bump',     cubeLineValue('BOSS', 40, 250), 40);
+check('MaxHP% 12 does not bump',   cubeLineValue('HP', 12, 250), 12);
+check('cooldown does not bump',    cubeLineValue('CD', -2, 250), -2);
+check('crit dmg does not bump',    cubeLineValue('Crit DMG', 8, 250), 8);
+
+check('level 0 reproduces cubing.py', cubeLineValue('main_stats', 12, 0), 12);
+for (const cat of ['hat', 'emblem', 'weapon']) {
+  const t = cubeCombos('black', cat, 160).reduce((a, c) => a + c.prob, 0);
+  check(`${cat} combos still sum to 1 at lv160`, t, 1, 1e-12);
+}
+check('lv160 emblem can reach 13% ATT',
+  cubeLineOptions('emblem', 160).some(([n, v]) => n === 'ATT' && v === 13), true);
+check('lv150 emblem cannot',
+  cubeLineOptions('emblem', 150).some(([n, v]) => n === 'ATT' && v === 13), false);
+check('lv160 raises the reachable ceiling',
+  Math.max(...cubeCombos('black', 'emblem', 160).map(c => cubeValue(c.sums, w)))
+    > Math.max(...cubeCombos('black', 'emblem', 150).map(c => cubeValue(c.sums, w))), true);
+
+/* ---------- cooldown as a constraint ---------- */
+section('cubing.js cooldown constraint');
+const hatCur = cubeCurrentValue([['main_stats', 9], ['main_stats', 9], ['Zero', 0]], w);
+const free = cubeTargetScan('black', 'hat', w, hatCur, 8, null);
+const cd2  = cubeTargetScan('black', 'hat', w, hatCur, 8, { cd: -2 });
+check('unconstrained finds targets', free.length > 0, true);
+check('cd -2 still finds targets', cd2.length > 0, true);
+// demanding cooldown pins a line, so three stat lines stop being reachable
+check('cd -2 lowers the stat ceiling',
+  Math.max(...cd2.map(t => t.threshold)) < Math.max(...free.map(t => t.threshold)), true);
+check('cd -2 costs more per stat', cd2[0].per > free[0].per, true);
+check('cd -2 is rarer', cd2[0].prob < free[0].prob, true);
+// a slot with no cooldown line at all cannot satisfy it
+check('emblem cannot roll cooldown',
+  cubeTargetScan('black', 'emblem', w, 0, 5, { cd: -2 }).length, 0);
+
+/* ---------- star force cost invariants ---------- */
+section('sf.js cost invariants');
+const c1718 = sfClimb(150, 17, 18, CFG).cost;
+const c1822 = sfClimb(150, 18, 22, CFG).cost;
+const c1722 = sfClimb(150, 17, 22, CFG).cost;
+check('climbs compose: 17→18 + 18→22 = 17→22', c1718 + c1822, c1722, 1);
+check('cost rises with star',
+  sfClimb(150, 21, 22, CFG).cost > sfClimb(150, 17, 18, CFG).cost, true);
+check('cost rises with item level',
+  sfClimb(200, 17, 18, CFG).cost > sfClimb(150, 17, 18, CFG).cost, true);
+check('no booms below 15★', sfClimb(150, 0, 15, CFG).booms, 0, 1e-12);
+check('booms above 15★', sfClimb(150, 17, 22, CFG).booms > 0, true);
+check('to <= from is free', sfClimb(150, 17, 17, CFG).cost, 0);
+check('ssf is cheaper than no event',
+  sfClimb(150, 17, 18, Object.assign({}, CFG, { event: 'none' })).cost
+    > sfClimb(150, 17, 18, CFG).cost, true);
+check('star catch helps',
+  sfClimb(150, 17, 18, Object.assign({}, CFG, { catching: false })).cost
+    > sfClimb(150, 17, 18, CFG).cost, true);
+check('boom item cost raises the price',
+  sfClimb(150, 17, 22, Object.assign({}, CFG, { itemCost: 5e9 })).cost > c1722, true);
+
+section('sf.js mode 4 (what "safe" used to mean)');
+// Safety is per star now. These sit at the rate/cost level; the strategy-level
+// checks live in 'enhancement mode policy'.
+check('mode 4 costs more per attempt than mode 1',
+  attemptCost(17, 150, 0, true, 3) > attemptCost(17, 150, 0, true, 0), true);
+check('  ... and cannot boom at all', getRates(17, 3, true, true)[2], 0, 1e-12);
+check('  ... and reports mode 4 on every step',
+  sfClimb(150, 17, 22, Object.assign({}, CFG, { modes: [0, 0, 3, 3, 3, 3, 3] }))
+    .modes.every(m => m.mode === 4), true);
+check('  ... so the climb is priced, not called impossible',
+  isFinite(sfClimb(150, 22, 23, CFG).cost), true);
+check('  ... and it can still boom', sfClimb(150, 22, 23, CFG).booms > 0, true);
+// solveSpares is still the right answer to "guarantee it with one item", and that
+// genuinely is Infinity up there -- kept as an oracle, just not as a UI column.
+check('guaranteeing arrival with one item remains impossible',
+  solveSpares(150, 0, true, true, true, 23, 1).V[22][1], Infinity);
+
+/* ---------- flames ---------- */
+section('flames.js offered types and current-flame value');
+check('order is eternal, powerful, abyssal',
+  FLAME_TYPES.map(t => t[0]).join(','), 'eternal,powerful,reincarnation');
+check('eternal is labelled rainbow/black',
+  FLAME_TYPE_LABELS.eternal, 'eternal (rainbow/black)');
+check('powerful is labelled red', FLAME_TYPE_LABELS.powerful, 'powerful (red)');
+// the key stays as worker.js names it so the vendored tables stay traceable
+check('abyssal is worker.js reincarnation',
+  FLAME_TYPE_LABELS.reincarnation, 'abyssal');
+check('unused types are not offered',
+  ['drop','fusion','masterFusion','meisterFusion'].some(k => FLAME_TYPE_LABELS[k]), false);
+check('their data is still present',
+  ['drop','fusion','masterFusion','meisterFusion'].every(k => FLAME_TIER_PROBS[k]), true);
+check('a retired type falls back to eternal', flameTypeOrDefault('drop'), 'eternal');
+check('an offered type is left alone', flameTypeOrDefault('powerful'), 'powerful');
+
+// flameInputWeight is the single source of truth the UI reads to warn about a zero
+check('input weights match the valuation',
+  FLAME_INPUTS.every(([k]) =>
+    Math.abs(flameCurrentValue({ [k]: 7 }, w) - 7 * flameInputWeight(k, w)) < 1e-9), true);
+check('INT input weight', flameInputWeight('fINT', w), w.flatByStat.INT, 1e-9);
+check('LUK input weight', flameInputWeight('fLUK', w), w.flatByStat.LUK, 1e-9);
+check('STR is weightless for a mage', flameInputWeight('fSTR', w), 0, 1e-12);
+check('att input weight', flameInputWeight('fAtt', w), w.matt, 1e-9);
+check('boss input weight', flameInputWeight('fBoss', w), w.boss, 1e-9);
+// Damage% IS boss damage%: one weight, boss simply counting double per flame tier.
+check('dmg weight is the boss weight', w.dmgPct, w.boss, 1e-12);
+check('dmg input uses it', flameInputWeight('fDmg', w), w.boss, 1e-12);
+check('a Dmg% amount scores', flameCurrentValue({ fDmg: 30 }, w), 30 * w.boss, 1e-9);
+check('boss counts 2x damage per flame tier',
+  FLAME_BOSS_PER_TIER / FLAME_DMG_PER_TIER, 2);
+// the weightless columns are exactly the ones hidden for this class
+check('a mage hides STR, DEX and HP',
+  FLAME_INPUTS.filter(([k]) => flameInputWeight(k, w) === 0).map(([k]) => k).join(','),
+  'fSTR,fDEX,fHp');
+check('unknown input keys weigh nothing', flameInputWeight('nope', w), 0);
+check('empty flame is worth nothing', flameCurrentValue({}, w), 0, 1e-12);
+check('null flame is safe', flameCurrentValue(null, w), 0);
+check('the inputs add up',
+  flameCurrentValue({ fINT: 56, fLUK: 56, fAtt: 20, fAll: 3, fDmg: 0, fBoss: 0 }, w),
+  56 * w.flatByStat.INT + 56 * w.flatByStat.LUK + 20 * w.matt + 3 * w.allStatPct, 1e-9);
+
+/* ---------- classes fall out of the weights ---------- */
+section('line 1 is always prime');
+// CUBE_PRIME_PROB[*][0] is 1.0 for both cube types, and cubeLineDists builds slot 1
+// from the legendary pool alone. So the line-1 picker must not offer unique-tier
+// values -- a 9% main stat cannot be line 1, only 12% can.
+check('line 1 is prime with certainty for black', CUBE_PRIME_PROB.black[0], 1.0);
+check('  ... and for red', CUBE_PRIME_PROB.red[0], 1.0);
+check('lines 2 and 3 are not', CUBE_PRIME_PROB.red[1] < 1, true);
+
+(function () {
+  const all = cubeLineOptions('hat', 150, []);
+  const prime = cubeLineOptions('hat', 150, [], true);
+  const key = (o) => o.map(([n, v]) => n + '|' + v);
+  check('the prime list is shorter', prime.length < all.length, true);
+  // every legendary-pool value survives, every unique-only one goes
+  check('12% main stat stays', key(prime).includes('main_stats|12'), true);
+  check('9% main stat is gone', key(prime).includes('main_stats|9'), false);
+  check('9% all stat stays (it is the legendary value)',
+    key(prime).includes('all_stats|9'), true);
+  check('6% all stat is gone', key(prime).includes('all_stats|6'), false);
+  check('12% HP stays', key(prime).includes('HP|12'), true);
+  check('9% HP is gone', key(prime).includes('HP|9'), false);
+  check('cooldown lines stay, being legendary-only anyway',
+    key(prime).includes('CD|-2') && key(prime).includes('CD|-1'), true);
+  // the filtered list must be exactly the legendary pool, no more and no less
+  const legKeys = CUBE_POOLS.hat.leg.map(([n, v]) => n + '|' + cubeLineValue(n, v, 150));
+  check('the prime list is exactly the legendary pool',
+    key(prime).slice().sort().join(',') === legKeys.slice().sort().join(','), true);
+})();
+
+// a weapon, where the tiers differ on ATT/BOSS/IED rather than stats
+(function () {
+  const prime = cubeLineOptions('weapon', 160, [], true).map(([n, v]) => n + '|' + v);
+  check('lv160 ATT 13 is prime', prime.includes('ATT|13'), true);
+  check('ATT 10 is not', prime.includes('ATT|10'), false);
+  check('BOSS 30 is not', prime.includes('BOSS|30'), false);
+  check('IED 30 is not', prime.includes('IED|30'), false);
+  check('BOSS 40 and 35 are', prime.includes('BOSS|40') && prime.includes('BOSS|35'), true);
+})();
+
+// Filtering the picker must not touch the maths -- the distribution already excluded
+// unique values from slot 1, so probabilities are unchanged.
+(function () {
+  const wl = buildWeights(parseScouter(SCOUTER_EXAMPLE));
+  const mass = cubeCombos('red', 'hat', 150, []).reduce((a, c) => a + c.prob, 0);
+  check('combo mass is still 1', mass, 1, 1e-12);
+  const d1 = cubeLineDists('red', 'hat', 150, [])[0];
+  check('slot 1 draws only legendary entries', d1.length, CUBE_POOLS.hat.leg.length);
+  check('  ... and its mass is 1', d1.reduce((a, e) => a + e[2], 0), 1, 1e-12);
+  check('a scan still returns rungs',
+    cubeTargetScanAll('hat', wl, 0, 3, null, 150).length > 0, true);
+})();
+
+section('booms at a percentile');
+// The detail column quoted expected booms even at p85, which read as though a percentile
+// only moved the cost. It moves both -- a climb is expensive BECAUSE it boomed more.
+//
+// The figure is lostara's: a lognormal fitted to the mean and DVar, continuous, exactly
+// its line 1312. An earlier version fitted a negative binomial and returned an INTEGER,
+// which is a discrete quantile -- the ceiling of this -- so 22->23 read 4 where lostara
+// says 3.26. Discrete is arguably the better statistic for a count, but this engine
+// exists to agree with lostara.
+const PCFG = { mvp: 0, event: 'ssf', catching: true, itemCost: 0,
+               modes: SF_MODE_PRESETS['444/11/44'] };
+
+check('the boom variance comes out of the same climb',
+  sfClimb(250, 22, 23, PCFG).boomVariance > 0, true);
+check('  ... and booms are overdispersed here',
+  sfClimb(250, 22, 23, PCFG).boomVariance > sfClimb(250, 22, 23, PCFG).booms, true);
+
+// PARITY, against figures read off lostara for 22*->23* under 444/11/44 with ssf.
+// Booms do not depend on item level -- rates are level-independent, only cost scales --
+// so the same numbers must come out at every level.
+check('22->23 expected booms matches lostara', sfClimb(250, 22, 23, PCFG).booms, 1.91, 5e-3);
+check('  ... and p85 matches lostara',
+  sfBoomsAtPct(sfClimb(250, 22, 23, PCFG), 85), 3.26, 5e-3);
+check('  ... at lv150 too, since booms ignore level',
+  sfClimb(150, 22, 23, PCFG).booms, sfClimb(250, 22, 23, PCFG).booms, 1e-12);
+// the integer form was the ceiling of it, which is where the 4 came from
+check('the old integer answer was just the ceiling',
+  Math.ceil(sfBoomsAtPct(sfClimb(250, 22, 23, PCFG), 85)), 4);
+
+// the strategy drives it, because a boom at 22 falls to 17 and the re-climb runs 15-21
+check('a boom at 22 falls to 17', recoveryStar(22), 17);
+check('so an unguarded strategy booms far more',
+  sfClimb(250, 22, 23, Object.assign({}, PCFG,
+    { modes: SF_MODE_PRESETS['111/11/11'] })).booms
+  > 2 * sfClimb(250, 22, 23, PCFG).booms, true);
+
+check('no percentile leaves the mean alone',
+  sfBoomsAtPct(sfClimb(250, 22, 23, PCFG), 0), sfClimb(250, 22, 23, PCFG).booms, 1e-12);
+check('a guarded 15->22 booms zero times at any percentile',
+  sfBoomsAtPct(sfClimb(150, 15, 22,
+    Object.assign({}, PCFG, { modes: SF_MODE_PRESETS['444/44/44'] })), 95), 0);
+check('the count rises with the percentile',
+  sfBoomsAtPct(sfClimb(150, 15, 22, PCFG), 95)
+  > sfBoomsAtPct(sfClimb(150, 15, 22, PCFG), 50), true);
+check('and exceeds the mean at the upper end',
+  sfBoomsAtPct(sfClimb(150, 15, 22, PCFG), 85)
+  > sfClimb(150, 15, 22, PCFG).booms, true);
+
+// the same family as the cost column, so the two cannot disagree about what pXX means
+check('booms use the cost column’s own fit',
+  sfBoomsAtPct(sfClimb(150, 15, 22, PCFG), 85),
+  lognormalPct(sfClimb(150, 15, 22, PCFG).booms,
+               sfClimb(150, 15, 22, PCFG).boomVariance, 85), 1e-12);
+// no loop, so an enormous climb is priced rather than truncated. An earlier attempt
+// capped a pmf walk and returned the CAP, so every percentile read a flat 100000.
+(function () {
+  const r = sfClimb(150, 15, 30, PCFG);
+  check('a 15->30 climb expects a huge number of booms', r.booms > 1000, true);
+  check('  ... and is finite at p95', isFinite(sfBoomsAtPct(r, 95)), true);
+  check('  ... never the old flat 100000',
+    [5, 50, 85, 95].every(q => Math.round(sfBoomsAtPct(r, q)) !== 100000), true);
+  check('  ... and monotonic',
+    sfBoomsAtPct(r, 50) < sfBoomsAtPct(r, 85)
+    && sfBoomsAtPct(r, 85) < sfBoomsAtPct(r, 95), true);
+})();
+
+// DVar had never been checked before this went in: within 0.4% of 200k simulated climbs.
+// Kept as a regression anchor on the recursion that produces it.
+check('DVar for 15->18 is the simulated value',
+  sfClimb(150, 15, 18, Object.assign({}, PCFG,
+    { modes: SF_MODE_PRESETS['111/11/11'] })).boomVariance, 0.598, 0.02);
+check('DVar for 15->22 is the simulated value',
+  sfClimb(150, 15, 22, Object.assign({}, PCFG,
+    { modes: SF_MODE_PRESETS['111/11/11'] })).boomVariance, 18.27, 0.3);
+
+section('cube sale and per-slot strategy');
+// A sale takes 25% off the cube, not off the reveal fee -- they are separate charges.
+check('a red cube on sale', cubeCostPerUse('red', 150, true),
+  CUBE_COST.red * 0.75 + cubeRevealCost(150), 1e-9);
+check('a black cube on sale', cubeCostPerUse('black', 150, true),
+  CUBE_COST.black * 0.75 + cubeRevealCost(150), 1e-9);
+check('the reveal fee is not discounted',
+  cubeCostPerUse('red', 150, true) - cubeCostPerUse('red', 150, false),
+  -CUBE_COST.red * 0.25, 1e-9);
+check('off by default', cubeCostPerUse('red', 150),
+  CUBE_COST.red + cubeRevealCost(150), 1e-9);
+
+// the discount has to reach the ranking, not just the cost helper
+(function () {
+  const wc = buildWeights(parseScouter(SCOUTER_EXAMPLE));
+  const full = cubeTargetScanAll('hat', wc, 0, 3, null, 150, false);
+  const sale = cubeTargetScanAll('hat', wc, 0, 3, null, 150, true);
+  check('a sale makes cubing cheaper', sale[0].cost < full[0].cost, true);
+  check('  ... without changing what you roll for', sale[0].threshold, full[0].threshold);
+  check('  ... nor the odds', sale[0].prob, full[0].prob, 1e-12);
+  check('the saving is under 25%, since the reveal fee is not discounted',
+    sale[0].cost / full[0].cost > 0.75, true);
+})();
+
+// Per-slot strategy, written the way players say it.
+check('a slashed plan parses', sfModesFromText('444/11/44').join(''), '3330033');
+check('bare digits work too', sfModesFromText('4441144').join(''), '3330033');
+check('dashes too', sfModesFromText('4-4-4-1-1-4-4').join(''), '3330033');
+check('all mode 1', sfModesFromText('111/11/11').join(''), '0000000');
+check('too few digits is rejected', sfModesFromText('4441'), null);
+check('too many is rejected', sfModesFromText('44411444'), null);
+check('mode 5 does not exist', sfModesFromText('544/11/44'), null);
+check('mode 0 does not exist', sfModesFromText('044/11/44'), null);
+check('blank means use the global', sfModesFromText(''), null);
+check('null is safe', sfModesFromText(null), null);
+check('it round-trips against the preset names',
+  sfModesName(sfModesFromText('444/11/44')), '444/11/44');
+check('a per-slot plan changes the cost',
+  sfClimb(150, 15, 22, { mvp: 0, event: 'ssf', catching: true, itemCost: 0,
+                         modes: sfModesFromText('444/44/44') }).cost
+  > sfClimb(150, 15, 22, { mvp: 0, event: 'ssf', catching: true, itemCost: 0,
+                           modes: sfModesFromText('111/11/11') }).cost, true);
+
+section('lv130 equipment');
+// Rare, but real: some accessories and secondaries are lv130. It falls in the wiki's
+// 128-137 bracket, which only tabulates up to 20★ -- so the cap comes from the
+// generated tables rather than a special case written here.
+// (the dropdown itself is asserted in tools/check_js.py, which loads app.js)
+check('lv130 sits in the first bracket', sfBracket(130), 0);
+check('a secondary-shaped item too', sfCap(130, 'weapon'), 20);
+// the bracket boundary itself
+check('lv137 still caps at 20★', sfCap(137, 'armor'), 20);
+check('lv138 jumps to 30★', sfCap(138, 'armor'), 30);
+check('  ... and a weapon to 25★', sfCap(138, 'weapon'), 25);
+
+// the stat tables really do cover the bracket -- a cap is useless without values
+const W130 = buildWeights(parseScouter(SCOUTER_EXAMPLE));
+check('16★ has a stat value at lv130', sfStatValue(16, 130, 'armor', W130) > 0, true);
+check('20★ too', sfStatValue(20, 130, 'armor', W130) > 0, true);
+check('  ... and it is below the lv150 figure',
+  sfStatValue(16, 130, 'armor', W130) < sfStatValue(16, 150, 'armor', W130), true);
+
+// flames and cubes are level-driven, so check they answer at 130 rather than fall over
+check('flames distribute at lv130',
+  flameDistribution('armor', 130, W130, { flameType: 'eternal' })
+    .reduce((a, x) => a + x.prob, 0), 1, 1e-9);
+// flame stat per tier is floor(level/20)+1, so 7 at lv130 -> 49 at tier 7
+check('a tier-7 stat flame is 49 at lv130',
+  flameTrackedSlots('armor', 130, W130).find(s => s.label === 'INT').at(7),
+  49 * W130.flatByStat.INT, 1e-9);
+check('cube reveal is 20 x level² at lv130', cubeRevealCost(130), 20 * 130 * 130);
+check('no lv160 potential bump at lv130', cubeLineValue('main_stats', 12, 130), 12);
+
+section('enhancement mode policy');
+// The ranking prices the strategy you picked, rather than searching for the cheapest.
+// Presets are one digit per star, 15->16 up to 21->22, grouped 15-18 / 18-20 / 20-22.
+const POL = (modes) => ({ mvp: 0, event: 'ssf', catching: true, itemCost: 0, modes });
+const P111 = POL(SF_MODE_PRESETS['111/11/11']);
+const P444_11_44 = POL(SF_MODE_PRESETS['444/11/44']);
+const P444 = POL(SF_MODE_PRESETS['444/44/44']);
+
+check('every preset covers them all',
+  Object.keys(SF_MODE_PRESETS).every(k => SF_MODE_PRESETS[k].length === 7), true);
+check('the name round-trips', sfModesName(SF_MODE_PRESETS['444/11/44']), '444/11/44');
+check('  ... for all three',
+  Object.keys(SF_MODE_PRESETS).every(k => sfModesName(SF_MODE_PRESETS[k]) === k), true);
+
+// mode lookup only applies inside the band
+check('mode 4 applies at 15', sfModeIndex(P444, 15), 3);
+check('  ... and at 21', sfModeIndex(P444, 21), 3);
+check('no mode choice at 22', sfModeIndex(P444, 22), 0);
+check('nor at 14', sfModeIndex(P444, 14), 0);
+
+// mode 4 cannot boom, so a fully safeguarded 15->22 climb destroys nothing
+check('444/44/44 booms exactly zero times, 15->22',
+  sfClimb(150, 15, 22, P444).booms, 0, 1e-12);
+check('  ... and 111/11/11 does not', sfClimb(150, 15, 22, P111).booms > 1, true);
+check('  ... nor does 444/11/44 (the middle is unguarded)',
+  sfClimb(150, 15, 22, P444_11_44).booms > 0, true);
+// zero booms means zero variance from re-climbing, so the cost is a pure geometric sum
+check('a no-boom climb still has spread', sfClimb(150, 15, 22, P444).variance > 0, true);
+
+// the point of the trade: safety costs meso
+const c111 = sfClimb(150, 15, 22, P111).cost;
+const cMid = sfClimb(150, 15, 22, P444_11_44).cost;
+const c444 = sfClimb(150, 15, 22, P444).cost;
+check('safeguarding everything costs the most', c444 > cMid, true);
+check('  ... and the middle strategy more than none', cMid > c111, true);
+check('  ... with 111 cheapest in expected meso', c111 < cMid && c111 < c444, true);
+// and fewer booms the other way
+check('booms run the opposite direction',
+  sfClimb(150, 15, 22, P111).booms > sfClimb(150, 15, 22, P444_11_44).booms, true);
+
+// The optimiser is no longer the ranking path, but it still bounds it: no fixed
+// policy can beat the mode-by-mode optimum with the same event and item cost.
+(() => {
+  const { V } = solveUnconstrained(150, 0, true, true, true, 22, 0);
+  for (const [name, cfg] of Object.entries({
+    '111/11/11': P111, '444/11/44': P444_11_44, '444/44/44': P444,
+  })) {
+    check(`${name} is never cheaper than the optimum`,
+      sfClimb(150, 15, 22, cfg).cost >= V[15] - 1, true);
+  }
+  // with free spares mode 1 IS the optimum nearly everywhere, so 111 should match it
+  check('111/11/11 matches the optimum when spares are free',
+    sfClimb(150, 15, 22, P111).cost, V[15], Math.abs(V[15]) * 1e-9);
+})();
+
+// which stars a mode change can reach
+(() => {
+  const a = POL([0, 0, 0, 0, 0, 0, 0]);
+  const b = POL([0, 0, 3, 0, 0, 0, 0]);          // safeguard 17->18 alone
+  const CFG_POL_LATER = POL([0, 0, 0, 0, 0, 3, 0]);  // safeguard 20->21 alone
+  check('one star switched changes 17→18',
+    sfClimb(150, 17, 18, a).cost !== sfClimb(150, 17, 18, b).cost, true);
+  // It changes 18→19 as well, and that is correct rather than leakage: a boom at 18★
+  // regresses to recoveryStar(18) = 12★, so recovery re-walks 17→18 under whatever
+  // mode is set there. The dependency runs strictly backwards.
+  check('  ... and 18→19 too, since its boom recovery re-walks 17→18',
+    sfClimb(150, 18, 19, a).cost !== sfClimb(150, 18, 19, b).cost, true);
+  check('  ... because a boom at 18★ drops to 12★', recoveryStar(18), 12);
+  // but a later star can never reach backwards
+  check('a mode set at 20 does not touch 18→19',
+    sfClimb(150, 18, 19, a).cost, sfClimb(150, 18, 19, CFG_POL_LATER).cost, 1e-9);
+  check('  ... though it does touch 20→21',
+    sfClimb(150, 20, 21, a).cost !== sfClimb(150, 20, 21, CFG_POL_LATER).cost, true);
+  check('  ... and the cache keeps every policy apart',
+    sfClimb(150, 15, 22, a).cost !== sfClimb(150, 15, 22, b).cost, true);
+})();
+
+// labels quote the rate actually faced, so the event has to move them
+check('mode labels react to the event',
+  sfModeLabel(17, 0, POL(SF_MODE_PRESETS['111/11/11']))
+  !== sfModeLabel(17, 0, { mvp: 0, event: 'none', catching: true, itemCost: 0,
+                           modes: SF_MODE_PRESETS['111/11/11'] }), true);
+check('mode 4 is labelled as unable to boom',
+  sfModeLabel(17, 3, P444).indexOf('no boom') >= 0, true);
+
+section('endgame weapons (Genesis / Destiny)');
+// Genesis (lv200) and Destiny (lv250) arrive at a fixed 22 stars from liberation
+// quests. Second-stage Destiny liberation unlocks 22->25, and a boom there costs more
+// than a single fee can express: 10b revives the weapon at 12 stars, then either 54.2b
+// buys a guaranteed 22 or you re-star-force 12->22 yourself.
+const RULE = WEAPON_KINDS.destiny2;
+const DST = { mvp: 0, event: 'ssf', catching: true, itemCost: 0,
+              modes: SF_MODE_PRESETS['444/11/44'], weaponRule: RULE };
+const ORD = { mvp: 0, event: 'ssf', catching: true, itemCost: 0,
+              modes: SF_MODE_PRESETS['444/11/44'] };
+
+check('a liberated Destiny climb is finite', isFinite(sfClimb(250, 22, 25, DST).cost), true);
+check('the weapon rule is part of the cache key',
+  sfClimb(250, 22, 25, DST).cost !== sfClimb(250, 22, 25, ORD).cost, true);
+check('an ordinary lv250 weapon still recovers to 17', recoveryStar(22), 17);
+
+// The two routes, and which wins. At lv250 buying back beats re-climbing under every
+// preset, but by only ~11b under 444/11/44 -- close enough to be worth computing
+// rather than assuming, which is why both are priced every time.
+(function () {
+  const X = sfPolicy(250, DST).X;
+  const sum = (a, b) => X.slice(a, b).reduce((t, v) => t + v, 0);
+  check('re-climbing 12->22 costs more than buying the guarantee',
+    sum(12, 22) > RULE.guaranteeCost, true);
+  check('  ... so the buy route is taken', sfClimb(250, 22, 25, DST).recovery.route, 'buy');
+  check('  ... priced at revive + guarantee',
+    sfClimb(250, 22, 25, DST).recovery.per, RULE.reviveCost + RULE.guaranteeCost, 1);
+  const dear = Object.assign({}, DST, {
+    weaponRule: Object.assign({}, RULE, { guaranteeCost: 500e9 }) });
+  check('an absurd guarantee flips it to climbing',
+    sfClimb(250, 22, 25, dear).recovery.route, 'climb');
+  check('  ... and costs more overall',
+    sfClimb(250, 22, 25, dear).cost > sfClimb(250, 22, 25, DST).cost, true);
+})();
+
+// The correction that mattered: assuming the weapon came back at 22 for the 10b alone
+// understated a boom by the entire 12->22 gap.
+check('reviving to 12 costs far more than reviving to 22 would',
+  sfClimb(250, 22, 25, DST).cost
+  > 4 * sfClimb(250, 22, 25, { mvp: 0, event: 'ssf', catching: true, itemCost: 10e9,
+                               recoverTo: 22, modes: SF_MODE_PRESETS['444/11/44'] }).cost,
+  true);
+check('recovery fees dominate the bill',
+  sfClimb(250, 22, 25, DST).booms * sfClimb(250, 22, 25, DST).recovery.per
+  / sfClimb(250, 22, 25, DST).cost > 0.8, true);
+
+check('the percentile exceeds the mean',
+  sfClimbAtPct(sfClimb(250, 22, 25, DST), 85) > sfClimb(250, 22, 25, DST).cost, true);
+// Dearer than an ordinary lv250 weapon, but only by ~1.26x, which is not obvious: the
+// ordinary one BOOMS MORE (23.4 against 14.1, since it falls to 17/19 and re-climbs
+// through the boom-prone stars) while each Destiny boom costs a flat 64.2b. Fewer,
+// pricier booms. Asserting a big multiplier here would be inventing a number.
+check('  ... and exceeds an ordinary lv250 weapon',
+  sfClimbAtPct(sfClimb(250, 22, 25, DST), 85)
+  > sfClimbAtPct(sfClimb(250, 22, 25, ORD), 85), true);
+check('  ... which booms more often, not less',
+  sfClimb(250, 22, 25, ORD).booms > sfClimb(250, 22, 25, DST).booms, true);
+
+(function () {
+  const X = sfPolicy(250, DST).X;
+  let sum = 0;
+  for (let s = 22; s < 25; s++) sum += X[s];
+  check('sfClimb sums the same X the policy solved', sum, sfClimb(250, 22, 25, DST).cost, 1);
+})();
+
+check('no rule means no recovery block', sfClimb(250, 22, 25, ORD).recovery, null);
+
+section('MapleScouter paste scale');
+// The real Demon Avenger paste, normalised to HP = 1 because a DA has no natural
+// stat to normalise against. All-stat and STR% come out EXACTLY equal here, which
+// is right: a DA benefits from STR alone, so all-stat buys nothing extra.
+const DA_REAL = 'Boss Damage\t\t45.68\nAttack\t\t10.19\nAttack%\t\t200.50\n'
+  + 'Critical Dmg\t\t140.21\nIgnore Dff(300)\t\t11.65\nIgnore Dff(380)\t\t14.86\n'
+  + 'HP\t\t1.00\nHP%\t\t44.57\nNot Affected by % HP\t\t0.14\n'
+  + 'STR\t\t1.82\nSTR%\t\t28.08\nNot Affected by % STR\t\t0.62\n'
+  + 'All Stat%\t\t28.08';
+const pDA = parseScouter(DA_REAL);
+const wDA = buildWeights(pDA);
+check('every row is recognised', scouterUnknownRows(pDA).length, 0);
+check('not treated as empty', wDA.empty, false);
+check('normalised against HP, not a stat', wDA.normalizedTo, 'HP');
+check('flat HP is the unit', wDA.hpFlat, 1, 1e-9);
+check('HP% read', wDA.hpPct, 44.57, 1e-9);
+check('STR is the stat', wDA.mainStat, 'STR');
+check('flat attack read (physical, not magic)', wDA.attFlat, 10.19, 1e-9);
+check('recognised as a DA', weightsProfileText(wDA).indexOf('Demon Avenger') >= 0, true);
+check('HP flame column is live', flameInputWeight('fHp', wDA) > 0, true);
+check('flame mass still 1',
+  flameDistribution('armor', 150, wDA, { flameType: 'eternal' })
+    .reduce((a, x) => a + x.prob, 0), 1, 1e-9);
+// HP flames give 450/tier at lv150 against 8 stat/tier, so for a DA they dominate
+// by ~30x even though flat STR is worth more per POINT than flat HP
+check('flat STR is worth more per point than flat HP',
+  wDA.flatByStat.STR > wDA.hpFlat, true);
+check('  ... yet an HP flame tier beats a stat flame tier for a DA',
+  flameTrackedSlots('armor', 150, wDA).find(s => s.label === 'HP').at(7)
+  > flameTrackedSlots('armor', 150, wDA).find(s => s.label === 'STR').at(7), true);
+check('HP% potential outranks STR% for a DA',
+  cubeValue({ HP: 12 }, wDA) > cubeValue({ main_stats: 12 }, wDA), true);
+
+// The same table with the Main Stat column selected. Identical labels, parses
+// perfectly, and CORRECT as per-line values -- each is one point's worth times the
+// amount beside it. It is just not a weight set until the amounts come back out.
+const DA_TOTALS = 'Boss Damage\t\t1827.21\nAttack\t\t305.79\nAttack%\t\t2406.06\n'
+  + 'Critical Dmg\t\t1121.69\nIgnore Dff(300)\t\t466.10\nIgnore Dff(380)\t\t594.50\n'
+  + 'HP\t\t30.00\nHP%\t\t534.90\nNot Affected by % HP\t\t28.60\n'
+  + 'STR\t\t54.75\nSTR%\t\t336.97\nNot Affected by % STR\t\t125.00\n'
+  + 'All Stat%\t\t252.73';
+// the same rows again as Final Damage: a different unit, the same weight set
+const DA_FD = 'Boss Damage\t\t4.055%\nAttack\t\t0.679%\nAttack%\t\t5.339%\n'
+  + 'Critical Dmg\t\t2.489%\nIgnore Dff(300)\t\t1.034%\nIgnore Dff(380)\t\t1.319%\n'
+  + 'HP\t\t0.067%\nHP%\t\t1.187%\nNot Affected by % HP\t\t0.063%\n'
+  + 'STR\t\t0.121%\nSTR%\t\t0.748%\nNot Affected by % STR\t\t0.277%\n'
+  + 'All Stat%\t\t0.561%';
+
+const wTot = buildWeights(parseScouter(DA_TOTALS));
+check('the totals column still parses (labels are identical)',
+  scouterUnknownRows(parseScouter(DA_TOTALS)).length, 0);
+check('no row lands on 1', wTot.normalizedTo, null);
+check('flagged as needing amounts', wTot.suspectTotals, true);
+check('  ... and the profile line says so',
+  weightsProfileText(wTot).indexOf('SCALE UNVERIFIED') >= 0, true);
+
+// The per-line values are internally consistent -- 12% HP% against 9% all-stat
+// really is 2.116, and that IS (12 x 44.57)/(9 x 28.08). Comparing that to the bare
+// per-point ratio 1.587 and calling the gap a defect is an error about amounts, not
+// a finding about the format. ~1e-3 because the column prints to two decimals.
+check('the per-line column is internally consistent',
+  wTot.hpPct / wTot.allStatPct,
+  (12 * wDA.hpPct) / (9 * wDA.allStatPct), 1e-3);
+
+// Left undivided it is counted twice over, by a DIFFERENT factor per row, which
+// reorders rather than merely inflating -- the whole reason amounts exist.
+check('undivided, a 12% HP line is valued 12x too high',
+  cubeValue({ HP: 12 }, wTot) / cubeValue({ HP: 12 }, wDA), 12, 1e-2);
+check('undivided, a 9% all-stat line is valued 9x too high',
+  cubeValue({ all_stats: 9 }, wTot) / cubeValue({ all_stats: 9 }, wDA), 9, 1e-2);
+// This particular pair keeps its order -- HP% leads either way. The danger is not
+// that every comparison flips, it is that the error is invisible when none does.
+check('  ... while this pair happens to keep its order',
+  (cubeValue({ HP: 12 }, wTot) > cubeValue({ all_stats: 9 }, wTot))
+  === (cubeValue({ HP: 12 }, wDA) > cubeValue({ all_stats: 9 }, wDA)), true);
+check('  ... though their ratio is off by exactly the amount ratio',
+  (cubeValue({ HP: 12 }, wTot) / cubeValue({ all_stats: 9 }, wTot))
+  / (cubeValue({ HP: 12 }, wDA) / cubeValue({ all_stats: 9 }, wDA)), 12 / 9, 1e-2);
+
+/* ---------- amounts divide the per-line column back to per-point ---------- */
+// MapleScouter's own defaults, which is what "MapleScouter defaults" fills in.
+const AMT = {
+  boss: 40, attFlat: 30, attPctPhys: 12, critDmg: 8, ied300: 40, ied380: 40,
+  hpFlat: 30, hpPct: 12, 'nopct.HP': 200,
+  'flat.STR': 30, 'pct.STR': 12, 'nopct.STR': 200, allStatPct: 9,
+};
+const wDiv = buildWeights(parseScouter(DA_TOTALS), { amounts: AMT });
+check('the defaults table matches MapleScouter’s page',
+  Object.keys(AMT).every(k => SCOUTER_DEFAULT_AMOUNTS[k] === AMT[k]), true);
+// The round trip: dividing the defaults out reproduces the per-point block exactly.
+// One check over every field rather than one per field -- a failure here means the
+// round trip broke, and which field it was is two lines away in the output.
+check('dividing the defaults out reproduces every per-point weight',
+  ['boss', 'attFlat', 'attPct', 'critDmg', 'ied', 'hpPct', 'mainPct', 'allStatPct']
+    .concat(['STR'])
+    .every(k => Math.abs((k === 'STR' ? wDiv.flatByStat.STR : wDiv[k])
+                       - (k === 'STR' ? wDA.flatByStat.STR : wDA[k])) <= 5e-3), true);
+// HP 30/30 lands back on exactly 1, so the normaliser reappears...
+check('flat HP returns to the unit', wDiv.hpFlat, 1, 1e-6);
+check('the normaliser is found again', wDiv.normalizedTo, 'HP');
+check('  ... so the warning clears itself', wDiv.suspectTotals, false);
+check('and the ranking now agrees with the per-point paste',
+  cubeValue({ HP: 12 }, wDiv) / cubeValue({ all_stats: 9 }, wDiv),
+  cubeValue({ HP: 12 }, wDA) / cubeValue({ all_stats: 9 }, wDA), 1e-3);
+check('still read as a DA', weightsProfileText(wDiv).indexOf('Demon Avenger') >= 0, true);
+check('the divisions are reported', weightsProfileText(wDiv).indexOf('divided by') >= 0, true);
+
+// Final Damage is the same weight set in another unit, so once divided every RATIO
+// must agree with Main Stat even though no absolute value does.
+const wFd = buildWeights(parseScouter(DA_FD), { amounts: AMT });
+check('Final Damage column detected', wFd.unit, '%fd');
+check('Main Stat column detected', wDiv.unit, 'stat');
+check('Final Damage normalises nothing, so it is never flagged',
+  wFd.suspectTotals, false);
+for (const [name, num, den] of [
+  ['HP% / STR%',      w => w.hpPct,      w => w.mainPct],
+  ['all% / STR%',     w => w.allStatPct, w => w.mainPct],
+  ['boss / att%',     w => w.boss,       w => w.attPct],
+  ['flat STR / HP%',  w => w.flatByStat.STR, w => w.hpPct],
+]) {
+  check(`same weight set either column: ${name}`,
+    num(wFd) / den(wFd), num(wDiv) / den(wDiv), 3e-3);
+}
+
+/* ---------- a three-column paste carries its own amounts ---------- */
+const THREE = 'Boss Damage\t40\t1827.21\nHP\t30\t30.00\nHP%\t12\t534.90\n'
+  + 'STR\t30\t54.75\nSTR%\t12\t336.97\nAll Stat%\t9\t252.73';
+const pThree = parseScouter(THREE);
+const wThree = buildWeights(pThree);
+check('the amount column is read when present', pThree.amounts['hpPct'], 12);
+check('every row still recognised', scouterUnknownRows(pThree).length, 0);
+check('divided without any UI input', wThree.hpPct, wDA.hpPct, 5e-3);
+check('flagged as coming from the paste', wThree.amountsFromPaste, true);
+check('a paste amount beats the UI',
+  buildWeights(pThree, { amounts: { hpPct: 999 } }).hpPct, wDA.hpPct, 5e-3);
+// a label ending in a number must not have its last word eaten as an amount
+check('two-column rows are unaffected', buildWeights(parseScouter(
+  'Ignore Dff(300)\t\t466.10')).ied, 466.10, 1e-9);
+check('an unknown label falls back to two-column',
+  parseScouter('Some Thing 2\t\t5.5').rows[0].amount, null);
+
+check('a real paste is never flagged', wDA.suspectTotals, false);
+check('  ... nor a mage one', buildWeights(parseScouter(SCOUTER_EXAMPLE)).suspectTotals, false);
+check('  ... which normalises against its main stat',
+  buildWeights(parseScouter(SCOUTER_EXAMPLE)).normalizedTo, 'INT');
+// a trailing % is tolerated so a stray format cannot blank the whole tool
+check('a % suffix does not break parsing',
+  buildWeights(parseScouter('STR\t\t1%\nSTR%\t\t12%')).mainPct, 12, 1e-9);
+check('  ... and is not read into the number',
+  buildWeights(parseScouter('STR\t\t1%\nSTR%\t\t12%')).flatByStat.STR, 1, 1e-9);
+
+section('class profiles (flames)');
+// Synthetic pastes shaped like MapleScouter output for the three special cases.
+const XENON_PASTE = 'Boss Damage\t\t3.5\nAttack\t\t1.2\nAttack%\t\t15.2\n'
+  + 'Critical Dmg\t\t11.9\nIgnore Dff(300)\t\t1.2\nSTR\t\t1\nSTR%\t\t4.4\n'
+  + 'DEX\t\t0.98\nDEX%\t\t4.3\nLUK\t\t0.97\nLUK%\t\t4.2\nAll Stat%\t\t13.1';
+const SHAD_PASTE = 'Boss Damage\t\t12.1\nAttack\t\t2.8\nAttack%\t\t50.1\n'
+  + 'LUK\t\t1\nLUK%\t\t11.9\nDEX\t\t0.26\nDEX%\t\t0.9\nSTR\t\t0.24\n'
+  + 'STR%\t\t0.8\nAll Stat%\t\t13.5';
+const DA_PASTE = 'Boss Damage\t\t10.2\nAttack\t\t2.1\nAttack%\t\t38.4\n'
+  + 'HP\t\t1\nHP%\t\t14.9\nSTR\t\t0.2\nSTR%\t\t0.7\nAll Stat%\t\t1.1\n'
+  + 'Critical Dmg\t\t30.2';
+const wX = buildWeights(parseScouter(XENON_PASTE));
+const wS = buildWeights(parseScouter(SHAD_PASTE));
+const wD = buildWeights(parseScouter(DA_PASTE));
+
+// MathBro's flame calculator needs a class dropdown because it asks for hand-typed
+// equivalences; its choose_from constants are the junk-slot counts per class.
+// Ours must land on the same numbers purely from the weights.
+check('mage junk = 10 (MathBro choose_from)',
+  FLAME_SLOTS_ARMOR - flameTrackedSlots('armor', 160, w).length, 10);
+check('xenon junk = 8', FLAME_SLOTS_ARMOR - flameTrackedSlots('armor', 160, wX).length, 8);
+check('shadower/db junk = 8', FLAME_SLOTS_ARMOR - flameTrackedSlots('armor', 160, wS).length, 8);
+// worker.js:755 counts xenon pairs among its three stats double; ours does it via
+// flat[a]+flat[b], no special case
+check('xenon STR+DEX pair counts both stats',
+  flameTrackedSlots('armor', 160, wX).find(x => x.label === 'STR+DEX').at(1),
+  5 * (1 + 0.98), 1e-9);
+check('a Demon Avenger tracks a flat-HP slot',
+  flameTrackedSlots('armor', 150, wD).some(x => x.label === 'HP'), true);
+check('  ... 450 HP per tier at lv150',
+  flameTrackedSlots('armor', 150, wD).find(x => x.label === 'HP').at(7), 3150, 1e-9);
+check('a mage does not track HP',
+  flameTrackedSlots('armor', 150, w).some(x => x.label === 'HP'), false);
+check('fHp weight is the paste HP weight', flameInputWeight('fHp', wD), 1, 1e-9);
+check('fHp is dead for a mage', flameInputWeight('fHp', w), 0, 1e-12);
+check('DA flame mass is still 1',
+  flameDistribution('armor', 150, wD, { flameType: 'eternal' })
+    .reduce((a, x) => a + x.prob, 0), 1, 1e-9);
+check('a pure-HP paste is not treated as empty', wD.empty, false);
+// the defect that motivated per-stat columns: Sec multiplied one number by the
+// SUM of non-main weights, only right with exactly one secondary. Per-stat
+// entry is exact for a three-stat flame.
+check('xenon flame valued per stat, not through a Sec mush',
+  flameCurrentValue({ fSTR: 40, fDEX: 38, fLUK: 42 }, wX),
+  40 * 1 + 38 * 0.98 + 42 * 0.97, 1e-9);
+check('xenon per-stat input weights', flameInputWeight('fDEX', wX), 0.98, 1e-9);
+check('DA HP input carries weight 1', flameInputWeight('fHp', wD), 1, 1e-9);
+check('shadower sees all three of its stats',
+  ['fSTR', 'fDEX', 'fLUK'].every(k => flameInputWeight(k, wS) > 0), true);
+
+section('class profiles (potentials)');
+check('mage stays collapsed', cubeStatCollapsed(w), true);
+check('shadower stays collapsed', cubeStatCollapsed(wS), true);
+check('xenon does not collapse', cubeStatCollapsed(wX), false);
+check('xenon all-stat keeps its true weight',
+  cubeValue({ all_stats: 9 }, wX), 9 * 13.1, 1e-9);
+check('  ... and beats a single 12% line',
+  cubeValue({ all_stats: 9 }, wX) > cubeValue({ main_stats: 12 }, wX), true);
+check('xenon sub lines qualify', cubeSubStats(wX).join(','), 'DEX,LUK');
+check('mage subs stay folded (LUK% is 13% of INT%)', cubeSubStats(w).length, 0);
+check('shadower subs stay folded (tiny bases)', cubeSubStats(wS).length, 0);
+check('xenon DEX% line carries its own weight',
+  cubeValue({ 'DEX%': 12 }, wX), 12 * 4.3, 1e-9);
+check('sub lines get the 160+ bump', cubeLineValue('DEX%', 12, 160), 13);
+for (const ct of ['black', 'red']) {
+  check(`hat/${ct} combos sum to 1 with subs injected`,
+    cubeCombos(ct, 'hat', 160, cubeSubStats(wX)).reduce((a, c) => a + c.prob, 0), 1, 1e-12);
+}
+check('a DEX% line reaches the enumeration',
+  cubeCombos('black', 'hat', 160, cubeSubStats(wX)).some(c => c.sums['DEX%']), true);
+check('DA HP% dominates its potentials',
+  cubeValue({ HP: 12 }, wD) > cubeValue({ main_stats: 12 }, wD), true);
+check('xenon example text keeps the currencies apart',
+  cubeExampleText({ main_stats: 12, all_stats: 9, 'DEX%': 13 }, wX),
+  'stat 12, all 9, DEX% 13');
+check('mage example text still merges', cubeExampleText({ main_stats: 20, all_stats: 10 }, w),
+  'stat 30');
+
+section('flames.js constants (from worker.js, not main_IRbm.js)');
+for (const t in FLAME_TIER_PROBS) {
+  const s = Object.values(FLAME_TIER_PROBS[t]).reduce((a, b) => a + b, 0);
+  check(`${t} tier probabilities sum to 1`, s, 1, 1e-9);
+}
+// worker.js has 4:0.01 / 7:0.02 here; main_IRbm.js has 4:0 / 7:0.03. worker.js is
+// the file that actually computes, so it is the one vendored.
+check('reincarnation uses the worker.js values',
+  FLAME_TIER_PROBS.reincarnation[4] === 0.01 && FLAME_TIER_PROBS.reincarnation[7] === 0.02, true);
+check('non-advantaged line counts sum to 1',
+  Object.values(FLAME_LINES_NON_ADV).reduce((a, b) => a + b, 0), 1, 1e-9);
+check('advantaged eternal starts at tier 4', FLAME_TIER_PROBS.eternal[3], 0);
+check('non-advantaged shifts tiers down 2',
+  Object.keys(flameTierProbs('eternal', true)).map(Number).sort((a,b)=>a-b).join(','),
+  '1,2,3,4,5');
+
+section('flames.js distribution');
+// The mass check is load-bearing: an earlier version emitted at interior nodes of
+// the subset walk as well as leaves, which double-counted partial subsets and made
+// this read 3.90 instead of 1.
+for (const [kind, lvl, ft, na] of [['armor',160,'eternal',false],
+                                   ['armor',160,'eternal',true],
+                                   ['armor',150,'powerful',false],
+                                   ['weapon',200,'eternal',false],
+                                   ['weapon',250,'reincarnation',false]]) {
+  const d = flameDistribution(kind, lvl, w,
+    { flameType: ft, nonAdvantaged: na, baseAtt: 253 });
+  const m = d.reduce((a, x) => a + x.prob, 0);
+  check(`${kind} lv${lvl} ${ft}${na ? ' non-adv' : ''} mass = 1`, m, 1, 1e-9);
+}
+check('tracked slots for a mage armor = 9',
+  flameTrackedSlots('armor', 160, w).length, 9);
+check('  ... leaving 10 junk, matching MathBro’s choose_from',
+  FLAME_SLOTS_ARMOR - flameTrackedSlots('armor', 160, w).length, 10);
+// A weapon adds boss% and damage% to the same 9, giving 11 of 21. It was 10 while
+// damage carried no weight; now that damage% is the boss weight, that slot counts.
+check('weapon adds boss and damage, so 11 tracked',
+  flameTrackedSlots('weapon', 200, w, { baseAtt: 253 }).length, 11);
+check('  ... leaving 10 junk of 21',
+  FLAME_SLOTS_WEAPON - flameTrackedSlots('weapon', 200, w, { baseAtt: 253 }).length, 10);
+check('the damage slot is what changed',
+  flameTrackedSlots('weapon', 200, w, { baseAtt: 253 }).some(s => s.label === 'damage'), true);
+
+const dA = flameDistribution('armor', 160, w, { flameType: 'eternal' });
+const dN = flameDistribution('armor', 160, w, { flameType: 'eternal', nonAdvantaged: true });
+const rA = flameReroll(dA, 0), rN = flameReroll(dN, 0);
+check('advantage raises the expected score', rA.expected > rN.expected, true);
+check('advantage raises the ceiling', rA.max > rN.max, true);
+check('lv160 beats lv150',
+  flameReroll(flameDistribution('armor', 160, w, { flameType: 'eternal' }), 0).expected >
+  flameReroll(flameDistribution('armor', 150, w, { flameType: 'eternal' }), 0).expected, true);
+check('reincarnation beats eternal',
+  flameReroll(flameDistribution('armor', 160, w, { flameType: 'reincarnation' }), 0).expected >
+  rA.expected, true);
+
+section('flames.js reroll value');
+check('gain from nothing equals expected score', flameReroll(dA, 0).gainPerRoll,
+  rA.expected, 1e-9);
+check('nothing beats the ceiling', flameReroll(dA, rA.max).pImprove, 0, 1e-12);
+check('rolls to beat the ceiling is never',
+  flameReroll(dA, rA.max).rollsToBeat, Infinity);
+check('P(better) falls as current rises',
+  flameReroll(dA, 60).pImprove < flameReroll(dA, 20).pImprove, true);
+check('gain falls as current rises',
+  flameReroll(dA, 60).gainPerRoll < flameReroll(dA, 20).gainPerRoll, true);
+check('rolls to beat = 1 / P(better)',
+  flameReroll(dA, 60).rollsToBeat, 1 / flameReroll(dA, 60).pImprove, 1e-9);
+check('E[value | better] exceeds current',
+  flameReroll(dA, 60).expectedIfBetter > 60, true);
+check('weapon attack scales with base attack',
+  flameReroll(flameDistribution('weapon', 200, w, { flameType: 'eternal', baseAtt: 300 }), 0).max >
+  flameReroll(flameDistribution('weapon', 200, w, { flameType: 'eternal', baseAtt: 253 }), 0).max, true);
+check('flameable set excludes rings for now', FLAMEABLE.has('ring1'), false);
+check('flameable set includes weapon', FLAMEABLE.has('weapon'), true);
+
+/* ---------- percentiles ---------- */
+section('percentile machinery');
+check('normalQuantile(0.5) = 0', normalQuantile(0.5), 0, 1e-6);
+check('normalQuantile(0.975) ~ 1.96', normalQuantile(0.975), 1.96, 5e-3);
+check('normalQuantile is symmetric',
+  normalQuantile(0.85) + normalQuantile(0.15), 0, 1e-9);
+check('zero variance collapses to the mean', lognormalPct(1e9, 0, 85), 1e9, 1e-9);
+check('p50 of a lognormal is below its mean', lognormalPct(1e9, 1e18, 50) < 1e9, true);
+check('percentiles increase monotonically',
+  lognormalPct(1e9, 1e18, 50) < lognormalPct(1e9, 1e18, 85)
+    && lognormalPct(1e9, 1e18, 85) < lognormalPct(1e9, 1e18, 95), true);
+
+// cube and flame counts are geometric, so their percentile is exact
+check('certain success needs one attempt', geometricPct(1, 85), 1);
+check('impossible never succeeds', geometricPct(0, 85), Infinity);
+check('p=0.5 median is 1 roll', geometricPct(0.5, 50), 1);
+check('p=0.01 p95 is 299', geometricPct(0.01, 95), 299);
+check('geometric p50 is below the mean 1/p', geometricPct(0.1, 50) < 10, true);
+check('geometric p95 is above the mean 1/p', geometricPct(0.1, 95) > 10, true);
+
+section('percentile applied to a climb');
+const rc = sfClimb(150, 21, 22, CFG);
+check('climb reports a variance', rc.variance > 0, true);
+check('no percentile gives the mean', sfClimbAtPct(rc, 0), rc.cost, 1e-9);
+check('p50 is below the mean', sfClimbAtPct(rc, 50) < rc.cost, true);
+check('p95 is above the mean', sfClimbAtPct(rc, 95) > rc.cost, true);
+check('a percentile on a priced climb is finite',
+  isFinite(sfClimbAtPct(sfClimb(150, 22, 23, CFG), 85)), true);
+check('  ... and above the mean',
+  sfClimbAtPct(sfClimb(150, 22, 23, CFG), 85) > sfClimb(150, 22, 23, CFG).cost, true);
+check('sub-15 has variance too', sfClimb(150, 0, 15, CFG).variance > 0, true);
+
+const ct = cubeTargetScanAll('emblem', w, cubeCurrentValue([['ATT', 9]], w), 1)[0];
+check('no percentile gives the mean cube count', cubeAtPct(ct, 0).cubes, ct.cubes, 1e-9);
+check('cube p95 exceeds the mean', cubeAtPct(ct, 95).cubes > ct.cubes, true);
+check('cube percentile cost = cubes x cost per cube',
+  cubeAtPct(ct, 85).cost, cubeAtPct(ct, 85).cubes * ct.costPerCube, 1e-6);
+check('cost per cube includes the reveal fee',
+  ct.costPerCube, CUBE_COST[ct.cubeType] + cubeRevealCost(0), 1e-9);
+
+/* ---------- numbers to eyeball against lostara ---------- */
+section('compare these against lostara by hand (ssf, star catch, mvp none)');
+const fm = n => !isFinite(n) ? '—'
+  : n >= 1e12 ? (n/1e12).toFixed(2)+'t' : n >= 1e9 ? (n/1e9).toFixed(2)+'b'
+  : n >= 1e6 ? (n/1e6).toFixed(1)+'m' : Math.round(n).toLocaleString();
+for (const [L, a, b] of [[150,0,15],[150,15,16],[150,17,18],[150,21,22],
+                         [150,17,22],[160,17,22],[200,21,22],[150,22,23]]) {
+  const r = sfClimb(L, a, b, CFG);
+  info(`lv${L}  ${a}★ → ${b}★`,
+    `${fm(r.cost)}   booms ${r.booms.toFixed(2)}   `
+    + (r.modes && r.modes.length ? r.modes.map(m => `${m.star}★:m${m.mode}`).join(' ') : '—'));
+}
+
+/* ---------- render ---------- */
+const out = document.getElementById('out');
+let lastGroup = null;
+const frag = document.createDocumentFragment();
+let table = null;
+for (const r of results) {
+  if (r.group !== lastGroup) {
+    const h = document.createElement('h2');
+    h.textContent = r.group;
+    frag.append(h);
+    table = document.createElement('table');
+    frag.append(table);
+    lastGroup = r.group;
+  }
+  const tr = table.insertRow();
+  if (r.info) {
+    tr.insertCell().textContent = r.name;
+    const c = tr.insertCell();
+    c.colSpan = 3; c.className = 'dim'; c.textContent = r.got;
+  } else {
+    tr.insertCell().textContent = r.name;
+    const st = tr.insertCell();
+    st.className = r.ok ? 'pass' : 'fail';
+    st.textContent = r.ok ? 'pass' : 'FAIL';
+    const g = tr.insertCell(); g.className = 'num'; g.textContent = r.got;
+    const wc = tr.insertCell(); wc.className = 'num dim';
+    wc.textContent = r.ok ? '' : 'want ' + r.want;
+  }
+}
+out.append(frag);
+
+const total = results.filter(r => !r.info).length;
+const failed = results.filter(r => !r.info && !r.ok);
+const s = document.getElementById('summary');
+s.className = failed.length ? 'bad' : 'ok';
+s.textContent = failed.length
+  ? `${failed.length} of ${total} checks FAILED: ` + failed.map(f => f.name).join('; ')
+  : `all ${total} checks passed`;
+</script>
+</body>
+</html>
