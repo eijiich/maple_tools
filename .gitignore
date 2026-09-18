@@ -55,3 +55,24 @@ jTessBoxEditor/
 
 data/img/maple_images/
 data/dedel3.png
+
+# generated media & screen recordings (not committed)
+/data/video/
+*.mkv
+*.mp4
+*.mov
+
+# native build artifacts (solver)
+*.exe
+*.log
+/solver/dist/
+
+# gear-progression export/build zips
+/gear_progression/*.zip
+
+# large local binary datasets — kept on disk, not committed
+/data/img/dataset/
+/maplescouter/samples/
+
+# claude local overrides
+.claude

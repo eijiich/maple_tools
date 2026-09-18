@@ -1,0 +1,163 @@
+/* styles.css — dark, compact, readable at a glance. No framework. */
+
+:root {
+  --bg: #0e1116;
+  --panel: #161b22;
+  --panel2: #1c2230;
+  --line: #2a3242;
+  --text: #e8eef7;
+  --dim: #93a1b5;
+  --accent: #5eead4;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 24px 16px 64px;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+header, main { max-width: 940px; margin: 0 auto; }
+
+h1 { margin: 0 0 4px; font-size: 24px; letter-spacing: -0.01em; }
+h2 { margin: 0 0 10px; font-size: 16px; }
+h3 { margin: 0 0 6px; font-size: 14px; }
+
+.sub { margin: 0 0 24px; color: var(--dim); }
+a { color: var(--accent); }
+
+.hint { color: var(--dim); font-size: 13px; margin: 4px 0 10px; }
+.status { color: var(--dim); font-size: 13px; min-height: 1.4em; }
+
+/* ---- drop zone ---- */
+.drop {
+  display: flex; flex-direction: column; gap: 6px; align-items: center;
+  padding: 32px 20px; text-align: center; cursor: pointer;
+  border: 2px dashed var(--line); border-radius: 12px; background: var(--panel);
+  transition: border-color .15s, background .15s;
+}
+.drop:hover, .drop.hover { border-color: var(--accent); background: var(--panel2); }
+.drop span { color: var(--dim); font-size: 13px; }
+kbd {
+  padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--panel2); font: 12px ui-monospace, monospace;
+}
+
+/* ---- cards ---- */
+.card {
+  margin-top: 18px; padding: 16px; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--panel);
+}
+
+.fields { display: flex; gap: 16px; flex-wrap: wrap; }
+.fields label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--dim); }
+
+input[type=text], input[type=number], textarea, select {
+  padding: 7px 9px; border: 1px solid var(--line); border-radius: 7px;
+  background: var(--bg); color: var(--text); font: inherit;
+}
+input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+button, .bm {
+  padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--accent); color: #06231f; font: 600 14px inherit;
+  cursor: pointer; text-decoration: none; display: inline-block;
+}
+button.ghost, .ghost { background: transparent; color: var(--text); }
+button.mini, .mini { padding: 3px 8px; font-size: 12px; margin-left: 8px; }
+.row { display: flex; gap: 10px; margin: 12px 0; flex-wrap: wrap; }
+
+/* ---- panel status ---- */
+.shotcard { padding: 10px 0; border-top: 1px solid var(--line); }
+.shotcard:first-child { border-top: 0; }
+.shotname { font: 600 13px ui-monospace, monospace; color: var(--dim); margin-bottom: 6px; }
+.panelrow { font-size: 13px; padding: 3px 0 3px 18px; position: relative; }
+.panelrow::before {
+  content: ""; position: absolute; left: 0; top: 9px;
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.panelrow.ok::before { background: var(--ok); }
+.panelrow.warn::before { background: var(--warn); }
+.panelrow.bad::before { background: var(--bad); }
+
+/* ---- tables ---- */
+.grid { width: 100%; border-collapse: collapse; font-size: 14px; }
+.grid th {
+  text-align: left; padding: 6px 8px; color: var(--dim);
+  font-size: 12px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .04em; border-bottom: 1px solid var(--line);
+}
+.grid td { padding: 4px 8px; border-bottom: 1px solid rgba(42,50,66,.5); }
+.grid tr.extra td { color: var(--dim); }
+.grid td input { width: 100%; max-width: 200px; }
+
+/* Values table mirroring the in-game STAT window: two stat/value column pairs. */
+.grid.mirror td.fname { color: var(--text); white-space: nowrap; padding-right: 4px; }
+.grid.mirror td.fval { width: 22%; }
+.grid.mirror td.fval input { max-width: 120px; }
+.grid.mirror td.fval input.narrow { max-width: 52px; }
+.grid.mirror td.fval .subtag { color: var(--dim); font-size: 11px; margin: 0 6px 0 3px; }
+/* Read-only = maplescouter derives it; de-emphasised so the editable ones lead. */
+.grid.mirror td.readonly { color: var(--dim); }
+.grid.mirror tr.spacer td { border: 0; height: 10px; padding: 0; }
+/* The right-hand pair gets a rule between it and the left, like the game panel. */
+.grid.mirror td:nth-child(3) { border-left: 1px solid var(--line); padding-left: 14px; }
+
+@media (max-width: 700px) {
+  /* Two columns don't fit; fall back to one stat per line, order preserved. */
+  .grid.mirror thead { display: none; }
+  .grid.mirror td:nth-child(3) { border-left: 0; padding-left: 8px; }
+  .grid.mirror tr { display: grid; grid-template-columns: 1fr auto; }
+  .grid.mirror td.fval { width: auto; text-align: right; }
+}
+.grid .statname { font-weight: 600; }
+.grid .note { color: var(--dim); font-size: 12px; }
+.grid .empty { color: var(--dim); text-align: center; padding: 16px; }
+
+/* ---- glyph teaching ---- */
+.issue { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 0; font-size: 13px; }
+.teach { display: inline-flex; align-items: center; gap: 4px; }
+canvas.glyph { border: 1px solid var(--line); border-radius: 3px; image-rendering: pixelated; vertical-align: middle; }
+.teachinput { width: 34px; text-align: center; }
+
+.steps { margin: 0 0 10px; padding-left: 22px; }
+.steps li { margin: 8px 0; line-height: 2.1; }
+.alt { margin: 10px 0; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
+.alt summary { cursor: pointer; font-size: 13px; color: var(--dim); }
+.alt[open] summary { margin-bottom: 6px; }
+.bm.ghost { background: transparent; color: var(--text); }
+
+.json {
+  width: 100%; margin-top: 10px; font: 12px/1.5 ui-monospace, monospace;
+  resize: vertical;
+}
+
+/* ---- manual locate modal ---- */
+.modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,.72);
+  display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50;
+}
+.modalbox {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px; max-width: 96vw; max-height: 92vh; display: flex; flex-direction: column; gap: 10px;
+}
+.modalhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; }
+.ref { display: flex; align-items: center; gap: 8px; }
+.confirmbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px; border: 1px solid var(--accent); border-radius: 8px;
+  background: var(--panel2);
+}
+.remember { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dim); }
+.panelrow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.panelrow > span { margin-right: 2px; }
+.canvaswrap { overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+.canvaswrap canvas { display: block; max-width: 100%; height: auto; cursor: crosshair; }
+
+.hidden { display: none !important; }

@@ -1,0 +1,939 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Legion Solver</title>
+  <style>
+/* =========================================================================
+ * Theme tokens
+ * Dark theme is the default (variables on :root). Light theme overrides them
+ * on html.theme-light. The class lives on <html> (not <body>) so that
+ * custom-property overrides reach the html element itself — otherwise the
+ * html background stays dark and shows through below short pages.
+ * Piece colours (set via inline style by app.mjs) stay the same in both
+ * themes — they're game data, not theme data.
+ * ========================================================================= */
+:root {
+  /* Backgrounds */
+  --bg-page:           #1d1f23;
+  --bg-card:           #15171b;
+  --bg-input:          #16181c;
+  --bg-board:          #16181c;
+  --bg-button:         #2c2f36;
+  --bg-button-hover:   #3a3e48;
+  --bg-button-disabled:#2c3a52;
+  --bg-thumbnail:      #0e1013;
+  --bg-locked:         #1a1c20;
+  --bg-empty:          #353945;
+  --bg-empty-hover:    #424754;
+
+  /* Text */
+  --text-primary:    #e2e4ea;
+  --text-secondary:  #c8cbd2;
+  --text-muted:      #8b8f99;
+  --text-faded:      #6a6f7a;
+  --text-counter:    #5a6172;
+
+  /* Borders */
+  --border-page:    #2c2f36;
+  --border-card:    #2a2d33;
+  --border-input:   #3a3e48;
+  --border-subtle:  #24262b;
+  --border-cell:    #2a2c32;
+  --border-shape:   #2c2f36;
+  --border-group:   #6c7388;
+
+  /* Accents (action colours — stay vibrant in both themes) */
+  --accent-primary:        #3a7bd5;
+  --accent-primary-hover:  #5b97e8;
+  --accent-success:        #6ad36a;
+  --accent-warning:        #e0a458;
+  --accent-danger:         #d35a5a;
+
+  /* Danger chips (delete buttons) */
+  --danger-text:         #d3a0a0;
+  --danger-border:       #5a3a3a;
+  --danger-bg-hover:     #5a3a3a;
+  --danger-bg-armed:     #d35a5a;
+  --danger-bg-armed-hov: #e07070;
+  --danger-button-bg:    #b04848;
+  --danger-button-bg-hov:#c95a5a;
+
+  /* Hover preview */
+  --preview-on-outline:  #b6c4ff;
+  --preview-off-outline: #8b94b3;
+
+  /* Per-group cell tints — eight subtle variants for locked + eight for empty.
+   * In dark mode these stay close to the base locked/empty colours but
+   * shift hue slightly per group. */
+  --tint-locked-0: #1a1c20;
+  --tint-locked-1: #1c1f24;
+  --tint-locked-2: #1a1d22;
+  --tint-locked-3: #1e2127;
+  --tint-locked-4: #1c1f25;
+  --tint-locked-5: #1e2128;
+  --tint-locked-6: #1c1f25;
+  --tint-locked-7: #1e2229;
+  --tint-empty-0:  #353945;
+  --tint-empty-1:  #383d4a;
+  --tint-empty-2:  #353a48;
+  --tint-empty-3:  #393e4c;
+  --tint-empty-4:  #393e4d;
+  --tint-empty-5:  #3c4250;
+  --tint-empty-6:  #393e4d;
+  --tint-empty-7:  #3d4353;
+
+  /* Error overlay */
+  --error-bg:   #3a1015;
+  --error-text: #ffb4b4;
+
+  /* Placed-piece outline + middle marker */
+  --piece-outline: rgba(0,0,0,0.55);
+  --piece-sep:     rgba(0,0,0,0.95);
+  --piece-middle:  rgba(255,255,255,0.32);
+
+  /* Header bg — same as page in dark mode, slightly darker in light. */
+  --bg-header: transparent;
+}
+
+html.theme-light {
+  --bg-page:           #f3f4f7;
+  --bg-header:         #e6e8ee;       /* a touch darker than page bg */
+  --bg-card:           #ffffff;
+  --bg-input:          #ffffff;
+  --bg-board:          #ffffff;
+  --bg-button:         #eaecf1;
+  --bg-button-hover:   #dde0e8;
+  --bg-button-disabled:#c0c8d6;
+  --bg-thumbnail:      #e8eaef;
+  /* Inverted polarity from dark mode: in light, "untouched" cells are white
+   * (blend with the page) and "marked / available" cells stand out by being
+   * a touch darker. Painting a cell makes it darker, not lighter. */
+  --bg-locked:         #ffffff;
+  --bg-empty:          #dadee5;
+  --bg-empty-hover:    #cbd0d9;
+
+  --text-primary:   #1a1d24;
+  --text-secondary: #3a3e48;
+  --text-muted:     #6a6f7a;
+  --text-faded:     #8b8f99;
+  --text-counter:   #a5aab5;
+
+  --border-page:    #d4d7de;
+  --border-card:    #d8dae0;
+  --border-input:   #bcc0c8;
+  --border-subtle:  #e2e4e8;
+  /* Cell + piece-shape gridlines need to be dark in light mode — otherwise
+   * they vanish against the white board background. */
+  --border-cell:    #3a3e48;
+  --border-shape:   #4a4f5c;
+  --border-group:   #1d1f23;
+
+  --accent-primary:        #3a7bd5;
+  --accent-primary-hover:  #2e6cc4;
+  --accent-success:        #2a8b2a;
+  --accent-warning:        #b5732f;
+  --accent-danger:         #c54040;
+
+  --danger-text:         #b03a3a;
+  --danger-border:       #d8a0a0;
+  --danger-bg-hover:     #f0d8d8;
+  --danger-bg-armed:     #c54040;
+  --danger-bg-armed-hov: #d65555;
+  --danger-button-bg:    #c54040;
+  --danger-button-bg-hov:#d65555;
+
+  --preview-on-outline:  #5470d8;
+  --preview-off-outline: #8b94b3;
+
+  /* Locked = white-ish bands (matches the inverted polarity above). */
+  --tint-locked-0: #ffffff;
+  --tint-locked-1: #fbfcfe;
+  --tint-locked-2: #fdfdff;
+  --tint-locked-3: #f8fafc;
+  --tint-locked-4: #fafbfd;
+  --tint-locked-5: #f6f8fc;
+  --tint-locked-6: #fafbfd;
+  --tint-locked-7: #f4f6fb;
+  /* Empty = mid-gray bands, so painting a cell makes it darker. */
+  --tint-empty-0:  #dadee5;
+  --tint-empty-1:  #d6dae2;
+  --tint-empty-2:  #dadfe6;
+  --tint-empty-3:  #d3d8e0;
+  --tint-empty-4:  #d8dce4;
+  --tint-empty-5:  #d1d6df;
+  --tint-empty-6:  #d8dce4;
+  --tint-empty-7:  #ced3dd;
+
+  --error-bg:   #fff0f0;
+  --error-text: #8a2020;
+
+  /* Light mode: darker outline so it pops against the lighter piece colors,
+   * darker sep separator, and dark middle marker (white would vanish). */
+  --piece-outline: rgba(0,0,0,0.7);
+  --piece-sep:     rgba(0,0,0,1);
+  --piece-middle:  rgba(0,0,0,0.25);
+}
+
+/* =========================================================================
+ * Layout & typography
+ * ========================================================================= */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font: 13px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+header {
+  padding: 12px 18px;
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--border-page);
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+header h1 { font-size: 16px; font-weight: 600; margin: 0; }
+header .sub { color: var(--text-muted); font-size: 12px; }
+header .spacer { flex: 1; }
+
+main { padding: 18px; }
+
+/* Theme toggle (top right of the header) */
+.theme-toggle {
+  background: var(--bg-button);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 4px 10px;
+  font-size: 16px;
+  line-height: 1;
+  align-self: center;
+}
+.theme-toggle:hover { background: var(--bg-button-hover); }
+.theme-toggle .icon-light { display: inline; }
+.theme-toggle .icon-dark  { display: none; }
+html.theme-light .theme-toggle .icon-light { display: none; }
+html.theme-light .theme-toggle .icon-dark  { display: inline; }
+
+/* Middle-marker toggle — same kind of button. Shows ⊙ (filled dot) when the
+ * marker is ON, ◯ (empty circle) when it's OFF. */
+#middleToggle .icon-middle-on  { display: inline; }
+#middleToggle .icon-middle-off { display: none; }
+body.hide-middle #middleToggle .icon-middle-on  { display: none; }
+body.hide-middle #middleToggle .icon-middle-off { display: inline; }
+
+/* The board is the visual anchor: a centered rail that hugs the board's natural
+ * width. The two side panels (pieces, presets) are absolutely positioned just
+ * outside the rail, so the board always sits at the exact horizontal page
+ * centre regardless of how wide the side panels are. */
+.center-rail {
+  position: relative;
+  width: max-content;
+  margin: 0 auto;
+}
+
+.column h2 {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;
+  margin: 0 0 8px;
+}
+
+.trayCol {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  margin-right: 24px;
+  width: 540px;
+  display: flex;
+  gap: 18px;
+}
+.trayCol-piecePresets { flex: 0 0 240px; min-width: 0; }
+.trayCol-pieces       { flex: 1 1 auto;  min-width: 0; }
+.boardCol {
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 0;
+}
+.presetsCol {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: 24px;
+  width: 560px;
+}
+
+.board-title {
+  font-size: 38px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 16px;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+.column h2 .counter {
+  color: var(--text-counter);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  margin-left: 6px;
+}
+
+/* =========================================================================
+ * Saved-preset panel (board + counts; right column)
+ * ========================================================================= */
+.presets-controls { display: flex; gap: 8px; margin-bottom: 10px; }
+.presets-controls button {
+  background: var(--bg-button);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+.presets-controls button:hover    { background: var(--bg-button-hover); }
+.presets-controls button:disabled { opacity: 0.55; cursor: not-allowed; }
+.presets-list {
+  display: grid;
+  grid-template-rows: repeat(5, auto);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-flow: column;
+  gap: 8px;
+}
+.presets-empty {
+  grid-column: 1 / -1;
+  color: var(--text-faded); font-size: 12px; line-height: 1.45;
+  padding: 10px 4px;
+}
+.preset-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 10px;
+  padding: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 4px;
+  min-width: 0;
+}
+.preset-card .corner-delete {
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 20px; height: 20px;
+  padding: 0;
+  background: var(--bg-button);
+  color: var(--danger-text);
+  border: 1px solid var(--danger-border);
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2;
+}
+.preset-card .corner-delete:hover { background: var(--danger-bg-hover); color: #fff; }
+.preset-card .corner-delete.armed {
+  background: var(--danger-bg-armed); color: #fff; border-color: var(--danger-bg-armed);
+}
+.preset-card .corner-delete.armed:hover { background: var(--danger-bg-armed-hov); }
+.preset-card .solve-stats {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.preset-card canvas {
+  width: 88px; height: 80px;
+  align-self: stretch;
+  background: var(--bg-thumbnail);
+  border-radius: 2px;
+  image-rendering: pixelated;
+}
+.preset-card .meta {
+  display: flex; flex-direction: column; gap: 3px;
+  min-width: 0;
+}
+.preset-card .name {
+  width: 100%;
+  background: transparent;
+  color: var(--text-primary);
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 2px 24px 2px 0;
+  font: inherit;
+  font-size: 12px;
+  min-width: 0;
+}
+.preset-card .name:focus,
+.preset-card .name:hover {
+  outline: none;
+  border-bottom-color: var(--border-input);
+}
+.preset-card .sub {
+  font-size: 10px; color: var(--text-faded);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.preset-card .actions {
+  display: flex; gap: 6px;
+  margin-top: auto;
+}
+.preset-card .actions button {
+  background: var(--bg-button);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  border-radius: 3px;
+  padding: 3px 4px;
+  font-size: 11px;
+  line-height: 1.3;
+  cursor: pointer;
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+}
+.preset-card .actions button:hover { background: var(--bg-button-hover); }
+.preset-card .actions button.danger {
+  color: var(--danger-text); border-color: var(--danger-border);
+  flex: 0 0 auto;
+  min-width: 28px;
+  padding: 3px 8px;
+}
+.preset-card .actions button.danger:hover  { background: var(--danger-bg-hover); color: #fff; }
+.preset-card .actions button.danger.armed  {
+  background: var(--danger-bg-armed); color: #fff; border-color: var(--danger-bg-armed);
+}
+.preset-card .actions button.danger.armed:hover { background: var(--danger-bg-armed-hov); }
+
+/* =========================================================================
+ * Board
+ * ========================================================================= */
+.boardWrap {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+#legionBoard {
+  border-collapse: collapse;
+  background: var(--bg-board);
+  user-select: none;
+}
+#legionBoard td {
+  width: 26px; height: 26px;
+  border: 1px solid var(--border-cell);
+  cursor: pointer;
+  position: relative;
+}
+#legionBoard td.locked { background: var(--bg-locked); }
+#legionBoard td.empty  { background: var(--bg-empty); }
+#legionBoard td.empty:hover { background: var(--bg-empty-hover); }
+
+/* Placed pieces.
+ * Filled cells inherit the board's 1px dark gridline like everyone else —
+ * adjacent cells of the same piece show that gridline between them (matches
+ * the user's "internal gridlines same color as the board gridline" call).
+ * Add to it:
+ *   --sep-right / --sep-bottom : a thick (2px) dark line between this cell
+ *                                and a DIFFERENT placement on its right/bottom,
+ *                                so two same-colour pieces that touch still
+ *                                show a clear boundary.
+ *   --middle                   : subtle inset on the piece's center cell. */
+#legionBoard td.filled {
+  --sep-right:  inset 0 0 0 0 transparent;
+  --sep-bottom: inset 0 0 0 0 transparent;
+  --middle:     inset 0 0 0 0 transparent;
+  box-shadow:
+    var(--sep-right),
+    var(--sep-bottom),
+    var(--middle);
+}
+#legionBoard td.filled.middle { --middle:     inset 0 0 0 3px var(--piece-middle); }
+#legionBoard td.filled.sep-r  { --sep-right:  inset -1px 0 0 0 var(--piece-sep); }
+#legionBoard td.filled.sep-b  { --sep-bottom: inset 0 -1px 0 0 var(--piece-sep); }
+
+/* Hide the 1px gridline between two same-piece adjacent cells. The classes
+ * are added in applyPieceSeparators when the cell's neighbour on that side
+ * belongs to the SAME placement. With border-collapse, both adjacent cells
+ * end up with border-width: 0 on the shared edge, so the line disappears. */
+#legionBoard td.filled.no-t { border-top-width:    0; }
+#legionBoard td.filled.no-b { border-bottom-width: 0; }
+#legionBoard td.filled.no-l { border-left-width:   0; }
+#legionBoard td.filled.no-r { border-right-width:  0; }
+
+/* Middle-marker toggle: when the body has .hide-middle, suppress the marker. */
+body.hide-middle #legionBoard td.filled.middle { --middle: inset 0 0 0 0 transparent; }
+
+/* Per-group cell tints — alternate two banks of 4 across the 16 groups. */
+#legionBoard td.locked.g0,  #legionBoard td.locked.g4  { background: var(--tint-locked-0); }
+#legionBoard td.locked.g1,  #legionBoard td.locked.g5  { background: var(--tint-locked-1); }
+#legionBoard td.locked.g2,  #legionBoard td.locked.g6  { background: var(--tint-locked-2); }
+#legionBoard td.locked.g3,  #legionBoard td.locked.g7  { background: var(--tint-locked-3); }
+#legionBoard td.locked.g8,  #legionBoard td.locked.g12 { background: var(--tint-locked-4); }
+#legionBoard td.locked.g9,  #legionBoard td.locked.g13 { background: var(--tint-locked-5); }
+#legionBoard td.locked.g10, #legionBoard td.locked.g14 { background: var(--tint-locked-6); }
+#legionBoard td.locked.g11, #legionBoard td.locked.g15 { background: var(--tint-locked-7); }
+
+#legionBoard td.empty.g0,  #legionBoard td.empty.g4  { background: var(--tint-empty-0); }
+#legionBoard td.empty.g1,  #legionBoard td.empty.g5  { background: var(--tint-empty-1); }
+#legionBoard td.empty.g2,  #legionBoard td.empty.g6  { background: var(--tint-empty-2); }
+#legionBoard td.empty.g3,  #legionBoard td.empty.g7  { background: var(--tint-empty-3); }
+#legionBoard td.empty.g8,  #legionBoard td.empty.g12 { background: var(--tint-empty-4); }
+#legionBoard td.empty.g9,  #legionBoard td.empty.g13 { background: var(--tint-empty-5); }
+#legionBoard td.empty.g10, #legionBoard td.empty.g14 { background: var(--tint-empty-6); }
+#legionBoard td.empty.g11, #legionBoard td.empty.g15 { background: var(--tint-empty-7); }
+
+#legionBoard td.gb-top    { border-top:    2px solid var(--border-group); }
+#legionBoard td.gb-bot    { border-bottom: 2px solid var(--border-group); }
+#legionBoard td.gb-left   { border-left:   2px solid var(--border-group); }
+#legionBoard td.gb-right  { border-right:  2px solid var(--border-group); }
+
+#legionBoard td.preview-on  {
+  outline: 1px solid var(--preview-on-outline); outline-offset: -1px;
+  filter: brightness(1.25);
+}
+#legionBoard td.preview-off {
+  outline: 1px solid var(--preview-off-outline); outline-offset: -1px;
+  filter: brightness(0.9);
+}
+
+/* During a solve: block board interaction, dim it slightly, show 🚫 cursor.
+ * With pointer-events:none on the board, the cursor falls through to its
+ * parent (.boardWrap) which we mark as not-allowed. */
+body.solving #legionBoard { pointer-events: none; opacity: 0.85; }
+body.solving .boardWrap   { cursor: not-allowed; }
+
+/* =========================================================================
+ * Controls (the bar below the board, plus the "Clear counts" in the tray)
+ * ========================================================================= */
+.controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
+.controls button {
+  background: var(--bg-button);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+.controls button:hover                  { background: var(--bg-button-hover); }
+.controls button.primary                { background: var(--accent-primary); border-color: var(--accent-primary); color: #fff; }
+.controls button.primary:hover          { background: var(--accent-primary-hover); }
+.controls button.primary:disabled       { background: var(--bg-button-disabled); border-color: var(--bg-button-disabled); cursor: not-allowed; opacity: 0.6; color: #fff; }
+.controls button:disabled               { cursor: not-allowed; opacity: 0.55; }
+.controls button.danger                 { background: var(--danger-button-bg); border-color: var(--danger-button-bg); color: #fff; }
+.controls button.danger:hover           { background: var(--danger-button-bg-hov); }
+.controls .sep { flex-basis: 100%; height: 0; }
+.controls label.check {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--text-secondary); font-size: 12px; cursor: pointer;
+  padding: 4px 8px;
+}
+.controls input[type=number] {
+  width: 100px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  border-radius: 3px;
+  padding: 4px 6px;
+  font: inherit;
+  text-align: left;
+}
+
+/* Counters above the board */
+.counters { display: flex; gap: 18px; margin-bottom: 8px; font-size: 12px; color: var(--text-muted); }
+.counters .k { color: var(--text-muted); margin-right: 4px; }
+.counters .v { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.counters .v.ok    { color: var(--accent-success); }
+.counters .v.over  { color: var(--accent-warning); }
+.counters .v.under { color: var(--accent-danger); }
+
+/* Last-solve stats (below the board) */
+.stats {
+  display: flex; gap: 24px;
+  margin-top: 10px; padding: 8px 14px;
+  background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 4px;
+  font-size: 12px; color: var(--text-muted);
+}
+.stats .k { color: var(--text-muted); margin-right: 6px; text-transform: uppercase; letter-spacing: 0.05em; font-size: 11px; }
+.stats .v { color: var(--text-primary); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+#status { font-size: 12px; color: var(--text-muted); margin-top: 8px; min-height: 1.2em; text-align: center; }
+#status.ok  { color: var(--accent-success); }
+#status.err { color: var(--accent-danger); }
+
+.controls.below {
+  margin-top: 12px;
+  width: 100%;
+  justify-content: space-between;
+}
+.controls.below > label.check { flex: 0 0 auto; }
+.controls.below > button     { flex: 0 0 auto; }
+
+/* =========================================================================
+ * Piece-only presets (saved counts, no board) — left of the piece tray
+ * ========================================================================= */
+.piece-presets-list {
+  display: flex; flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+.piece-preset-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 5px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 4px;
+  min-width: 0;
+}
+.piece-preset-card .name {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  color: var(--text-primary);
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 1px 0;
+  font: inherit;
+  font-size: 12px;
+}
+.piece-preset-card .name:focus,
+.piece-preset-card .name:hover {
+  outline: none; border-bottom-color: var(--border-input);
+}
+.piece-preset-card .actions {
+  display: flex; gap: 3px;
+  flex: 0 0 auto;
+}
+.piece-preset-card .actions button {
+  background: var(--bg-button);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 10px;
+  line-height: 1.4;
+  cursor: pointer;
+  min-width: 0;
+}
+.piece-preset-card .actions button:hover { background: var(--bg-button-hover); }
+.piece-preset-card .actions button.danger {
+  color: var(--danger-text); border-color: var(--danger-border);
+  padding: 1px 4px;
+  min-width: 20px;
+}
+.piece-preset-card .actions button.danger:hover { background: var(--danger-bg-hover); color: #fff; }
+.piece-preset-card .actions button.danger.armed {
+  background: var(--danger-bg-armed); color: #fff; border-color: var(--danger-bg-armed);
+}
+
+/* =========================================================================
+ * Piece tray
+ * ========================================================================= */
+.piece-row {
+  display: grid;
+  grid-template-columns: 1fr max-content 56px;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.piece-row:last-child { border-bottom: none; }
+.piece-row .label {
+  color: var(--text-secondary); font-size: 12px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Piece shape preview — just coloured cells, no contour, no grid.
+ * Empty cells (shape[i][j] === 0) are fully transparent. */
+.piece-row .shape { border-collapse: collapse; }
+.piece-row .shape td {
+  width: 12px; height: 12px;
+  border: 0;
+  background: transparent;
+}
+.piece-row input[type=number] {
+  width: 56px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font: inherit;
+  text-align: left;
+}
+.piece-row input[type=number]:focus { outline: 1px solid var(--accent-primary); border-color: var(--accent-primary); }
+
+/* =========================================================================
+ * Error overlay
+ * ========================================================================= */
+#errorOverlay {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+  background: var(--error-bg); color: var(--error-text);
+  border-bottom: 1px solid var(--accent-danger);
+  padding: 8px 14px;
+  font: 12px/1.4 ui-monospace, Consolas, monospace;
+  white-space: pre-wrap;
+  max-height: 40vh; overflow: auto;
+}
+
+</style>
+</head>
+<body>
+
+<script>
+  // Apply persisted theme BEFORE the page renders to avoid a dark→light flash.
+  // The class goes on <html> so the page-bg variable cascades to it too —
+  // otherwise the html element keeps the dark default and shows through
+  // below the body when the page is shorter than the viewport.
+  try {
+    if (localStorage.getItem('legionSolver.theme') === 'light') {
+      document.documentElement.classList.add('theme-light');
+    }
+  } catch (e) {}
+</script>
+
+<div id="errorOverlay" hidden></div>
+<script>
+  // Surface module-load and runtime errors visibly — opening DevTools shouldn't be required.
+  (function () {
+    const overlay = document.getElementById('errorOverlay');
+    function show(msg) {
+      overlay.hidden = false;
+      overlay.textContent = (overlay.textContent ? overlay.textContent + '\n' : '') + msg;
+    }
+    window.addEventListener('error', (ev) => {
+      const where = ev.filename ? ` (${ev.filename}:${ev.lineno}:${ev.colno})` : '';
+      show('ERROR: ' + (ev.message || ev.type) + where);
+    });
+    window.addEventListener('unhandledrejection', (ev) => {
+      const r = ev.reason;
+      show('UNHANDLED: ' + (r && r.stack ? r.stack : String(r)));
+    });
+  })();
+</script>
+
+<header>
+  <h1>Legion Solver</h1>
+  <span class="sub">click cells to toggle · double-click toggles a whole region · enter piece counts on the left · solve</span>
+  <span class="spacer"></span>
+  <button id="middleToggle" class="theme-toggle" title="Show / hide piece middle marker" aria-label="Toggle middle marker">
+    <span class="icon-middle-on">⊙</span>
+    <span class="icon-middle-off">◯</span>
+  </button>
+  <button id="themeToggle" class="theme-toggle" title="Toggle light / dark theme" aria-label="Toggle theme">
+    <span class="icon-light">☀</span>
+    <span class="icon-dark">☾</span>
+  </button>
+</header>
+
+<main>
+ <div class="center-rail">
+  <div class="column trayCol">
+    <div class="trayCol-piecePresets">
+      <h2>Piece presets <span class="counter" id="piecePresetsCount"></span></h2>
+      <div class="presets-controls">
+        <button id="btnSavePiecePreset">Save current</button>
+      </div>
+      <div id="piecePresetsList" class="piece-presets-list">
+        <div class="presets-empty">No piece presets yet — saves only your counts (not the board).</div>
+      </div>
+    </div>
+
+    <div class="trayCol-pieces">
+      <h2>Pieces</h2>
+      <div class="controls">
+        <button id="btnClearCounts">Clear counts</button>
+      </div>
+      <div id="pieceTray"></div>
+    </div>
+  </div>
+
+  <div class="column boardCol">
+    <h1 class="board-title">Legion Solver</h1>
+    <div class="counters">
+      <div><span class="k">characters</span><span class="v" id="counterCharacters">0</span></div>
+      <div><span class="k">piece cells</span><span class="v" id="counterPieceCells">0</span></div>
+      <div><span class="k">marked cells</span><span class="v" id="counterEmpty">0</span></div>
+      <div><span class="k">diff</span><span class="v" id="counterDiff">0</span></div>
+    </div>
+
+    <div class="boardWrap">
+      <table id="legionBoard">
+        <tbody id="boardBody"></tbody>
+      </table>
+    </div>
+
+    <div class="controls below">
+      <button id="btnClearBoard">Clear board</button>
+      <button id="btnClearSolution">Clear solution</button>
+      <label class="check" title="0 = no cap. Solve blocks the UI while it runs.">
+        Max iter
+        <input type="number" id="inpMaxIter" min="0" step="1000000" value="0" />
+      </label>
+      <label class="check"><input type="checkbox" id="chkBigClick" /> Region click</label>
+      <button id="btnStop" class="danger" style="visibility:hidden">Stop</button>
+      <button id="btnSolve" class="primary">Solve</button>
+    </div>
+
+    <div class="stats">
+      <div><span class="k">iterations</span><span class="v" id="statIter">—</span></div>
+      <div><span class="k">time</span><span class="v" id="statTime">—</span></div>
+      <div><span class="k">placements</span><span class="v" id="statPlacements">—</span></div>
+    </div>
+
+    <div id="status"></div>
+  </div>
+
+  <div class="column presetsCol">
+    <h2>Saved presets <span class="counter" id="presetsCount"></span></h2>
+    <div class="presets-controls">
+      <button id="btnSavePreset">Save current</button>
+    </div>
+    <div id="presetsList" class="presets-list">
+      <div class="presets-empty">No saved presets yet — hit “Save current” to remember this board + counts.</div>
+    </div>
+  </div>
+ </div>
+</main>
+
+<script>
+(()=>{var sr=Object.defineProperty;var ar=(t,r,e)=>r in t?sr(t,r,{enumerable:!0,configurable:!0,writable:!0,value:e}):t[r]=e;var Ie=(t,r,e)=>ar(t,typeof r!="symbol"?r+"":r,e);var cr={};async function ir(t={}){var r,e=t,A=!0,l=!1,s=[],a="./this.program",j=cr.url,p="",d;if(A||l){try{p=new URL(".",j).href}catch{}d=async o=>{var i=await fetch(o,{credentials:"same-origin"});if(i.ok)return i.arrayBuffer();throw new Error(i.status+" : "+i.url)}}var m=console.log.bind(console),f=console.error.bind(console),k,y=!1;class b{}class w extends b{}function L(o){for(var i=0,u=o.length,g=new Uint8Array(u),E;i<u;++i)E=o.charCodeAt(i),g[i]=~E>>8&E;return g}var T,D,N=!1;function C(){var o=re.buffer;e.HEAP8=_e=new Int8Array(o),e.HEAP16=lt=new Int16Array(o),e.HEAPU8=te=new Uint8Array(o),e.HEAPU16=jt=new Uint16Array(o),e.HEAP32=st=new Int32Array(o),e.HEAPU32=ut=new Uint32Array(o),it=new Float32Array(o),e.HEAPF64=ct=new Float64Array(o),at=new BigInt64Array(o),dt=new BigUint64Array(o)}function ue(){if(e.preRun)for(typeof e.preRun=="function"&&(e.preRun=[e.preRun]);e.preRun.length;)pt(e.preRun.shift());ke(be)}function ee(){N=!0,z.c()}function x(){if(e.postRun)for(typeof e.postRun=="function"&&(e.postRun=[e.postRun]);e.postRun.length;)ft(e.postRun.shift());ke(he)}function Qe(o){e.onAbort?.(o),o=`Aborted(${o})`,f(o),y=!0,o+=". Build with -sASSERTIONS for more info.";var i=new WebAssembly.RuntimeError(o);throw D?.(i),i}var Ee;function et(){return L(`\0asm\0\0\0J\f\`\0\x7F\`\x7F\x7F\`\x7F\x7F\x7F\`\x7F\x7F\0\`\x7F\0\`\x7F\x7F\x7F\x7F\x7F\0\`\x7F\x7F\x7F\x7F\x7F\`\x7F\x7F\x7F\0\`\x7F\x7F\x7F\x7F\`\x07\x7F\x7F\x7F\x7F\x7F\x7F\x7F\0\`\x7F\x7F\x7F\x7F\0\`\0\0\x07aa\0'&\b	
+\0\x07\x07\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\vp\x07\x80\x80\x80	\x7FA\xE0\x8F\x80\v\x07qb\0c\0&d\0e\0f\0g\0	h\0i\0j\0	k\0$l\0m\0n\0o\0#p\0"q\0r\0!s\0t\0 u\0v\0w\0x\0y\0\x1Bz\0\fA\0B\0C\0		\0A\v%\f
+\x88\x9C&\v\0 \0  \0\vT\x7F~@A\xE8\v(\0"\xAD \0\xADB\x07|B\xF8\xFF\xFF\xFF\x83|"B\xFF\xFF\xFF\xFFX@ \xA7"\0?\0AtM\r \0\0\r\vA\xEC\vA06\0A\x7F\vA\xE8\v \x006\0 \vH\x7F\x7F AM@ \0(\0! \0Aj\f\v A k! \0\v(\0! \0  t6\0 \0  t A  kvr6\v\xC1\x7F#\0A\xF0k"\b$\0 \b (\0"\x076\xE8 (! \b \x006\0 \b 6\xECA\0 k!\f E!
+@@@@ \x07AG@ \0!\x07A!\f\v \0!\x07A! \r\0\f\v@ \x07  Atj"	(\0k" \0 A\0L\r 
+A\x7Fs!\vA!
+@ \v AHrAqE@ 	A\bk(\0!	 \x07 \fj"\v  A\0N\r \v 	k  A\0N\r\v \b Atj 6\0 \bA\xE8j"\x07 \x07"\x07 Aj!  \x07j! \b(\xEC !\x07 \b(\xE8AG\r\r\f\v\v \x07!\f\v \x07! 
+E\r\v  \b      \x07\v \bA\xF0j$\0\vK\x7F \0(! \0\x7F AM@ \0(\0! \f\v A k! !A\0\v" v6 \0 A  kt  vr6\0\v\xDF\v\b\x7F@ \0E\r\0 \0A\bk" \0Ak(\0"Axq"\0j!@ Aq\r\0 AqE\r  (\0"k"A\x80\f(\0I\r \0 j!\0@@@A\x84\f(\0 G@ (\f! A\xFFM@  (\b"G\rA\xF0\vA\xF0\v(\0A~ Avwq6\0\f\v (!\x07  G@ (\b" 6\f  6\b\f\v ("\x7F Aj ("E\r Aj\v!@ ! "Aj! ("\r\0 Aj! ("\r\0\v A\x006\0\f\v ("AqAG\rA\xF8\v \x006\0  A~q6  \0Ar6  \x006\0\v  6\f  6\b\f\vA\0!\v \x07E\r\0@ ("At"(\xA0 F@ A\xA0j 6\0 \rA\xF4\vA\xF4\v(\0A~ wq6\0\f\v@  \x07(F@ \x07 6\f\v \x07 6\v E\r\v  \x076 ("@  6  6\v ("E\r\0  6  6\v  O\r\0 ("AqE\r\0@@@@ AqE@A\x88\f(\0 F@A\x88\f 6\0A\xFC\vA\xFC\v(\0 \0j"\x006\0  \0Ar6 A\x84\f(\0G\rA\xF8\vA\x006\0A\x84\fA\x006\0\vA\x84\f(\0"\x07 F@A\x84\f 6\0A\xF8\vA\xF8\v(\0 \0j"\x006\0  \0Ar6 \0 j \x006\0\v Axq \0j!\0 (\f! A\xFFM@ (\b" F@A\xF0\vA\xF0\v(\0A~ Avwq6\0\f\v  6\f  6\b\f\v (!\b  G@ (\b" 6\f  6\b\f\v ("\x7F Aj ("E\r Aj\v!@ ! "Aj! ("\r\0 Aj! ("\r\0\v A\x006\0\f\v  A~q6  \0Ar6 \0 j \x006\0\f\vA\0!\v \bE\r\0@ ("At"(\xA0 F@ A\xA0j 6\0 \rA\xF4\vA\xF4\v(\0A~ wq6\0\f\v@  \b(F@ \b 6\f\v \b 6\v E\r\v  \b6 ("@  6  6\v ("E\r\0  6  6\v  \0Ar6 \0 j \x006\0  \x07G\r\0A\xF8\v \x006\0\v \0A\xFFM@ \0A\xF8qA\x98\fj!\x7FA\xF0\v(\0"A \0Avt"\0qE@A\xF0\v \0 r6\0 \f\v (\b\v!\0  6\b \0 6\f  6\f  \x006\b\vA! \0A\xFF\xFF\xFF\x07M@ \0A& \0A\bvg"kvAq AtrA>s!\v  6 B\x007 AtA\xA0j!\x7F@\x7FA\xF4\v(\0"A t"qE@A\xF4\v  r6\0  6\0A!A\b\f\v \0A AvkA\0 AG\x1Bt! (\0!@ "(Axq \0F\r Av! At!  Aqj"("\r\0\v  6A! !A\b\v!\0 "\f\v (\b" 6\f  6\bA!\0A\b!A\0\v!  j 6\0  6\f \0 j 6\0A\x90\fA\x90\f(\0Ak"\0A\x7F \0\x1B6\0\v\v\xAB\x7F#\0A\xF0k"$\0  \x006\0A!\x07@ AH\r\0A\0 k!	 \0!@ \0  	j"  Ak"
+Atj(\0k"\b A\0N@ \0  A\0N\r\v  \x07Atj \b  \b  A\0N"\b\x1B"6\0 \x07Aj!\x07 Ak 
+ \b\x1B"AJ\r\0\v\v   \x07 A\xF0j$\0\v\xC2\x7F#\0A\xD0k"$\0 B7\b@  l"E\r\0  6  6A!@ Aj Atj" Ak(\0 A\bk(\0 jj"6\0 Aj!  K\r\0\v\x7F  k"A\0L@A!A\0\f\v \0 j!A!A!@\x7F AqAF@ \0    Aj\x07 A\bjA Aj\f\v@ Aj" Ak"\x07Atj(\0  \0kO@ \0   A\bj A\0 \f\v \0    Aj\x07\v AF@ A\bjAA\0\f\v A\bj \x07A\v!  (\bAr"6\b \0 j"\0 I\r\0\v (\fA\0G\v!A\0 k! \0   A\bj A\0 Aj@ AG\r\0 (\bAG\r\0 E\r\v@\x7F AL@ A\bj" "  j\f\v A\bj"A  (\bA\x07s6\b A \0 j"	 Aj"\x07 Ak"\bAtj(\0k    AkA \x07 A  (\bAr6\b 	    \bA \x07 \b\v! \0 j!\0 (\f (\b AG\r\0AG\r\0\r\0\v\v A\xD0j$\0\v\0A\v\xCB\r
+\x7F#\0A\xF0\rk"\v$\0 -\0@ \0A\xBC\xCB\0j!\f \0A\x90\xC1\0j!\r Aj! \xC0!\b \xC0!
+A\0!@  "Alj! ,\0!\x7F@@@@ \0(\xC0R\0\0\0\v ,\0 \bj! ,\0\0 
+ kj\f\v \b ,\0k!  
+j ,\0\0k\f\v ,\0\0 \b kj! ,\0 
+j\f\v  \bj ,\0\0k! 
+ ,\0k\v"\x07 \0 Aljj   -\0\x1B:\0\0 \vA\xE6\rj j :\0\0 \vA\xEB\rj j \x07:\0\0A\0! \0(\xB8K"A\0J@@@@ \x07 \r Alj"	,\0\0G\r\0  	,\0G\r\0 \0 Ak"6\xB8K 	 \r Alj"-\0:\0 	 /\0\0;\0\0 \0(\xB8K!\f\v Aj!\v  H\r\0\v\vA\0! \0(\xACR"A\0J@@@@ \x07 \f Atj"	,\0\0G\r\0  	,\0G\r\0 \0 Ak"6\xACR 	 \f Atj/\0;\0 \0(\xACR!\f\v Aj!\v  H\r\0\v\v E@ \0A\x006\xC8R\v Aj" -\0I\r\0\v \0A\x90\xC1\0j!
+A\0!@ " \vA\xE6\rjj,\0\0! \vA\xEB\rj j-\0\0"\xC0!\b@ AK"	\r\0 Aj"\x07AK\r\0 \0 \x07Alj \bj"-\0\0\r\0A\0!\x7F AL@ -\0E" \x07E\r\v  Ak-\0\0Ej\v!\x7F AM@  -\0Ej" E\r\v  Ak-\0\0Ej\v"AK\r\0 \0 \0(\xB8K"Aj6\xB8K 
+ Alj"A k:\0  \x07:\0  :\0\0\v@ 	\r\0 Ak"\x07AK\r\0 \0 \x07Alj \bj"-\0\0\r\0A\0!\x7F AL@ -\0E" \x07E\r\v  Ak-\0\0Ej\v!\x7F AM@  -\0Ej" E\r\v  Ak-\0\0Ej\v"AK\r\0 \0 \0(\xB8K"Aj6\xB8K 
+ Alj"A k:\0  \x07:\0  :\0\0\v@ AK"\x07\r\0 \bAj"AK\r\0 \0 Alj"	 j"-\0\0\r\0A\0!\x7F AM@ -\0E" E\r\v  Ak-\0\0Ej\v!\x7F \bAL@  -\0Ej" E\r\v  \b 	j-\0\0Ej\v"AK\r\0 \0 \0(\xB8K"Aj6\xB8K 
+ Alj"A k:\0  :\0  :\0\0\v@ \x07\r\0 \bAk"AK\r\0 \0 Alj"\x07 j"-\0\0\r\0A\0!\x7F AM@ -\0E" E\r\v  Ak-\0\0Ej\v!\x7F \bAL@  \x07 \bj-\0\0Ej" E\r\v  Ak-\0\0Ej\v"AK\r\0 \0 \0(\xB8K"Aj6\xB8K 
+ Alj"A k:\0  :\0  :\0\0\v Aj!  G\r\0\v\v@ \0(\xB8K"AH\r\0 Ak!\f \0A\x90\xC1\0j!\bA\0!A\0!A!A\0!@ ! ! \b Alj"
+-\0\0!\x07  kAqE@@ \x07 \b Alj"-\0\0G\r\0 
+-\0 -\0G\r\0 \v Atj 6\0 Aj!\v Aj!\v  \fG@@@ \b Alj"	-\0\0 \x07G\r\0 
+-\0 	-\0G\r\0 \v Atj 6\0 Aj!\v@ \x07 	-\0G\r\0 
+-\0 	-\0G\r\0 \v Atj 6\0 Aj!\v Aj" G\r\0\v\v Aj! Aj" G\r\0\v A\0L\r\0 \0A\x90\xC1\0j!@  \v Ak"Atj(\0"Aj"J@@  Alj"  "Alj"-\0:\0  /\0\0;\0\0 Aj" \0(\xB8K"H\r\0\v\v \0 Ak"6\xB8K AK !\r\0\v\v \0A\x90\xC1\0j AA\b \vA\xF0\rj$\0\v\xA3\x7F~@\x7FA\0 \0E\r\0 \0\xAD \xAD~"\xA7" \0 rA\x80\x80I\r\0A\x7F  B \x88\xA7\x1B\v"\0\f"E\r\0 Ak-\0\0AqE\r\0@ \0E\r\0 A\0:\0\0 \0 j"AkA\0:\0\0 \0AI\r\0 A\0:\0 A\0:\0 AkA\0:\0\0 AkA\0:\0\0 \0A\x07I\r\0 A\0:\0 AkA\0:\0\0 \0A	I\r\0 A\0 kAq"j"A\x006\0  \0 kA|q"\0j"AkA\x006\0 \0A	I\r\0 A\x006\b A\x006 A\bkA\x006\0 A\fkA\x006\0 \0AI\r\0 A\x006 A\x006 A\x006 A\x006\f AkA\x006\0 AkA\x006\0 AkA\x006\0 AkA\x006\0 \0 AqAr"\0k"A I\r\0 \0 j!\0@ \0B\x007 \0B\x007 \0B\x007\b \0B\x007\0 \0A j!\0 A k"AK\r\0\v\v\v \v\xC1'\v\x7F#\0Ak"
+$\0@@@@@@@@@@ \0A\xF4M@A\xF0\v(\0"A \0A\vjA\xF8q \0A\vI\x1B"Av"\0v"Aq@@ A\x7FsAq \0j"At"A\x98\fj"\0 (\xA0\f"(\b"F@A\xF0\v A~ wq6\0\f\v  \x006\f \0 6\b\v A\bj!\0  Ar6  j" (Ar6\f\v\v A\xF8\v(\0"\bM\r @@A \0t"A\0 kr  \0tqh"At"A\x98\fj" (\xA0\f"\0(\b"F@A\xF0\v A~ wq"6\0\f\v  6\f  6\b\v \0 Ar6 \0 j"\x07  k"Ar6 \0 j 6\0 \b@ \bAxqA\x98\fj!A\x84\f(\0!\x7F A \bAvt"qE@A\xF0\v  r6\0 \f\v (\b\v!  6\b  6\f  6\f  6\b\v \0A\bj!\0A\x84\f \x076\0A\xF8\v 6\0\f\v\vA\xF4\v(\0"\vE\r \vhAt(\xA0"(Axq k! !@@ ("\0E@ ("\0E\r\v \0(Axq k"   I"\x1B! \0  \x1B! \0!\f\v\v (!	  (\f"\0G@ (\b" \x006\f \0 6\b\f
+\v ("\x7F Aj ("E\r Aj\v!@ !\x07 "\0Aj! \0("\r\0 \0Aj! \0("\r\0\v \x07A\x006\0\f	\vA\x7F! \0A\xBF\x7FK\r\0 \0A\vj"Axq!A\xF4\v(\0"\x07E\r\0A!\bA\0 k! \0A\xF4\xFF\xFF\x07M@ A& A\bvg"\0kvAq \0AtkA>j!\b\v@@@ \bAt(\xA0"E@A\0!\0\f\vA\0!\0 A \bAvkA\0 \bAG\x1Bt!@@ (Axq k" O\r\0 ! "\r\0A\0! !\0\f\v \0 ("   AvAqj("F\x1B \0 \x1B!\0 At! \r\0\v\v \0 rE@A\0!A \bt"\0A\0 \0kr \x07q"\0E\r \0hAt(\xA0!\0\v \0E\r\v@ \0(Axq k" I!   \x1B! \0  \x1B! \0("\x7F  \0(\v"\0\r\0\v\v E\r\0 A\xF8\v(\0 kO\r\0 (!\b  (\f"\0G@ (\b" \x006\f \0 6\b\f\b\v ("\x7F Aj ("E\r Aj\v!@ ! "\0Aj! \0("\r\0 \0Aj! \0("\r\0\v A\x006\0\f\x07\v A\xF8\v(\0"M@A\x84\f(\0!\0@  k"AO@ \0 j" Ar6 \0 j 6\0 \0 Ar6\f\v \0 Ar6 \0 j" (Ar6A\0!A\0!\vA\xF8\v 6\0A\x84\f 6\0 \0A\bj!\0\f	\v A\xFC\v(\0"I@A\xFC\v  k"6\0A\x88\fA\x88\f(\0"\0 j"6\0  Ar6 \0 Ar6 \0A\bj!\0\f	\vA\0!\0 A/j"\x7FA\xC8(\0@A\xD0(\0\f\vA\xD4B\x7F7\0A\xCCB\x80\xA0\x80\x80\x80\x807\0A\xC8 
+A\fjApqA\xD8\xAA\xD5\xAAs6\0A\xDCA\x006\0A\xACA\x006\0A\x80 \v"j"A\0 k"\x07q" M\r\bA\xA8(\0"@A\xA0(\0"\b j"	 \bM\r	  	I\r	\v@A\xAC-\0\0AqE@@@@@A\x88\f(\0"@A\xB0!\0@ \0(\0"\b M@  \b \0(jI\r\v \0(\b"\0\r\0\v\vA\0"A\x7FF\r !A\xCC(\0"\0Ak" q@  k  jA\0 \0kqj!\v  M\rA\xA8(\0"\0@A\xA0(\0" j"\x07 M\r \0 \x07I\r\v "\0 G\r\f\v  k \x07q"" \0(\0 \0(jF\r !\0\v \0A\x7FF\r A0j M@ \0!\f\vA\xD0(\0"  kjA\0 kq"A\x7FF\r  j! \0!\f\v A\x7FG\r\vA\xACA\xAC(\0Ar6\0\v !A\0!\0 A\x7FF\r \0A\x7FF\r \0 M\r \0 k" A(jM\r\vA\xA0A\xA0(\0 j"\x006\0A\xA4(\0 \0I@A\xA4 \x006\0\v@A\x88\f(\0"@A\xB0!\0@  \0(\0" \0("jF\r \0(\b"\0\r\0\v\f\vA\x80\f(\0"\0A\0 \0 M\x1BE@A\x80\f 6\0\vA\0!\0A\xB4 6\0A\xB0 6\0A\x90\fA\x7F6\0A\x94\fA\xC8(\x006\0A\xBCA\x006\0@ \0At" A\x98\fj"6\xA0\f  6\xA4\f \0Aj"\0A G\r\0\vA\xFC\v A(k"\0Ax kA\x07q"k"6\0A\x88\f  j"6\0  Ar6 \0 jA(6A\x8C\fA\xD8(\x006\0\f\v  M\r  K\r \0(\fA\bq\r \0  j6A\x88\f Ax kA\x07q"\0j"6\0A\xFC\vA\xFC\v(\0 j" \0k"\x006\0  \0Ar6  jA(6A\x8C\fA\xD8(\x006\0\f\vA\0!\0\f\vA\0!\0\f\vA\x80\f(\0 K@A\x80\f 6\0\v  j!A\xB0!\0@@  \0(\0"G@ \0(\b"\0\r\f\v\v \0-\0\fA\bqE\r\vA\xB0!\0@@ \0(\0" M@   \0(j"I\r\v \0(\b!\0\f\v\vA\xFC\v A(k"\0Ax kA\x07q"k"\x076\0A\x88\f  j"6\0  \x07Ar6 \0 jA(6A\x8C\fA\xD8(\x006\0  A' kA\x07qjA/k"\0 \0 AjI\x1B"A\x1B6 A\xB8)\x007 A\xB0)\x007\bA\xB8 A\bj6\0A\xB4 6\0A\xB0 6\0A\xBCA\x006\0 Aj!\0@ \0A\x076 \0A\bj \0Aj!\0 I\r\0\v  F\r\0  (A~q6   k"Ar6  6\0\x7F A\xFFM@ A\xF8qA\x98\fj!\0\x7FA\xF0\v(\0"A Avt"qE@A\xF0\v  r6\0 \0\f\v \0(\b\v! \0 6\b  6\fA\f!A\b\f\vA!\0 A\xFF\xFF\xFF\x07M@ A& A\bvg"\0kvAq \0AtrA>s!\0\v  \x006 B\x007 \0AtA\xA0j!@@A\xF4\v(\0"A \0t"qE@A\xF4\v  r6\0  6\0\f\v A \0AvkA\0 \0AG\x1Bt!\0 (\0!@ "(Axq F\r \0Av! \0At!\0  Aqj"("\r\0\v  6\v  6A\b! "!\0A\f\f\v (\b"\0 6\f  6\b  \x006\bA\0!\0A!A\f\v j 6\0  j \x006\0\vA\xFC\v(\0"\0 M\r\0A\xFC\v \0 k"6\0A\x88\fA\x88\f(\0"\0 j"6\0  Ar6 \0 Ar6 \0A\bj!\0\f\vA\xEC\vA06\0A\0!\0\f\v \0 6\0 \0 \0( j6 Ax kA\x07qj"\b Ar6 Ax kA\x07qj"  \bj"k!\x07@A\x88\f(\0 F@A\x88\f 6\0A\xFC\vA\xFC\v(\0 \x07j"\x006\0  \0Ar6\f\vA\x84\f(\0 F@A\x84\f 6\0A\xF8\vA\xF8\v(\0 \x07j"\x006\0  \0Ar6 \0 j \x006\0\f\v ("\0AqAF@ \0Axq!	 (\f!@ \0A\xFFM@ (\b" F@A\xF0\vA\xF0\v(\0A~ \0Avwq6\0\f\v  6\f  6\b\f\v (!@  G@ (\b"\0 6\f  \x006\b\f\v@ ("\0\x7F Aj ("\0E\r Aj\v!@ ! \0"Aj! \0("\0\r\0 Aj! ("\0\r\0\v A\x006\0\f\vA\0!\v E\r\0@ ("\0At"(\xA0 F@ A\xA0j 6\0 \rA\xF4\vA\xF4\v(\0A~ \0wq6\0\f\v@  (F@  6\f\v  6\v E\r\v  6 ("\0@  \x006 \0 6\v ("\0E\r\0  \x006 \0 6\v \x07 	j!\x07  	j"(!\0\v  \0A~q6  \x07Ar6  \x07j \x076\0 \x07A\xFFM@ \x07A\xF8qA\x98\fj!\0\x7FA\xF0\v(\0"A \x07Avt"qE@A\xF0\v  r6\0 \0\f\v \0(\b\v! \0 6\b  6\f  \x006\f  6\b\f\vA! \x07A\xFF\xFF\xFF\x07M@ \x07A& \x07A\bvg"\0kvAq \0AtrA>s!\v  6 B\x007 AtA\xA0j!\0@@A\xF4\v(\0"A t"qE@A\xF4\v  r6\0 \0 6\0\f\v \x07A AvkA\0 AG\x1Bt! \0(\0!@ "\0(Axq \x07F\r Av! At! \0 Aqj"("\r\0\v  6\v  \x006  6\f  6\b\f\v \0(\b" 6\f \0 6\b A\x006  \x006\f  6\b\v \bA\bj!\0\f\v@ \bE\r\0@ ("At"(\xA0 F@ A\xA0j \x006\0 \0\rA\xF4\v \x07A~ wq"\x076\0\f\v@  \b(F@ \b \x006\f\v \b \x006\v \0E\r\v \0 \b6 ("@ \0 6  \x006\v ("E\r\0 \0 6  \x006\v@ AM@   j"\0Ar6 \0 j"\0 \0(Ar6\f\v  Ar6  j" Ar6  j 6\0 A\xFFM@ A\xF8qA\x98\fj!\0\x7FA\xF0\v(\0"A Avt"qE@A\xF0\v  r6\0 \0\f\v \0(\b\v! \0 6\b  6\f  \x006\f  6\b\f\vA!\0 A\xFF\xFF\xFF\x07M@ A& A\bvg"\0kvAq \0AtrA>s!\0\v  \x006 B\x007 \0AtA\xA0j!@@ \x07A \0t"qE@A\xF4\v  \x07r6\0  6\0  6\f\v A \0AvkA\0 \0AG\x1Bt!\0 (\0!@ "(Axq F\r \0Av! \0At!\0  Aqj"\x07("\r\0\v \x07 6  6\v  6\f  6\b\f\v (\b"\0 6\f  6\b A\x006  6\f  \x006\b\v A\bj!\0\f\v@ 	E\r\0@ ("At"(\xA0 F@ A\xA0j \x006\0 \0\rA\xF4\v \vA~ wq6\0\f\v@  	(F@ 	 \x006\f\v 	 \x006\v \0E\r\v \0 	6 ("@ \0 6  \x006\v ("E\r\0 \0 6  \x006\v@ AM@   j"\0Ar6 \0 j"\0 \0(Ar6\f\v  Ar6  j" Ar6  j 6\0 \b@ \bAxqA\x98\fj!\0A\x84\f(\0!\x7FA \bAvt"\x07 qE@A\xF0\v  \x07r6\0 \0\f\v \0(\b\v! \0 6\b  6\f  \x006\f  6\b\vA\x84\f 6\0A\xF8\v 6\0\v A\bj!\0\v 
+Aj$\0 \0\v\x95\x07\x7F@ E\r\0 -\0"E\r\0 ,\0" \xC0"\x07j!\b  \xC0"j!	 \x07 k!
+A\0!A\0!@@@@@ \0(\xC0R\0\0\0\v  k!@  Alj",\0 \x07j"AK\r  ,\0\0j"AO\r \0 Alj j-\0\0\rA! Aj" G\r\0\v\f\v@ \x07  Alj",\0k"AK\r 	 ,\0\0k"AO\r \0 Alj j-\0\0\rA!  Aj"G\r\0\v\f\v@ 
+  Alj",\0\0j"AK\r ,\0 j"AO\r \0 Alj j-\0\0\rA!  Aj"G\r\0\v\f\v@ \b  Alj",\0\0k"AK\r  ,\0k"AK\r \0 Alj j-\0\0\rA!  Aj"G\r\0\v\f\vA\0!\v \v\x96\x7F#\0A\x80k"$\0@ AH\r\0  Atj"\x07 6\0 \0E\r\0@ \x07(\0 (\0A\x80 \0 \0A\x80O\x1B"A\0!@  Atj"(\0  Aj"Atj(\0   (\0 j6\0  G\r\0\v \0 k"\0\r\0\v\v A\x80j$\0\v3\x7F \0(\0Ak"hA\0 \x1B"\x7F  \0("\0hA\0 \0\x1B"\0A rA\0 \0\x1B\v\v\x87\x7F A\x80O@ @ \0  \xFC
+\0\0\v\v \0 j!@ \0 sAqE@@ \0AqE@ \0!\f\v E@ \0!\f\v \0!@  -\0\0:\0\0 Aj! Aj"AqE\r  I\r\0\v\v A|q!\0@ A\xC0\0I\r\0  \0A@j"K\r\0@  (\x006\0  (6  (\b6\b  (\f6\f  (6  (6  (6  (6  ( 6   ($6$  ((6(  (,6,  (060  (464  (868  (<6< A@k! A@k" M\r\0\v\v \0 M\r@  (\x006\0 Aj! Aj" \0I\r\0\v\f\v AI@ \0!\f\v AI@ \0!\f\v Ak! \0!@  -\0\0:\0\0  -\0:\0  -\0:\0  -\0:\0 Aj! Aj" M\r\0\v\v  I@@  -\0\0:\0\0 Aj! Aj" G\r\0\v\v\v\0A\b\v\0A\v\0A\0\v\0A\v\0A\x80\v\0A\xC8+\v\xA4C\x7F~ !\r \xAC!\x1B !#\0A\xA0k"$\0@ \0E\r\0 E\r\0 E\r\0 A\0A\xC8+\xFC\v\0AA\xE8\xFA\0\v"E\r\0A\x80A\xC8\v"@  \0A\xB8\xFC
+\0\0 A\xB8j! Aj! Aj!\b A\xC3\0j!@ \r Atj(\0!\0  A\xF0lj"	A\0:\0\xEF 	A\0:\0 	 \0; 	 Aj"\v;\0  A\x1Bl"A\x80\bj"\0-\0":\0B  -\0\x80\b":\0A A\0:\0 B\x007\0 B\x007\0\b B\x007\0\0@@ @ E@A\0!\0\f\vA\0! AG@ Aq A\xFEq!A\0!@ Al!
+ E"E@  
+jA\xC3\0j \0 
+jAj \xFC
+\0\0\v E@  
+Aj"
+jA\xC3\0j \0 
+jAj \xFC
+\0\0\v Aj! Aj" G\r\0\vE\r\v E\r  Al"jA\xC3\0j \0 jAj \xFC
+\0\0\f\v \r\0A\0!\0\f\vA\0!@@  j-\0\0@  :\0@\f\v Aj" G\r\v\vA\0!\0A\0!\x07 E\r\0@  \x07Alj!
+A\0!@  
+j-\0\0"AkA\xFFqAM@ A0j \0A\xFFqAlj" AF:\0  \x07:\0  :\0\0 \0Aj!\0\v Aj" G\r\0\v  \0:\0? \x07Aj"\x07 G\r\0\v\v 	 \0A\xFFq; 	A\x07j!A\0!A!@A\0!
+@  -\0B":\0  -\0A"\f:\0 \bA\0:\0 \bB\x007\0 \bB\x007\0\b \bB\x007\0\0@ \f@ Ak"\0A~q! \0Aq! \b Alj!A\0!\x07 !\0@ \0A\xFFq!A\0!\0@ E\r\0  \x07Alj"-\0\0"\0@  Alj \x07j \0:\0\0\v "\0AI\r\0 \x07 j!A\0!\0A! AG@@  j"-\0\0"@  A\x7FsAlj :\0\0\v -\0"@ A~ kAlj :\0\0\v Aj! \0Aj"\0 G\r\0\v !\0 E\r\v !\0  j-\0\0"E\r\0  A\x7FsAlj :\0\0\v \x07Aj"\x07 \fG\r\0\vA\0! A\0;\0 -\0"E\r@@  \bj-\0\0@  :\0\f\v Aj" G\r\v\vA\0!\0A\0!\x07 -\0"\fE\r@ \b \x07Alj!A\0!@  j-\0\0"AkA\xFFqAM@  \0A\xFFqAlj" AF:\0  \x07:\0  :\0\0 \0Aj!\0\v Aj" G\r\0\v  \0:\0 \x07Aj"\x07 \fG\r\0\v\f\v A\0;\0\v  (\0(6X  )\0 7P  )\07H  )\07@  )\0\b78  )\0\x0070@ A\xFFq"@A\0!\0 -\0B!@ -\0A"\fE@@  \0A,lj"-\0E@ -\0 F\r\v \0Aj"\0 G\r\0\f\v\0\v@@  \0A,lj"-\0 \fG\r\0 -\0 G\r\0 E\r Aj!A\0!\x07@  \x07Al"j!  j!A\0!@  j-\0\0  j-\0\0G\r Aj" G\r\0\v \x07Aj"\x07 \fG\r\0\v\f\v \0Aj"\0 G\r\0\v\v A\x07K\r\v 	 Aj":\0  A,lj"\0 (\0(6\0( \0 )\0 7\0  \0 )\07\0 \0 )\07\0 \0 )\0\b7\0\b \0 )\0\x007\0\0\v 
+Aj"
+AG\r\0\v  -\0A"\0:\0  -\0B"
+:\0 \bA\0:\0 \bB\x007\0 \bB\x007\0\b \bB\x007\0\0 \0@A 
+A\xFFq" AM\x1B"A\xFEq! Aq! \b \0Alj!A\0!\x07 
+!@ A\xFFq!A\0!@ E\r\0  \x07Alj!  \x07A\x7FsAlj!\fA\0! AO@@  j-\0\0"@  \fj :\0\0\v  Ar"j-\0\0"@ \f j :\0\0\v Aj! Aj" G\r\0\v 
+! E\r\v 
+!  j-\0\0"E\r\0  \fj :\0\0\v \x07Aj"\x07 \0G\r\0\v -\0!
+\vA\0! A\0;\0@ 
+A\xFFq"E\r\0@@  \bj-\0\0@  :\0\f\v Aj" G\r\v\vA\0!\0A\0!\x07 -\0"
+E\r\0@ \b \x07Alj!\fA\0!@  \fj-\0\0"AkA\xFFqAM@  \0A\xFFqAlj" AF:\0  \x07:\0  :\0\0 \0Aj!\0\v Aj" G\r\0\v  \0:\0 \x07Aj"\x07 
+G\r\0\v\v  (\0(6X  )\0 7P  )\07H  )\07@  )\0\b78  )\0\x0070 A\0!\r\0\v A\xFFq"@ 	A\xE7j!A\0!@@  A,lj"\0,\0Aj" \0-\0H@ \0 j-\0\r\v 	 	-\0\xEF"\0Aj:\0\xEF \0 j :\0\0\v Aj" G\r\0\v\v \v"AG\r\0\v A6\x8C: AA\xF0A\b A\xFF\xFF;\x987A\0! A\x9A7jA\0A\xEE\xFC\v\0 A\x006\x98: A6\x88: -\0\xD0A\xFFG@ A6\x98: A\x8A;\x90:A!\v A\x90:j! -\0\xD1A\xFFG@  AtjA\x8B;\0  Aj"6\x98:\v -\0\xE6A\xFFG@  AtjA\x8A;\0  Aj"6\x98:\v -\0\xE7A\xFFG@  AtjA\x8B;\0  Aj6\x98:\v A\x006\x8CA A\x9C:j!\rA\0!A\0!@  Alj"\0-\0\0E@ \r Atj" :\0 A\0:\0\0  Aj"6\x8CA\v \0-\0E@ \r Atj" :\0 A:\0\0  Aj"6\x8CA\v \0-\0E@ \r Atj" :\0 A:\0\0  Aj"6\x8CA\v \0-\0E@ \r Atj" :\0 A:\0\0  Aj"6\x8CA\v \0-\0E@ \r Atj" :\0 A:\0\0  Aj"6\x8CA\v \0-\0E@ \r Atj" :\0 A:\0\0  Aj"6\x8CA\v \0-\0E@ \r Atj" :\0 A:\0\0  Aj"6\x8CA\v \0-\0\x07E@ \r Atj" :\0 A\x07:\0\0  Aj"6\x8CA\v \0-\0\bE@ \r Atj" :\0 A\b:\0\0  Aj"6\x8CA\v \0-\0	E@ \r Atj" :\0 A	:\0\0  Aj"6\x8CA\v \0-\0
+E@ \r Atj" :\0 A
+:\0\0  Aj"6\x8CA\v \0-\0\vE@ \r Atj" :\0 A\v:\0\0  Aj"6\x8CA\v \0-\0\fE@ \r Atj" :\0 A\f:\0\0  Aj"6\x8CA\v \0-\0\rE@ \r Atj" :\0 A\r:\0\0  Aj"6\x8CA\v \0-\0E@ \r Atj" :\0 A:\0\0  Aj"6\x8CA\v \0-\0E@ \r Atj" :\0 A:\0\0  Aj"6\x8CA\v \0-\0E@ \r Atj" :\0 A:\0\0  Aj"6\x8CA\v \0-\0E@ \r Atj" :\0 A:\0\0  Aj"6\x8CA\v \0-\0E@ \r Atj" :\0 A:\0\0  Aj"6\x8CA\v \0-\0E@ \r Atj" :\0 A:\0\0  Aj"6\x8CA\v \0-\0E@ \r Atj" :\0 A:\0\0  Aj"6\x8CA\v \0-\0E@ \r Atj"\0 :\0 \0A:\0\0  Aj"6\x8CA\v Aj"AG\r\0\v A\x006\xB8K A\x90\xC1\0j!A\0!A\0!\0A\0!
+A\0!@  Alj"\vAk!\x07 \v-\0\0!@@ AG@ \vAj!@ \r\0 -\0\0E! \x7F \x07-\0\0E j \v \v-\0Ej"AK\r\0  
+Aj"6\xB8K  
+Alj"\0A k:\0 \0 :\0 \0A\0:\0\0 "\0!
+\vA!@@  \vj"\b-\0\0\r\0  j-\0\0E!	 \bAk-\0\0E \x7F  \x07j-\0\0E 	j 	\v \b-\0Ejj"	AK\r\0  \0Aj"6\xB8K  \0Alj"\0A 	k:\0 \0 :\0 \0 :\0\0 "\0!
+\v Aj"AG\r\0\v  \vj-\0\0\r  j-\0\0E! \x7F  \x07j-\0\0E j \v \b-\0\0Ej"AK\r  \0Aj"6\xB8K  \0Alj"A k:\0\f\v@ @ !\f\v \v-\0E \x07-\0\0Ej"AK@ !\f\v  \0Aj"6\xB8K  \0Alj"\0A k:\0 \0 :\0 \0A\0:\0\0 "\0!
+\vA!@@  \vj"-\0\0\r\0 Ak-\0\0E -\0E  \x07j-\0\0Ejj"\bAK\r\0  Aj"\x006\xB8K  Alj"A \bk:\0  :\0  :\0\0 \0"!
+\v Aj"AG\r\0\v  \vj-\0\0@ !\f\v  \x07j-\0\0E -\0\0Ej"AK@ !\f\v  Aj"6\xB8K  Alj"A k:\0\v  :\0 A:\0\0 "\0!
+\v Aj"AG\r\0\v A\x006\xACR A\xBC\xCB\0j!A\0!\0A\0!A\0!\v@  \vAlj"
+Aj!\x07@ \vE@A!@ AF\r@  \x07j-\0\0E\r\0  
+j"-\0\r\0 Ak-\0\0\r\0  \0Atj" \v:\0  :\0\0  \0Aj"\x006\xACR \0!\v Aj"AG\r\0\v\f\v 
+Ak!\b@ \vAF"	\r\0 \x07-\0\0\r\0 \b-\0\0\r\0 
+-\0E\r\0  Atj"\0 \v:\0 \0A\0:\0\0  Aj"\x006\xACR \0!\vA!@  \bj-\0\0!\fA\0!  
+j"-\0! Ak-\0\0! 	E@  \x07j-\0\0E!\v@@@ E\r\0 \f\r\0 E\r\0 \r\v  \fEr\r \r \r\v  Atj"\0 \v:\0 \0 :\0\0  Aj"\x006\xACR \0!\v Aj"AG\r\0\v 	\x7FA  \x07j-\0\0  \bj-\0\0r\v\r\0 -\0\0E\r\0  Atj"\0 \v:\0 \0A:\0\0  Aj"\x006\xACR \0!\v \vAj"\vAG\r\0\v  \0A\0J6\xC8R  AA\b  \x1B7\xD8R B\x007\xD0R A6\xC4R A\xE0\xD2\0j!B\0!\x1BA\0!\vA\0!
+@@@ (\xC4R!\0@@@@ .\xBAA\0L@ \0E\rA!\f\x07\v \0E\r\0@ (\xB8K"\0E\r\0  (\xB8R"A\xF0l"j"	."\fA\0L\r\0 (\xC0RAF\r\0 (\xC8R\r\0  (\x8C:F\rA\0!@ (\xBCR"\0A\0H\r\0 \0 	-\0\xEFO\r\0 	 \0 	j-\0\xE7A,ljA\x07j!\v ,\0\x90A!\x07 \x7F@ ,\0\x91A"\bA\0L\r\0 \bAK\r\0 \x07AK\r\0  \bAlj \x07jAk-\0\0\r\0A\f\v@@ \bAK"E@ \x07AjA\xFFqAK\r  \bAlj \x07j-\0\rA\f\v \bA\x7FH\r\v@ \bAJ\r\0 \x07AK\r\0  \bAlj \x07j-\0\r\0A\f\v \r\0 \x07AkA\xFFqAK\r\0  \bAlj \x07jAk-\0\0\r\0A\f\vA\v"6\xC0R  \x07 \b \r@ 	.\0!  (\0(6(  )\0 7   )\07  )\07  )\0\b7\b  )\0\x007\0 \0 	j-\0\xE7!  
+A\xC8lj"B\x007\0 	 \fAk"\0; (\x88:"\f Aj"  \fH\x1BAk!@  \fN@ !\0\f\v 	. \0A\xFF\xFFql! !\0@   A\xF0lj". .lN\r "\0Aj" \fH\r\0\v !\0\v A0j" 	A\xF0\xFC
+\0\0 	  \0A\xF0lj"A\xF0\xFC
+\0\0  A\xF0\xFC
+\0\0  \0 k6\b  (\xB8K"\x006\xB4
+ \0Al"@ A\fj  \xFC
+\0\0\v  \x07A\xFFq \bA\btr;\xB8
+  (\xB8R6\xBC
+  (\xBCR6\xC0
+ (\xC0R! B\x007\xB8  6\xC4
+ (\xC4R!A! A6\xC4  6\xC0 \0AL\r@  Alj"\0Ak" \0-\0:\0  \0/\0\0;\0\0 Aj" (\xB8K"\0H\r\0\v\f\v  j-\0\xA7Ak \0J@  \0Aj6\xBCR\f\v  Aj6\xB8R A\x006\xBCR\f\v  (\xB0R"A\xF0l"j"\x07."A\0L\r\0@ (\xC8RE@ \0\r (\xC0RAF\rA\0!\v A\x006\xC0R (\x8CA"A\0L\r@  \r \vAtj"\0,\0Alj \0,\0\0j-\0\0E\rA! \vAj"\v G\r\0\v\f\b\v (\xC0RAF\r A\x006\xC0R (\x8CA!\v  \vF@A!\f\x07\v \r \vAtj/\0"\fA\bv!\bA\0!@ (\xB4R"	A\0H\r\0 	 \x07-\0O\r\0 \x07 	A,ljA\x07j!\v  \f \b \r@ \x07.\0!  (\0(6(  )\0 7   )\07  )\07  )\0\b7\b  )\0\x007\0  
+A\xC8lj" 	6  6\0 \x07 Ak"; (\x88:" Aj"  H\x1BAk!\0@  N@ \0!\f\v \x07. A\xFF\xFFql! !@   A\xF0lj". .lN\r "Aj" H\r\0\v \0!\v A0j"\0 \x07A\xF0\xFC
+\0\0 \x07  A\xF0lj"A\xF0\xFC
+\0\0  \0A\xF0\xFC
+\0\0   k6\b  (\xB8K"\x006\xB4
+ \0Al"\0@ A\fj  \0\xFC
+\0\0\vA\0! A\x006\xC4
+ B\x007\xBC
+  \f;\xB8
+  (\xACR"\x006\xB8 \0At"\0@ A\xC8
+j  \0\xFC
+\0\0\v  \v6\xBC (\xC4R!\0 A\x006\xC4  \x006\xC0  \f \b  
+A\0!  (\x98:"\0A\0J\x7F@   Atj",\0Alj ,\0\0j,\0\0"A\0J@  (\x8C: Nj!\v Aj" \0G\r\0\v \0 GA\v6\xC4R  (\xE0z"\0Aj6\xE0z  \0Alj"\0A\0;\0\x07 \0 	:\0 \0 \b\xC0; \0 \f\xC0; \0 ;\0 \0 -\0":\0	@ E\r\0 \0Aj! \0A
+j!\0 \f -\0k!A\0! AG@ Aq A\xFEq!\fA\0!\x07@  Alj"-\0! \0 j  -\0\0j:\0\0  j \b j:\0\0  Ar"Alj"-\0! \0 j  -\0\0j:\0\0  j \b j:\0\0 Aj! \x07Aj"\x07 \fG\r\0\vE\r\v  Alj"-\0!\x07 \0 j  -\0\0j:\0\0  j \x07 \bj:\0\0\v (\xC8R@@ \v (\x8CA"\0N\r\0@  \r \vAtj",\0Alj ,\0\0j-\0\0E\r \vAj"\v \0G\r\0\v\f\v \0 \vF\r\v 
+Aj!
+ B\x007\xB0R\f\v  j-\0\xBEAk 	J@  	Aj6\xB4R\f\v  Aj6\xB0R A\x006\xB4R\f\v 
+E@  \x1BB|"\x1B7\xD0R\f\v   
+Ak"
+A\xC8lj"\0(\x006\xB0R  \0(6\xB4R \0(\xB4
+"Al"@  \0A\fj \xFC
+\0\0\v  6\xB8K \0/\xB8
+!  \0(\xBC
+6\xB8R  \0(\xC0
+6\xBCR  \0(\xC4
+"6\xC0R \0(\xB8"At"@  \0A\xC8
+j \xFC
+\0\0\v  6\xACR \0(\xBC!\v  \0(\xC06\xC4R A\bv! \0(\b!@ E@ A0j"  (\xB0RA\xF0lj"\0A\xF0\xFC
+\0\0 \0 \0 A\xF0lj"A\xF0\xFC
+\0\0  A\xF0\xFC
+\0\0 \0 \0/Aj; (\xB4R"\0A\0H\r \0  (\xB0RA\xF0lj"-\0O\r  \0A,lj"-\0"\0E\r \xC0! \xC0!\x07A\0! A\x07j!	@ 	 Alj! 	,\0!\b\x7F@@@@ (\xC0R\0\0\0\v ,\0 j! ,\0\0 \x07 \bkj\f\v  ,\0k! \x07 \bj ,\0\0k\f\v ,\0\0  \bkj! ,\0 \x07j\f\v  \bj ,\0\0k! \x07 ,\0k\v!@ AK\r\0 AK\r\0  Alj jA\0:\0\0 	-\0!\0\v Aj" \0A\xFFqI\r\0\v\f\v A0j"  (\xB8RA\xF0lj"\0A\xF0\xFC
+\0\0 \0 \0 A\xF0lj"A\xF0\xFC
+\0\0  A\xF0\xFC
+\0\0 \0 \0/Aj; (\xBCR"\0A\0H\r\0 \0  (\xB8RA\xF0lj"-\0\xEFO\r\0  \0 j-\0\xE7A,lj"\0-\0"E\r\0 \0A\x07j!	 \xC0! \xC0!\x07A\0!@ 	 Alj!\0 	,\0!\b\x7F@@@@ (\xC0R\0\0\0\v \0,\0 j! \0,\0\0 \x07 \bkj\f\v  \0,\0k! \x07 \bj \0,\0\0k\f\v \0,\0\0  \bkj! \0,\0 \x07j\f\v  \bj \0,\0\0k! \x07 \0,\0k\v!\0@ AK\r\0 \0AK\r\0  Alj \0jA\0:\0\0 	-\0!\v Aj" A\xFFqI\r\0\v\v (\xE0z"\0A\0J@  \0Ak6\xE0z\v  (\xACR"\0A\0G6\xC8R \0E@ (\xB8K@ (\xBCR"\0  (\xB8R"A\xF0lj-\0\xA7AkH@  \0Aj6\xBCR\f\v  Aj6\xB8R A\x006\xBCR\f\v (\xB4R"\0  (\xB0R"A\xF0lj-\0\xBEAkH@  \0Aj6\xB4R\f\v  Aj6\xB0R A\x006\xB4R\f\v \x7F (\xB4R"\0  (\xB0R"A\xF0lj-\0\xBEAkH@ \0Aj\f\v  Aj6\xB0RA\0\v6\xB4R\f\v )\xD0R!\x1BA!\f\v  \0Ak6\xB8K  \x07 \b  
+A\0!A\0!  (\x98:"\0A\0L\x7FA@   Atj",\0Alj ,\0\0j,\0\0"A\0J@  (\x8C: Nj!\v Aj" \0G\r\0\v \0 G\v6\xC4R  (\xE0z"\0Aj6\xE0z  \0Alj"\0A:\0\b \0 :\0\x07 \0 :\0 \0 \b; \0 \x07; \0 ;\0 \0 -\0":\0	 @ \0Aj! \0A
+j!	 -\0"\0 \bj!\f \x07 \0k! \0 \x07j! \b \0k!A\0!@  Alj!\0  	j\x7F@@@@ \0\0\0\v \0-\0 \bj!  \0-\0\0j\f\v \b \0-\0k!  \0-\0\0k\f\v  \0-\0\0j! \0-\0 \x07j\f\v \f \0-\0\0k! \x07 \0-\0k\v:\0\0  j :\0\0 Aj" G\r\0\v\v 
+Aj!
+ B\x007\xB8R\v  )\xD0RB|"\x1B7\xD0R )\xD8R"B\0W\r \x1B S\r\v\vA\0!\v  \x1B7\b  6\0 Aj A\xB8\xFC
+\0\0 A\x80 (\xE0z"\0 \0A\x80N\x1B"\x006 \0Al"\0@ A\xC8j  \0\xFC
+\0\0\v \v \v A\xA0j$\0 \v\0#\0\v\0#\0 \0kApq"\0$\0 \0\v\0 \0$\0\v\0A\v\0A
+\v\r\0 -\0 \0-\0k\v\0A	\v\0A\x07\v\0A\v\0A\v\0A\xC8\v\0A\v\0A\v3\x7F . .l" \0. \0.l"G@  k\v \0.\0 .\0k\v\0\v\v\xA0\0A\x80\b\v\0A\x9B\b\v\0A\xB6\b\v	\0\0\0\0\0A\xD1\b\v\0A\xEC\b\v	\0\0\0\0A\x87	\v\0A\xA2	\v
+\0\0\0\0\0A\xBD	\v
+\0\0\0\0\0A\xD8	\v
+\0\0\0\0\0A\xF3	\v
+\0\0\0\0A\x8E
+\v\x07\0A\xA9
+\v\0\0\0\0\0\0\0\0\0A\xC4
+\v\0\0\0\0\0\0\0\0A\xDF
+\v\v\0\0\0\0\0A\xFA
+\v\0\0\0\0\0\0\0\0\0A\x95\v\v\v\0\0\0\0\0\0A\xB0\v\v\v\0\0\0\0\0A\xCB\v\v
+\0\0\0\0A\xE8\v\v\xE0\x07 `)}function Xr(o){return o}async function tt(o){return o}async function rt(o,i){try{var u=await tt(o),g=await WebAssembly.instantiate(u,i);return g}catch(E){f(`failed to asynchronously prepare wasm: ${E}`),Qe(E)}}async function nt(o,i,u){return rt(i,u)}function At(){var o={a:Ar};return o}async function ot(){function o(_,v){return z=_.exports,nr(z),C(),z}function i(_){return o(_.instance)}var u=At();if(e.instantiateWasm)return new Promise((_,v)=>{e.instantiateWasm(u,(h,M)=>{_(o(h,M))})});Ee??(Ee=et());var g=await nt(k,Ee,u),E=i(g);return E}class Vr{constructor(i){Ie(this,"name","ExitStatus");this.message=`Program terminated with exit(${i})`,this.status=i}}var lt,st,at,_e,it,ct,jt,ut,dt,te,ke=o=>{for(;o.length>0;)o.shift()(e)},he=[],ft=o=>he.push(o),be=[],pt=o=>be.push(o),mt=!0,gt=o=>Re(o),vt=()=>qe(),Et=()=>2147483648,_t=(o,i)=>Math.ceil(o/i)*i,kt=o=>{var i=re.buffer.byteLength,u=(o-i+65535)/65536|0;try{return re.grow(u),C(),1}catch{}},ht=o=>{var i=te.length;o>>>=0;var u=Et();if(o>u)return!1;for(var g=1;g<=4;g*=2){var E=i*(1+.2/g);E=Math.min(E,o+100663296);var _=Math.min(u,_t(Math.max(o,E),65536)),v=kt(_);if(v)return!0}return!1},ye=o=>{var i=e["_"+o];return i},bt=(o,i)=>{_e.set(o,i)},yt=o=>{for(var i=0,u=0;u<o.length;++u){var g=o.charCodeAt(u);g<=127?i++:g<=2047?i+=2:g>=55296&&g<=57343?(i+=4,++u):i+=3}return i},wt=(o,i,u,g)=>{if(!(g>0))return 0;for(var E=u,_=u+g-1,v=0;v<o.length;++v){var h=o.codePointAt(v);if(h<=127){if(u>=_)break;i[u++]=h}else if(h<=2047){if(u+1>=_)break;i[u++]=192|h>>6,i[u++]=128|h&63}else if(h<=65535){if(u+2>=_)break;i[u++]=224|h>>12,i[u++]=128|h>>6&63,i[u++]=128|h&63}else{if(u+3>=_)break;i[u++]=240|h>>18,i[u++]=128|h>>12&63,i[u++]=128|h>>6&63,i[u++]=128|h&63,v++}}return i[u]=0,u-E},St=(o,i,u)=>wt(o,te,i,u),we=o=>Le(o),Ct=o=>{var i=yt(o)+1,u=we(i);return St(o,u,i),u},Se=globalThis.TextDecoder&&new TextDecoder,Rt=(o,i,u,g)=>{var E=i+u;if(g)return E;for(;o[i]&&!(i>=E);)++i;return i},Lt=(o,i=0,u,g)=>{var E=Rt(o,i,u,g);if(E-i>16&&o.buffer&&Se)return Se.decode(o.subarray(i,E));for(var _="";i<E;){var v=o[i++];if(!(v&128)){_+=String.fromCharCode(v);continue}var h=o[i++]&63;if((v&224)==192){_+=String.fromCharCode((v&31)<<6|h);continue}var M=o[i++]&63;if((v&240)==224?v=(v&15)<<12|h<<6|M:v=(v&7)<<18|h<<12|M<<6|o[i++]&63,v<65536)_+=String.fromCharCode(v);else{var P=v-65536;_+=String.fromCharCode(55296|P>>10,56320|P&1023)}}return _},qt=(o,i,u)=>o?Lt(te,o,i,u):"",Ce=(o,i,u,g,E)=>{var _={string:S=>{var J=0;return S!=null&&S!==0&&(J=Ct(S)),J},array:S=>{var J=we(S.length);return bt(S,J),J}};function v(S){return i==="string"?qt(S):i==="boolean"?!!S:S}var h=ye(o),M=[],P=0;if(g)for(var G=0;G<g.length;G++){var Me=_[u[G]];Me?(P===0&&(P=vt()),M[G]=Me(g[G])):M[G]=g[G]}var de=h(...M);function lr(S){return P!==0&&gt(P),v(S)}return de=lr(de),de},Mt=(o,i,u,g)=>{var E=!u||u.every(v=>v==="number"||v==="boolean"),_=i!=="string";return _&&E&&!g?ye(o):(...v)=>Ce(o,i,u,v,g)};if(e.noExitRuntime&&(mt=e.noExitRuntime),e.print&&(m=e.print),e.printErr&&(f=e.printErr),e.wasmBinary&&(k=e.wasmBinary),e.arguments&&(s=e.arguments),e.thisProgram&&(a=e.thisProgram),e.preInit)for(typeof e.preInit=="function"&&(e.preInit=[e.preInit]);e.preInit.length>0;)e.preInit.shift()();e.ccall=Ce,e.cwrap=Mt;var It,Pt,Gt,Bt,Kt,Ft,Tt,Nt,xt,Ht,Ot,$t,Ut,Wt,Dt,zt,Jt,Xt,Vt,Yt,Zt,Qt,er,Re,Le,qe,tr,rr,re;function nr(o){It=e._free=o.d,Pt=e._legion_solve_wasm=o.e,Gt=e._legion_sizeof_result=o.f,Bt=e._legion_sizeof_placement=o.g,Kt=e._legion_max_placements=o.h,Ft=e._legion_max_cells_per_piece=o.i,Tt=e._legion_board_rows=o.j,Nt=e._legion_board_cols=o.k,xt=e._legion_offset_success=o.l,Ht=e._legion_offset_n_placements=o.m,Ot=e._legion_offset_iterations=o.n,$t=e._legion_offset_final_board=o.o,Ut=e._legion_offset_placements=o.p,Wt=e._legion_placement_offset_piece_id=o.q,Dt=e._legion_placement_offset_anchor_x=o.r,zt=e._legion_placement_offset_anchor_y=o.s,Jt=e._legion_placement_offset_transformation=o.t,Xt=e._legion_placement_offset_direction_free=o.u,Vt=e._legion_placement_offset_is_restricted=o.v,Yt=e._legion_placement_offset_n_cells=o.w,Zt=e._legion_placement_offset_cells_x=o.x,Qt=e._legion_placement_offset_cells_y=o.y,er=e._malloc=o.z,Re=o.A,Le=o.B,qe=o.C,tr=re=o.b,rr=o.__indirect_function_table}var Ar={a:ht};function or(){ue();function o(){e.calledRun=!0,!y&&(ee(),T?.(e),e.onRuntimeInitialized?.(),x())}e.setStatus?(e.setStatus("Running..."),setTimeout(()=>{setTimeout(()=>e.setStatus(""),1),o()},1)):o()}var z;return z=await ot(),or(),N?r=e:r=new Promise((o,i)=>{T=o,D=i}),r}var Pe=ir;function Ge(t){return{ROWS:t._legion_board_rows(),COLS:t._legion_board_cols(),MAX_PIECES:18,MAX_CELLS:t._legion_max_cells_per_piece(),RESULT_SIZE:t._legion_sizeof_result(),PLACEMENT_SIZE:t._legion_sizeof_placement(),o:{success:t._legion_offset_success(),nPlacements:t._legion_offset_n_placements(),iterations:t._legion_offset_iterations(),finalBoard:t._legion_offset_final_board(),placements:t._legion_offset_placements()},p:{pieceId:t._legion_placement_offset_piece_id(),anchorX:t._legion_placement_offset_anchor_x(),anchorY:t._legion_placement_offset_anchor_y(),transform:t._legion_placement_offset_transformation(),dir:t._legion_placement_offset_direction_free(),isRest:t._legion_placement_offset_is_restricted(),nCells:t._legion_placement_offset_n_cells(),cellsX:t._legion_placement_offset_cells_x(),cellsY:t._legion_placement_offset_cells_y()}}}function Be(t,r,e,A,l){if(e.length!==r.ROWS*r.COLS)throw new Error(`board must be ${r.ROWS*r.COLS} bytes`);if(A.length!==r.MAX_PIECES)throw new Error(`counts must be ${r.MAX_PIECES} ints`);let s=t._malloc(r.ROWS*r.COLS),a=t._malloc(r.MAX_PIECES*4),j=t._malloc(r.RESULT_SIZE);try{t.HEAP8.set(e,s),t.HEAP32.set(A,a>>2);let p=performance.now(),d=t._legion_solve_wasm(s,a,l,j),m=performance.now(),f=new DataView(t.HEAP8.buffer),k=f.getInt32(j+r.o.success,!0),y=f.getInt32(j+r.o.nPlacements,!0),b=f.getUint32(j+r.o.iterations,!0),w=f.getInt32(j+r.o.iterations+4,!0),L=w===0?b:Number(BigInt(w)<<32n|BigInt(b)),T=new Int8Array(t.HEAP8.buffer,j+r.o.finalBoard,r.ROWS*r.COLS).slice(),D=[];for(let N=0;N<y;N++){let C=j+r.o.placements+N*r.PLACEMENT_SIZE,ue=f.getInt8(C+r.p.nCells),ee=[];for(let x=0;x<ue;x++)ee.push([f.getInt8(C+r.p.cellsX+x),f.getInt8(C+r.p.cellsY+x)]);D.push({pieceId:f.getInt16(C+r.p.pieceId,!0),anchorX:f.getInt16(C+r.p.anchorX,!0),anchorY:f.getInt16(C+r.p.anchorY,!0),transform:f.getInt8(C+r.p.transform),dir:f.getInt8(C+r.p.dir),isRestricted:!!f.getInt8(C+r.p.isRest),cells:ee})}return{ok:d===1,success:k===1,iterations:L,finalBoard:T,placements:D,ms:m-p}}finally{t._free(s),t._free(a),t._free(j)}}var ne={},Te='KCgpPT57dmFyIEVyPU9iamVjdC5kZWZpbmVQcm9wZXJ0eTt2YXIga3I9KHQsbixyKT0+biBpbiB0P0VyKHQsbix7ZW51bWVyYWJsZTohMCxjb25maWd1cmFibGU6ITAsd3JpdGFibGU6ITAsdmFsdWU6cn0pOnRbbl09cjt2YXIgZUE9KHQsbixyKT0+a3IodCx0eXBlb2YgbiE9InN5bWJvbCI/bisiIjpuLHIpO3ZhciB1cj17fTthc3luYyBmdW5jdGlvbiB2cih0PXt9KXt2YXIgbixyPXQsST0hMCxTPSExLHE9W10sbT0iLi90aGlzLnByb2dyYW0iLEU9dXIudXJsLHc9IiIsQztpZihJfHxTKXt0cnl7dz1uZXcgVVJMKCIuIixFKS5ocmVmfWNhdGNoe31DPWFzeW5jIEE9Pnt2YXIgZT1hd2FpdCBmZXRjaChBLHtjcmVkZW50aWFsczoic2FtZS1vcmlnaW4ifSk7aWYoZS5vaylyZXR1cm4gZS5hcnJheUJ1ZmZlcigpO3Rocm93IG5ldyBFcnJvcihlLnN0YXR1cysiIDogIitlLnVybCl9fXZhciBPPWNvbnNvbGUubG9nLmJpbmQoY29uc29sZSksXz1jb25zb2xlLmVycm9yLmJpbmQoY29uc29sZSksSyxNPSExO2NsYXNzIGR7fWNsYXNzIE4gZXh0ZW5kcyBke31mdW5jdGlvbiBVKEEpe2Zvcih2YXIgZT0wLGo9QS5sZW5ndGgsbD1uZXcgVWludDhBcnJheShqKSxhO2U8ajsrK2UpYT1BLmNoYXJDb2RlQXQoZSksbFtlXT1+YT4+OCZhO3JldHVybiBsfXZhciBGLHAsZz0hMTtmdW5jdGlvbiBjKCl7dmFyIEE9UC5idWZmZXI7ci5IRUFQOD1XPW5ldyBJbnQ4QXJyYXkoQSksci5IRUFQMTY9Y0E9bmV3IEludDE2QXJyYXkoQSksci5IRUFQVTg9aD1uZXcgVWludDhBcnJheShBKSxyLkhFQVBVMTY9Z0E9bmV3IFVpbnQxNkFycmF5KEEpLHIuSEVBUDMyPUVBPW5ldyBJbnQzMkFycmF5KEEpLHIuSEVBUFUzMj1SQT1uZXcgVWludDMyQXJyYXkoQSksdkE9bmV3IEZsb2F0MzJBcnJheShBKSxyLkhFQVBGNjQ9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UHJvbWlzZSgoaSxvKT0+e3IuaW5zdGFudGlhdGVXYXNtKGosKHMsayk9PntpKEEocyxrKSl9KX0pO3o/Pyh6PW9BKCkpO3ZhciBsPWF3YWl0IHNBKEsseixqKSxhPWUobCk7cmV0dXJuIGF9Y2xhc3MgcXJ7Y29uc3RydWN0b3IoZSl7ZUEodGhpcywibmFtZSIsIkV4aXRTdGF0dXMiKTt0aGlzLm1lc3NhZ2U9YFByb2dyYW0gdGVybWluYXRlZCB3aXRoIGV4aXQoJHtlfSlgLHRoaXMuc3RhdHVzPWV9fXZhciBjQSxFQSxrQSxXLHZBLHVBLGdBLFJBLHFBLGgsSj1BPT57Zm9yKDtBLmxlbmd0aD4wOylBLnNoaWZ0KCkocil9LFg9W10sbUE9QT0+WC5wdXNoKEEpLEw9W10scEE9QT0+TC5wdXNoKEEpLEdBPSEwLHlBPUE9PngoQSksSUE9KCk9PkFBKCksS0E9KCk9PjIxNDc0ODM2NDgsTUE9KEEsZSk9Pk1hdGguY2VpbChBL2UpKmUsZEE9QT0+e3ZhciBlPVAuYnVmZmVyLmJ5dGVMZW5ndGgsaj0oQS1lKzY1NTM1KS82NTUzNnwwO3RyeXtyZXR1cm4gUC5ncm93KGopLGMoKSwxfWNhdGNoe319LEZBPUE9Pnt2YXIgZT1oLmxlbmd0aDtBPj4+PTA7dmFyIGo9S0EoKTtpZihBPmopcmV0dXJuITE7Zm9yKHZhciBsPTE7bDw9NDtsKj0yKXt2YXIgYT1lKigxKy4yL2wpO2E9TWF0aC5taW4oYSxBKzEwMDY2MzI5Nik7dmFyIGk9TWF0aC5taW4oaixNQShNYXRoLm1heChBLGEpLDY1NTM2KSksbz1kQShpKTtpZihvKXJldHVybiEwfXJldHVybiExfSxEPUE9Pnt2YXIgZT1yWyJfIitBXTtyZXR1cm4gZX0sQkE9KEEsZSk9PntXLnNldChBLGUpfSxoQT1BPT57Zm9yKHZhciBlPTAsaj0wO2o8QS5sZW5ndGg7KytqKXt2YXIgbD1BLmNoYXJDb2RlQXQoaik7bDw9MTI3P2UrKzpsPD0yMDQ3P2UrPTI6bD49NTUyOTYmJmw8PTU3MzQzPyhlKz00LCsraik6ZSs9M31yZXR1cm4gZX0sUEE9KEEsZSxqLGwpPT57aWYoIShsPjApKXJldHVybiAwO2Zvcih2YXIgYT1qLGk9aitsLTEsbz0wO288QS5sZW5ndGg7KytvKXt2YXIgcz1BLmNvZGVQb2ludEF0KG8pO2lmKHM8PTEyNyl7aWYoaj49aSlicmVhaztlW2orK109c31lbHNlIGlmKHM8PTIwNDcpe2lmKGorMT49aSlicmVhaztlW2orK109MTkyfHM+PjYsZVtqKytdPTEyOHxzJjYzfWVsc2UgaWYoczw9NjU1MzUpe2lmKGorMj49aSlicmVhaztlW2orK109MjI0fHM+PjEyLGVbaisrXT0xMjh8cz4+NiY2MyxlW2orK109MTI4fHMmNjN9ZWxzZXtpZihqKzM+PWkpYnJlYWs7ZVtqKytdPTI0MHxzPj4xOCxlW2orK109MTI4fHM+PjEyJjYzLGVbaisrXT0xMjh8cz4+NiY2MyxlW2orK109MTI4fHMmNjMsbysrfX1yZXR1cm4gZVtqXT0wLGotYX0sSEE9KEEsZSxqKT0+UEEoQSxoLGUsaiksVj1BPT5RKEEpLGJBPUE9Pnt2YXIgZT1oQShBKSsxLGo9VihlKTtyZXR1cm4gSEEoQSxqLGUpLGp9LFk9Z2xvYmFsVGhpcy5UZXh0RGVjb2RlciYmbmV3IFRleHREZWNvZGVyLFNBPShBLGUsaixsKT0+e3ZhciBhPWUrajtpZihsKXJldHVybiBhO2Zvcig7QVtlXSYmIShlPj1hKTspKytlO3JldHVybiBlfSx3QT0oQSxlPTAsaixsKT0+e3ZhciBhPVNBKEEsZSxqLGwpO2lmKGEtZT4xNiYmQS5idWZmZXImJlkpcmV0dXJuIFkuZGVjb2RlKEEuc3ViYXJyYXkoZSxhKSk7Zm9yKHZhciBpPSIiO2U8YTspe3ZhciBvPUFbZSsrXTtpZighKG8mMTI4KSl7aSs9U3RyaW5nLmZyb21DaGFyQ29kZShvKTtjb250aW51ZX12YXIgcz1BW2UrK10mNjM7aWYoKG8mMjI0KT09MTkyKXtpKz1TdHJpbmcuZnJvbUNoYXJDb2RlKChvJjMxKTw8NnxzKTtjb250aW51ZX12YXIgaz1BW2UrK10mNjM7aWYoKG8mMjQwKT09MjI0P289KG8mMTUpPDwxMnxzPDw2fGs6bz0obyY3KTw8MTh8czw8MTJ8azw8NnxBW2UrK10mNjMsbzw2NTUzNilpKz1TdHJpbmcuZnJvbUNoYXJDb2RlKG8pO2Vsc2V7dmFyIHY9by02NTUzNjtpKz1TdHJpbmcuZnJvbUNoYXJDb2RlKDU1Mjk2fHY+PjEwLDU2MzIwfHYmMTAyMyl9fXJldHVybiBpfSxDQT0oQSxlLGopPT5BP3dBKGgsQSxlLGopOiIiLFo9KEEsZSxqLGwsYSk9Pnt2YXIgaT17c3RyaW5nOmY9Pnt2YXIgeT0wO3JldHVybiBmIT1udWxsJiZmIT09MCYmKHk9YkEoZikpLHl9LGFycmF5OmY9Pnt2YXIgeT1WKGYubGVuZ3RoKTtyZXR1cm4gQkEoZix5KSx5fX07ZnVuY3Rpb24gbyhmKXtyZXR1cm4gZT09PSJzdHJpbmciP0NBKGYpOmU9PT0iYm9vbGVhbiI/ISFmOmZ9dmFyIHM9RChBKSxrPVtdLHY9MDtpZihsKWZvcih2YXIgdT0wO3U8bC5sZW5ndGg7dSsrKXt2YXIgckE9aVtqW3VdXTtyQT8odj09PTAmJih2PUlBKCkpLGtbdV09ckEobFt1XSkpOmtbdV09bFt1XX12YXIgVD1zKC4uLmspO2Z1bmN0aW9uIGNyKGYpe3JldHVybiB2IT09MCYmeUEodiksbyhmKX1yZXR1cm4gVD1jcihUKSxUfSxPQT0oQSxlLGosbCk9Pnt2YXIgYT0hanx8ai5ldmVyeShvPT5vPT09Im51bWJlciJ8fG89PT0iYm9vbGVhbiIpLGk9ZSE9PSJzdHJpbmciO3JldHVybiBpJiZhJiYhbD9EKEEpOiguLi5vKT0+WihBLGUsaixvLGwpfTtpZihyLm5vRXhpdFJ1bnRpbWUmJihHQT1yLm5vRXhpdFJ1bnRpbWUpLHIucHJpbnQmJihPPXIucHJpbnQpLHIucHJpbnRFcnImJihfPXIucHJpbnRFcnIpLHIud2FzbUJpbmFyeSYmKEs9ci53YXNtQmluYXJ5KSxyLmFyZ3VtZW50cyYmKHE9ci5hcmd1bWVudHMpLHIudGhpc1Byb2dyYW0mJihtPXIudGhpc1Byb2dyYW0pLHIucHJlSW5pdClmb3IodHlwZW9mIHIucHJlSW5pdD09ImZ1bmN0aW9uIiYmKHIucHJlSW5pdD1bci5wcmVJbml0XSk7ci5wcmVJbml0Lmxlbmd0aD4wOylyLnByZUluaXQuc2hpZnQoKSgpO3IuY2NhbGw9WixyLmN3cmFwPU9BO3ZhciBOQSxVQSwkQSxUQSx6QSxXQSxKQSxYQSxMQSxEQSxWQSxZQSxaQSx4QSxRQSxBcixycixlcixqcixucix0cixscixvcix4LFEsQUEsYXIsaXIsUDtmdW5jdGlvbiBzcihBKXtOQT1yLl9mcmVlPUEuZCxVQT1yLl9sZWdpb25fc29sdmVfd2FzbT1BLmUsJEE9ci5fbGVnaW9uX3NpemVvZl9yZXN1bHQ9QS5mLFRBPXIuX2xlZ2lvbl9zaXplb2ZfcGxhY2VtZW50PUEuZyx6QT1yLl9sZWdpb25fbWF4X3BsYWNlbWVudHM9QS5oLFdBPXIuX2xlZ2lvbl9tYXhfY2VsbHNfcGVyX3BpZWNlPUEuaSxKQT1yLl9sZWdpb25fYm9hcmRfcm93cz1BLmosWEE9ci5fbGVnaW9uX2JvYXJkX2NvbHM9QS5rLExBPXIuX2xlZ2lvbl9vZmZzZXRfc3VjY2Vzcz1BLmwsREE9ci5fbGVnaW9uX29mZnNldF9uX3BsYWNlbWVudHM9QS5tLFZBPXIuX2xlZ2lvbl9vZmZzZXRfaXRlcmF0aW9ucz1BLm4sWUE9ci5fbGVnaW9uX29mZnNldF9maW5hbF9ib2FyZD1BLm8sWkE9ci5fbGVnaW9uX29mZnNldF9wbGFjZW1lbnRzPUEucCx4QT1yLl9sZWdpb25fcGxhY2VtZW50X29mZnNldF9waWVjZV9pZD1BLnEsUUE9ci5fbGVnaW9uX3BsYWNlbWVudF9vZmZzZXRfYW5jaG9yX3g9QS5yLEFyPXIuX2xlZ2lvbl9wbGFjZW1lbnRfb2Zmc2V0X2FuY2hvcl95PUEucyxycj1yLl9sZWdpb25fcGxhY2VtZW50X29mZnNldF90cmFuc2Zvcm1hdGlvbj1BLnQsZXI9ci5fbGVnaW9uX3BsYWNlbWVudF9vZmZzZXRfZGlyZWN0aW9uX2ZyZWU9QS51LGpyPXIuX2xlZ2lvbl9wbGFjZW1lbnRfb2Zmc2V0X2lzX3Jlc3RyaWN0ZWQ9QS52LG5yPXIuX2xlZ2lvbl9wbGFjZW1lbnRfb2Zmc2V0X25fY2VsbHM9QS53LHRyPXIuX2xlZ2lvbl9wbGFjZW1lbnRfb2Zmc2V0X2NlbGxzX3g9QS54LGxyPXIuX2xlZ2lvbl9wbGFjZW1lbnRfb2Zmc2V0X2NlbGxzX3k9QS55LG9yPXIuX21hbGxvYz1BLnoseD1BLkEsUT1BLkIsQUE9QS5DLGFyPVA9QS5iLGlyPUEuX19pbmRpcmVjdF9mdW5jdGlvbl90YWJsZX12YXIgX3I9e2E6RkF9O2Z1bmN0aW9uIGZyKCl7JCgpO2Z1bmN0aW9uIEEoKXtyLmNhbGxlZFJ1bj0hMCwhTSYmKEIoKSxGPy4ociksci5vblJ1bnRpbWVJbml0aWFsaXplZD8uKCksUigpKX1yLnNldFN0YXR1cz8oci5zZXRTdGF0dXMoIlJ1bm5pbmcuLi4iKSxzZXRUaW1lb3V0KCgpPT57c2V0VGltZW91dCgoKT0+ci5zZXRTdGF0dXMoIiIpLDEpLEEoKX0sMSkpOkEoKX12YXIgRztyZXR1cm4gRz1hd2FpdCBmQSgpLGZyKCksZz9uPXI6bj1uZXcgUHJvbWlzZSgoQSxlKT0+e0Y9QSxwPWV9KSxufXZhciBqQT12cjtmdW5jdGlvbiBuQSh0KXtyZXR1cm57Uk9XUzp0Ll9sZWdpb25fYm9hcmRfcm93cygpLENPTFM6dC5fbGVnaW9uX2JvYXJkX2NvbHMoKSxNQVhfUElFQ0VTOjE4LE1BWF9DRUxMUzp0Ll9sZWdpb25fbWF4X2NlbGxzX3Blcl9waWVjZSgpLFJFU1VMVF9TSVpFOnQuX2xlZ2lvbl9zaXplb2ZfcmVzdWx0KCksUExBQ0VNRU5UX1NJWkU6dC5fbGVnaW9uX3NpemVvZl9wbGFjZW1lbnQoKSxvOntzdWNjZXNzOnQuX2xlZ2lvbl9vZmZzZXRfc3VjY2VzcygpLG5QbGFjZW1lbnRzOnQuX2xlZ2lvbl9vZmZzZXRfbl9wbGFjZW1lbnRzKCksaXRlcmF0aW9uczp0Ll9sZWdpb25fb2Zmc2V0X2l0ZXJhdGlvbnMoKSxmaW5hbEJvYXJkOnQuX2xlZ2lvbl9vZmZzZXRfZmluYWxfYm9hcmQoKSxwbGFjZW1lbnRzOnQuX2xlZ2lvbl9vZmZzZXRfcGxhY2VtZW50cygpfSxwOntwaWVjZUlkOnQuX2xlZ2lvbl9wbGFjZW1lbnRfb2Zmc2V0X3BpZWNlX2lkKCksYW5jaG9yWDp0Ll9sZWdpb25fcGxhY2VtZW50X29mZnNldF9hbmNob3JfeCgpLGFuY2hvclk6dC5fbGVnaW9uX3BsYWNlbWVudF9vZmZzZXRfYW5jaG9yX3koKSx0cmFuc2Zvcm06dC5fbGVnaW9uX3BsYWNlbWVudF9vZmZzZXRfdHJhbnNmb3JtYXRpb24oKSxkaXI6dC5fbGVnaW9uX3BsYWNlbWVudF9vZmZzZXRfZGlyZWN0aW9uX2ZyZWUoKSxpc1Jlc3Q6dC5fbGVnaW9uX3BsYWNlbWVudF9vZmZzZXRfaXNfcmVzdHJpY3RlZCgpLG5DZWxsczp0Ll9sZWdpb25fcGxhY2VtZW50X29mZnNldF9uX2NlbGxzKCksY2VsbHNYOnQuX2xlZ2lvbl9wbGFjZW1lbnRfb2Zmc2V0X2NlbGxzX3goKSxjZWxsc1k6dC5fbGVnaW9uX3BsYWNlbWVudF9vZmZzZXRfY2VsbHNfeSgpfX19ZnVuY3Rpb24gdEEodCxuLHIsSSxTKXtpZihyLmxlbmd0aCE9PW4uUk9XUypuLkNPTFMpdGhyb3cgbmV3IEVycm9yKGBib2FyZCBtdXN0IGJlICR7bi5ST1dTKm4uQ09MU30gYnl0ZXNgKTtpZihJLmxlbmd0aCE9PW4uTUFYX1BJRUNFUyl0aHJvdyBuZXcgRXJyb3IoYGNvdW50cyBtdXN0IGJlICR7bi5NQVhfUElFQ0VTfSBpbnRzYCk7bGV0IHE9dC5fbWFsbG9jKG4uUk9XUypuLkNPTFMpLG09dC5fbWFsbG9jKG4uTUFYX1BJRUNFUyo0KSxFPXQuX21hbGxvYyhuLlJFU1VMVF9TSVpFKTt0cnl7dC5IRUFQOC5zZXQocixxKSx0LkhFQVAzMi5zZXQoSSxtPj4yKTtsZXQgdz1wZXJmb3JtYW5jZS5ub3coKSxDPXQuX2xlZ2lvbl9zb2x2ZV93YXNtKHEsbSxTLEUpLE89cGVyZm9ybWFuY2Uubm93KCksXz1uZXcgRGF0YVZpZXcodC5IRUFQOC5idWZmZXIpLEs9Xy5nZXRJbnQzMihFK24uby5zdWNjZXNzLCEwKSxNPV8uZ2V0SW50MzIoRStuLm8ublBsYWNlbWVudHMsITApLGQ9Xy5nZXRVaW50MzIoRStuLm8uaXRlcmF0aW9ucywhMCksTj1fLmdldEludDMyKEUrbi5vLml0ZXJhdGlvbnMrNCwhMCksVT1OPT09MD9kOk51bWJlcihCaWdJbnQoTik8PDMybnxCaWdJbnQoZCkpLEY9bmV3IEludDhBcnJheSh0LkhFQVA4LmJ1ZmZlcixFK24uby5maW5hbEJvYXJkLG4uUk9XUypuLkNPTFMpLnNsaWNlKCkscD1bXTtmb3IobGV0IGc9MDtnPE07ZysrKXtsZXQgYz1FK24uby5wbGFjZW1lbnRzK2cqbi5QTEFDRU1FTlRfU0laRSwkPV8uZ2V0SW50OChjK24ucC5uQ2VsbHMpLEI9W107Zm9yKGxldCBSPTA7UjwkO1IrKylCLnB1c2goW18uZ2V0SW50OChjK24ucC5jZWxsc1grUiksXy5nZXRJbnQ4KGMrbi5wLmNlbGxzWStSKV0pO3AucHVzaCh7cGllY2VJZDpfLmdldEludDE2KGMrbi5wLnBpZWNlSWQsITApLGFuY2hvclg6Xy5nZXRJbnQxNihjK24ucC5hbmNob3JYLCEwKSxhbmNob3JZOl8uZ2V0SW50MTYoYytuLnAuYW5jaG9yWSwhMCksdHJhbnNmb3JtOl8uZ2V0SW50OChjK24ucC50cmFuc2Zvcm0pLGRpcjpfLmdldEludDgoYytuLnAuZGlyKSxpc1Jlc3RyaWN0ZWQ6ISFfLmdldEludDgoYytuLnAuaXNSZXN0KSxjZWxsczpCfSl9cmV0dXJue29rOkM9PT0xLHN1Y2Nlc3M6Sz09PTEsaXRlcmF0aW9uczpVLGZpbmFsQm9hcmQ6RixwbGFjZW1lbnRzOnAsbXM6Ty13fX1maW5hbGx5e3QuX2ZyZWUocSksdC5fZnJlZShtKSx0Ll9mcmVlKEUpfX12YXIgZ3I9e30sSD1udWxsLGI9bnVsbDtzZWxmLmFkZEV2ZW50TGlzdGVuZXIoIm1lc3NhZ2UiLGFzeW5jIHQ9PntsZXQgbj10LmRhdGE7aWYobi50eXBlPT09ImluaXQiKXt0cnl7SD1hd2FpdCBqQSh7bG9jYXRlRmlsZTpyPT5uZXcgVVJMKHIsZ3IudXJsKS5ocmVmfSksYj1uQShIKSxzZWxmLnBvc3RNZXNzYWdlKHt0eXBlOiJyZWFkeSIsbGF5b3V0OmJ9KX1jYXRjaChyKXtzZWxmLnBvc3RNZXNzYWdlKHt0eXBlOiJpbml0LWVycm9yIixlcnJvcjpTdHJpbmcociYmci5tZXNzYWdlfHxyKX0pfXJldHVybn1pZihuLnR5cGU9PT0ic29sdmUiKXtpZighSHx8IWIpe3NlbGYucG9zdE1lc3NhZ2Uoe3R5cGU6ImVycm9yIixyZXF1ZXN0SWQ6bi5yZXF1ZXN0SWQsZXJyb3I6InNvbHZlIGJlZm9yZSBpbml0In0pO3JldHVybn10cnl7bGV0IHI9dEEoSCxiLG4uYm9hcmQsbi5jb3VudHMsbi5tYXhJdGVyKTtzZWxmLnBvc3RNZXNzYWdlKHt0eXBlOiJyZXN1bHQiLHJlcXVlc3RJZDpuLnJlcXVlc3RJZCxyZXN1bHQ6cn0pfWNhdGNoKHIpe3NlbGYucG9zdE1lc3NhZ2Uoe3R5cGU6ImVycm9yIixyZXF1ZXN0SWQ6bi5yZXF1ZXN0SWQsZXJyb3I6U3RyaW5nKHImJnIubWVzc2FnZXx8cil9KX19fSk7fSkoKTsK';function jr(){let t=atob(Te),r=new Uint8Array(t.length);for(let e=0;e<t.length;e++)r[e]=t.charCodeAt(e);return r}var H="unknown",I=null,fe=null,K=null,B=null,X=new Map,ur=1;function Ke(t){let r=t.data;if(r.type!=="result"&&r.type!=="error")return;let e=X.get(r.requestId);e&&(X.delete(r.requestId),r.type==="result"?e.resolve(r.result):e.reject(new Error(r.error)))}function Fe(t){return new Promise((r,e)=>{let A=a=>{a.data.type==="ready"?(s(),r(a.data.layout)):a.data.type==="init-error"&&(s(),e(new Error(a.data.error)))},l=a=>{s(),e(new Error(a.message||"worker error"))},s=()=>{t.removeEventListener("message",A),t.removeEventListener("error",l)};t.addEventListener("message",A),t.addEventListener("error",l),t.postMessage({type:"init"})})}async function dr(){if(typeof ne<"u"&&ne.url)try{let t=new URL("./worker.mjs",ne.url),r=new Worker(t,{type:"module"});try{return K=await Fe(r),I=r,I.addEventListener("message",Ke),r}catch(e){r.terminate(),console.warn("[legion-solver] URL-worker init failed:",e)}}catch{}if(Te.length>1e3){let t=null;try{let r=jr(),e=new Blob([r],{type:"application/javascript"});t=URL.createObjectURL(e);let A=new Worker(t);try{return K=await Fe(A),I=A,I.addEventListener("message",Ke),URL.revokeObjectURL(t),A}catch(l){A.terminate(),t&&URL.revokeObjectURL(t),console.warn("[legion-solver] Blob-worker init failed:",l)}}catch(r){t&&URL.revokeObjectURL(t),console.warn("[legion-solver] Blob-worker spawn failed:",r)}}return null}async function fr(){fe=await Pe({locateFile:t=>new URL(t,ne.url).href}),K=Ge(fe)}async function V(){return B||(B=(async()=>{if(await dr()){H="worker",console.log("[legion-solver] using Web Worker \u2014 UI stays responsive during solve");return}await fr(),H="sync",console.log("[legion-solver] worker unavailable, solving on main thread (page may freeze on big solves)")})(),B)}function Ne(){if(!K)throw new Error("initSolver() not awaited yet");return K}function pe(){return H==="worker"}async function xe(t,r,e=0){if(B||V(),await B,H==="worker"){let A=ur++;return new Promise((l,s)=>{X.set(A,{resolve:l,reject:s}),I.postMessage({type:"solve",requestId:A,board:new Int8Array(t),counts:new Int32Array(r),maxIter:e})})}return Be(fe,K,t,r,e)}function He(){if(H!=="worker"||!I)return!1;let t=I;I=null,B=null,K=null,H="unknown";for(let r of X.values())r.reject(new Error("cancelled"));return X.clear(),t.terminate(),V(),!0}var me=[{id:1,label:"Lv 60",shape:[[2]]},{id:2,label:"Lv 100",shape:[[2,2]]},{id:3,label:"Lv 140 Warrior/Pirate",shape:[[1,0],[2,1]]},{id:4,label:"Lv 140 Mage/Thief/Archer",shape:[[1,2,1]]},{id:5,label:"Lv 200 Warrior",shape:[[2,2],[2,2]]},{id:6,label:"Lv 200 Archer",shape:[[1,2,2,1]]},{id:7,label:"Lv 200 Thief/Lab",shape:[[1,0,0],[1,2,1]]},{id:8,label:"Lv 200 Mage",shape:[[0,1,0],[1,2,1]]},{id:9,label:"Lv 200 Pirate",shape:[[1,2,0],[0,2,1]]},{id:10,label:"Lv 250 Warrior",shape:[[1,1,2],[0,1,1]]},{id:11,label:"Lv 250 Archer",shape:[[1,1,2,1,1]]},{id:12,label:"Lv 250 Thief",shape:[[0,0,1],[1,2,1],[0,0,1]]},{id:13,label:"Lv 250 Mage",shape:[[0,1,0],[1,2,1],[0,1,0]]},{id:14,label:"Lv 250 Pirate",shape:[[1,2,0,0],[0,1,1,1]]},{id:15,label:"Lv 250 Xenon",shape:[[1,1,0],[0,2,0],[0,1,1]]},{id:16,label:"Lv 200 Enhanced Lab",shape:[[1,0,0,0],[0,1,2,1]]},{id:17,label:"Lv 250 Enhanced Lab",shape:[[1,0,0,0,1],[0,1,2,1,0]]},{id:18,label:"Lv 250 Lab",shape:[[1,0,1],[1,2,1]]}],Ae={1:"lightpink",2:"lightcoral",3:"indianred",4:"darkseagreen",5:"firebrick",6:"mediumseagreen",7:"purple",8:"dodgerblue",9:"lightsteelblue",10:"maroon",11:"green",12:"indigo",13:"blue",14:"cadetblue",15:"mediumpurple",16:"aquamarine",17:"aquamarine",18:"aquamarine"};function Oe(t){let r=0;for(let e of t)for(let A of e)A!==0&&r++;return r}function ge(t){return t<=0?null:t>18?{pieceId:t-18,isMiddle:!0}:{pieceId:t,isMiddle:!1}}var c=t=>document.getElementById(t),We="legionSolver.v1",n={board:null,rows:0,cols:0,counts:new Int32Array(18),dragging:!1,dragValue:0,lastSolution:null,bigClick:!1,groups:[],cellToGroup:null,previewedGroup:-1,lastClick:null,placementMap:null,showMiddle:!0},pr=400;function R(){let t={board:Array.from(n.board),counts:Array.from(n.counts),bigClick:n.bigClick,showMiddle:n.showMiddle,maxIter:c("inpMaxIter")?.value||"0"};try{localStorage.setItem(We,JSON.stringify(t))}catch{}}function mr(){try{let t=localStorage.getItem(We);return t?JSON.parse(t):null}catch{return null}}function gr(t,r){let e=Array.from({length:16},()=>[]),A=t/4,l=t/2,s=3*t/4;for(let a=0;a<A;a++)for(let j=a;j<l;j++)e[0].push({r:j,c:a}),e[1].push({r:a,c:j+1}),e[2].push({r:a,c:r-2-j}),e[3].push({r:j,c:r-1-a}),e[4].push({r:t-1-j,c:r-1-a}),e[5].push({r:t-1-a,c:r-2-j}),e[6].push({r:t-1-a,c:j+1}),e[7].push({r:t-1-j,c:a});for(let a=A;a<l;a++)for(let j=a;j<l;j++)e[8].push({r:j,c:a}),e[9].push({r:a,c:j+1}),e[10].push({r:s-1-j,c:A+1+a}),e[11].push({r:j,c:r-1-a}),e[12].push({r:t-1-j,c:r-1-a}),e[13].push({r:j+A,c:a+A+1}),e[14].push({r:j+A,c:s-a}),e[15].push({r:t-j-1,c:a});return e}function vr(t,r,e){let A=new Int16Array(r*e).fill(-1);for(let l=0;l<t.length;l++)for(let s of t[l])s.r>=0&&s.r<r&&s.c>=0&&s.c<e&&(A[s.r*e+s.c]=l);return A}function De(t,r){return new Int8Array(t*r).fill(-1)}function Er(){let t=c("boardBody");t.innerHTML="";let r=n.cols;for(let e=0;e<n.rows;e++){let A=document.createElement("tr");for(let l=0;l<n.cols;l++){let s=document.createElement("td");s.dataset.r=e,s.dataset.c=l;let a=n.cellToGroup[e*r+l];if(a>=0){s.classList.add("g"+a);let j=(p,d)=>p<0||p>=n.rows||d<0||d>=n.cols||n.cellToGroup[p*r+d]!==a;j(e-1,l)&&s.classList.add("gb-top"),j(e+1,l)&&s.classList.add("gb-bot"),j(e,l-1)&&s.classList.add("gb-left"),j(e,l+1)&&s.classList.add("gb-right")}s.addEventListener("mousedown",j=>{j.preventDefault(),se();let p=e*n.cols+l,d=performance.now(),m=n.lastClick;if(m&&m.idx===p&&d-m.time<pr&&!n.bigClick){let k=n.cellToGroup[p];if(k>=0){for(let y of n.groups[k])oe(y.r,y.c,m.dragValue);n.lastClick=null,R();return}}let f=n.board[p];n.dragValue=f===0?-1:0,$e(e,l,n.dragValue),n.dragging=!0,n.lastClick={idx:p,dragValue:n.dragValue,time:d}}),s.addEventListener("mouseover",()=>{n.dragging?$e(e,l,n.dragValue):n.bigClick&&_r(e,l)}),s.addEventListener("mouseout",()=>{!n.dragging&&n.bigClick&&se()}),A.appendChild(s)}t.appendChild(A)}document.addEventListener("mouseup",()=>{n.dragging&&(n.dragging=!1,R())})}function $e(t,r,e){if(n.bigClick){let A=n.cellToGroup[t*n.cols+r];if(A<0)oe(t,r,e);else for(let l of n.groups[A])oe(l.r,l.c,e)}else oe(t,r,e)}function oe(t,r,e){let A=t*n.cols+r;n.board[A]!==e&&(n.board[A]=e,ze(t,r),q(),(n.lastSolution||n.placementMap)&&(n.lastSolution=null,n.placementMap=null,Je()))}function _r(t,r){let e=n.cellToGroup[t*n.cols+r];if(e===n.previewedGroup||(se(),e<0))return;n.previewedGroup=e;let A=c("boardBody");for(let l of n.groups[e]){let s=A.children[l.r]?.children[l.c];s&&(n.board[l.r*n.cols+l.c]===-1?s.classList.add("preview-on"):s.classList.add("preview-off"))}}function se(){if(n.previewedGroup<0)return;let t=c("boardBody");for(let r of n.groups[n.previewedGroup]){let e=t.children[r.r]?.children[r.c];e&&e.classList.remove("preview-on","preview-off")}n.previewedGroup=-1}var kr=["locked","empty","filled","middle","sep-r","sep-b","no-t","no-b","no-l","no-r"];function ze(t,r){let A=c("boardBody").children[t]?.children[r];if(!A)return;let l=n.board[t*n.cols+r];if(A.classList.remove(...kr),A.style.background="",l===-1)A.classList.add("locked");else if(l===0)A.classList.add("empty");else{let s=ge(l);s&&(A.classList.add("filled"),A.style.background=Ae[s.pieceId]||"#888",s.isMiddle&&A.classList.add("middle"))}}function $(){for(let t=0;t<n.rows;t++)for(let r=0;r<n.cols;r++)ze(t,r);Je()}function hr(t){let r=new Int16Array(n.rows*n.cols).fill(-1);for(let e=0;e<t.length;e++){let A=t[e];for(let[l,s]of A.cells)l>=0&&l<n.cols&&s>=0&&s<n.rows&&(r[s*n.cols+l]=e)}return r}function br(){let t=n.cols,r=n.rows,e=new Int16Array(r*t).fill(-1),A=0;for(let l=0;l<r;l++)for(let s=0;s<t;s++){let a=l*t+s;if(n.board[a]<=0||e[a]!==-1)continue;let j=n.board[a],p=j>18?j-18:j,d=A++,m=[a];for(;m.length;){let f=m.pop();if(e[f]!==-1)continue;let k=n.board[f];if(k<=0||(k>18?k-18:k)!==p)continue;e[f]=d;let b=f/t|0,w=f-b*t;b>0&&m.push((b-1)*t+w),b<r-1&&m.push((b+1)*t+w),w>0&&m.push(b*t+(w-1)),w<t-1&&m.push(b*t+(w+1))}}return e}function Je(){let t=c("boardBody"),r=n.cols,e=n.rows,A=n.placementMap;if(A||Array.from(n.board).some(s=>s>0)&&(A=br()),!A){for(let l=0;l<e;l++)for(let s=0;s<r;s++){let a=t.children[l]?.children[s];a&&a.classList.remove("sep-r","sep-b")}return}for(let l=0;l<e;l++)for(let s=0;s<r;s++){let a=t.children[l]?.children[s];if(!a)continue;a.classList.remove("sep-r","sep-b","no-t","no-b","no-l","no-r");let j=l*r+s;if(n.board[j]<=0)continue;let p=A[j];if(!(p<0)){if(l>0&&A[(l-1)*r+s]===p&&a.classList.add("no-t"),l<e-1&&A[(l+1)*r+s]===p&&a.classList.add("no-b"),s>0&&A[l*r+(s-1)]===p&&a.classList.add("no-l"),s<r-1&&A[l*r+(s+1)]===p&&a.classList.add("no-r"),s+1<r){let d=A[l*r+(s+1)];d>=0&&d!==p&&a.classList.add("sep-r")}if(l+1<e){let d=A[(l+1)*r+s];d>=0&&d!==p&&a.classList.add("sep-b")}}}}function yr(){let t=c("pieceTray");t.innerHTML="";for(let r of me){let e=document.createElement("div");e.className="piece-row";let A=document.createElement("div");A.className="label",A.textContent=r.label,e.appendChild(A);let l=document.createElement("table");l.className="shape";for(let a of r.shape){let j=document.createElement("tr");for(let p of a){let d=document.createElement("td");p!==0&&(d.style.background=Ae[r.id]),j.appendChild(d)}l.appendChild(j)}e.appendChild(l);let s=document.createElement("input");s.type="number",s.min="0",s.value=String(n.counts[r.id-1]||0),s.dataset.pieceId=r.id,s.addEventListener("input",()=>{let a=Math.max(0,parseInt(s.value,10)||0);n.counts[r.id-1]=a,q(),R()}),e.appendChild(s),t.appendChild(e)}}function q(){let t=0,r=0;for(let s of me){let a=n.counts[s.id-1]||0;a&&(t+=a*Oe(s.shape),r+=a)}let e=0;for(let s=0;s<n.board.length;s++)n.board[s]!==-1&&e++;c("counterCharacters").textContent=String(r),c("counterPieceCells").textContent=String(t),c("counterEmpty").textContent=String(e);let A=t-e,l=c("counterDiff");l.textContent=(A>0?"+":"")+String(A),l.className=A===0?"ok":A>0?"over":"under"}function wr(){let t=parseInt(c("inpMaxIter").value,10);return Number.isFinite(t)&&t>0?t:0}function Y(t){return t.toLocaleString("en-US")}function ve(t){if(t<1e3)return`${t.toFixed(2)} ms`;if(t<6e4)return`${(t/1e3).toFixed(2)} s`;let r=Math.floor(t/1e3),e=Math.floor(r/60),A=r-e*60;return`${e}m ${A}s`}function F(t,r,e){c("statIter").textContent=t==null?"\u2014":Y(t),c("statTime").textContent=r==null?"\u2014":ve(r),c("statPlacements").textContent=e==null?"\u2014":String(e)}var le=!1,Ue=0,O=null;async function Sr(){if(le)return;le=!0,c("btnSolve").disabled=!0,c("btnClearBoard").disabled=!0,c("btnClearSolution").disabled=!0,document.body.classList.add("solving");let t=!1;for(let A=0;A<n.board.length;A++)n.board[A]>0&&(n.board[A]=0,t=!0);t&&(n.lastSolution=null,n.placementMap=null,$()),await V(),pe()&&(c("btnStop").style.visibility="visible");let r=wr(),e=pe();c("status").textContent=e?r>0?`solving\u2026 (cap ${Y(r)} iters) \u2014 Stop is safe to hit`:"solving\u2026 (no cap) \u2014 Stop is safe to hit":r>0?`solving\u2026 (cap ${Y(r)} iters; page will freeze)`:"solving\u2026 (no cap; page will freeze until done)",c("status").className="",F(null,null,null),Ue=performance.now(),O&&clearInterval(O),O=setInterval(()=>{let A=performance.now()-Ue;c("statTime").textContent=ve(A)},100),await new Promise(A=>setTimeout(A,0));try{let A=await xe(n.board,n.counts,r);n.lastSolution=A,F(A.iterations,A.ms,A.placements.length),A.success?(n.board=A.finalBoard,n.placementMap=hr(A.placements),$(),c("status").textContent="solved",c("status").className="ok"):(c("status").textContent=r>0&&A.iterations>=r?`hit iteration cap (${Y(r)}) \u2014 raise or set to 0`:"no solution exists for these inputs",c("status").className="err"),q()}catch(A){let l=A&&A.message?A.message:String(A);l==="cancelled"?c("status").textContent="cancelled":c("status").textContent="error: "+l,c("status").className="err",F(null,null,null)}finally{O&&(clearInterval(O),O=null),le=!1,c("btnSolve").disabled=!1,c("btnClearBoard").disabled=!1,c("btnClearSolution").disabled=!1,c("btnStop").style.visibility="hidden",document.body.classList.remove("solving")}}function Cr(){le&&He()}function Rr(){for(let t=0;t<n.board.length;t++)n.board[t]>0&&(n.board[t]=0);n.lastSolution=null,n.placementMap=null,$(),q(),F(null,null,null),c("status").textContent="",c("status").className=""}function Lr(){n.board=De(n.rows,n.cols),n.lastSolution=null,n.placementMap=null,$(),q(),R(),F(null,null,null),c("status").textContent=""}function qr(){n.counts.fill(0);for(let t of c("pieceTray").querySelectorAll("input"))t.value="0";q(),R()}function Mr(t){n.bigClick=!!t,se(),c("chkBigClick").checked=n.bigClick,R()}function Ir(t){n.showMiddle=!!t,document.body.classList.toggle("hide-middle",!n.showMiddle),R()}function Pr(){Ir(!n.showMiddle)}var Xe="legionSolver.piecePresets.v1",ae=5;function U(){try{let t=localStorage.getItem(Xe);if(!t)return[];let r=JSON.parse(t);return Array.isArray(r)?r:[]}catch{return[]}}function ie(t){try{localStorage.setItem(Xe,JSON.stringify(t))}catch{}}function Ve(t){return{name:t,counts:Array.from(n.counts),savedAt:new Date().toISOString()}}function Gr(){let t=U();if(t.length>=ae){c("status").textContent=`piece-preset limit reached (${ae}) \u2014 delete one first`,c("status").className="err";return}let r=new Set(t.map(l=>l.name)),e=t.length+1,A=`Pieces ${e}`;for(;r.has(A);)e++,A=`Pieces ${e}`;t.push(Ve(A)),ie(t),ce()}function Br(t){let e=U()[t];if(!(!e||!Array.isArray(e.counts)||e.counts.length!==18)){n.counts=new Int32Array(e.counts);for(let A of c("pieceTray").querySelectorAll("input")){let l=parseInt(A.dataset.pieceId,10);A.value=String(n.counts[l-1]||0)}q(),R(),c("status").textContent=`loaded piece preset "${e.name}"`,c("status").className="ok"}}function Kr(t){let r=U();if(!r[t])return;let e=r[t].name;r[t]=Ve(e),ie(r),ce()}function Fr(t){let r=U();r.splice(t,1),ie(r),ce()}function Tr(t,r){let e=U();e[t]&&(e[t].name=(r||"").slice(0,40).trim()||e[t].name,ie(e))}function ce(){let t=U(),r=c("piecePresetsList");if(r.innerHTML="",c("piecePresetsCount").textContent=`(${t.length}/${ae})`,c("btnSavePiecePreset").disabled=t.length>=ae,t.length===0){let e=document.createElement("div");e.className="presets-empty",e.textContent="No piece presets yet \u2014 saves only your counts (not the board).",r.appendChild(e);return}t.forEach((e,A)=>{let l=document.createElement("div");l.className="piece-preset-card";let s=document.createElement("input");s.className="name",s.value=e.name,s.addEventListener("change",()=>Tr(A,s.value)),l.appendChild(s);let a=document.createElement("div");a.className="actions";let j=document.createElement("button");j.textContent="Load",j.title="Replace your current counts with this preset",j.addEventListener("click",()=>Br(A)),a.appendChild(j);let p=document.createElement("button");p.textContent="Save",p.title="Overwrite this preset with your current counts",p.addEventListener("click",()=>Kr(A)),a.appendChild(p);let d=document.createElement("button");d.textContent="\u2715",d.className="danger",d.title="Delete this piece preset";let m=null,f=()=>{d.classList.remove("armed"),d.textContent="\u2715",d.title="Delete this piece preset",m&&(clearTimeout(m),m=null)};d.addEventListener("click",k=>{if(k.stopPropagation(),d.classList.contains("armed")){f(),Fr(A);return}d.classList.add("armed"),d.textContent="?",d.title="Click again to confirm",m=setTimeout(f,2500)}),d.addEventListener("blur",f),a.appendChild(d),l.appendChild(a),r.appendChild(l)})}var Ye="legionSolver.presets.v1",Z=10;function W(){try{let t=localStorage.getItem(Ye);if(!t)return[];let r=JSON.parse(t);return Array.isArray(r)?r:[]}catch{return[]}}function je(t){try{localStorage.setItem(Ye,JSON.stringify(t))}catch{}}function Ze(t){let r={name:t,board:Array.from(n.board),counts:Array.from(n.counts),savedAt:new Date().toISOString()};return n.lastSolution&&(r.iterations=n.lastSolution.iterations,r.solveMs=n.lastSolution.ms,r.placements=n.lastSolution.placements?n.lastSolution.placements.length:null),n.placementMap&&(r.placementMap=Array.from(n.placementMap)),r}function Nr(){let t=W();if(t.length>=Z){c("status").textContent=`preset limit reached (${Z}) \u2014 delete one first`,c("status").className="err";return}let e=Array.from(n.board).some(a=>a>0)?"Solved":"Setup",A=t.length+1,l=`${e} ${A}`,s=new Set(t.map(a=>a.name));for(;s.has(l);)A++,l=`${e} ${A}`;t.push(Ze(l)),je(t),Q()}function xr(t){let r=W();r.splice(t,1),je(r),Q()}function Hr(t){let r=W();if(!r[t])return;let e=r[t].name;r[t]=Ze(e),je(r),Q()}function Or(t){let e=W()[t];if(e){if(Array.isArray(e.board)&&e.board.length===n.rows*n.cols&&(n.board=new Int8Array(e.board)),Array.isArray(e.counts)&&e.counts.length===18){n.counts=new Int32Array(e.counts);for(let A of c("pieceTray").querySelectorAll("input")){let l=parseInt(A.dataset.pieceId,10);A.value=String(n.counts[l-1]||0)}}Array.isArray(e.placementMap)&&e.placementMap.length===n.rows*n.cols?n.placementMap=new Int16Array(e.placementMap):n.placementMap=null,$(),q(),R(),typeof e.iterations=="number"?(n.lastSolution={iterations:e.iterations,ms:typeof e.solveMs=="number"?e.solveMs:0,placements:typeof e.placements=="number"?new Array(e.placements):[]},F(e.iterations,e.solveMs??null,e.placements??null)):(n.lastSolution=null,F(null,null,null)),c("status").textContent=`loaded "${e.name}"`,c("status").className="ok"}}function $r(t,r){let e=W();e[t]&&(e[t].name=(r||"").slice(0,40).trim()||e[t].name,je(e),c("presetsCount").textContent=`(${e.length}/${Z})`)}function Ur(){let t=getComputedStyle(document.documentElement),r=(e,A)=>t.getPropertyValue(e).trim()||A;return{locked:r("--bg-locked","#1a1c20"),empty:r("--bg-empty","#353945")}}function Wr(t,r){let e=n.cols,A=n.rows,l=4,s=t.width=e*l,a=t.height=A*l,j=t.getContext("2d"),p=Ur();j.fillStyle=p.locked,j.fillRect(0,0,s,a);for(let d=0;d<A;d++)for(let m=0;m<e;m++){let f=r[d*e+m],k;if(f!==-1){if(f===0)k=p.empty;else{let y=ge(f);k=y&&Ae[y.pieceId]||"#888"}j.fillStyle=k,j.fillRect(m*l,d*l,l,l)}}}function Q(){let t=W(),r=c("presetsList");if(r.innerHTML="",c("presetsCount").textContent=`(${t.length}/${Z})`,c("btnSavePreset").disabled=t.length>=Z,t.length===0){let e=document.createElement("div");e.className="presets-empty",e.textContent="No saved presets yet \u2014 hit \u201CSave current\u201D to remember this board + counts.",r.appendChild(e);return}t.forEach((e,A)=>{let l=document.createElement("div");l.className="preset-card";let s=document.createElement("button");s.textContent="\u2715",s.className="corner-delete",s.title="Delete this preset";let a=null,j=()=>{s.classList.remove("armed"),s.textContent="\u2715",s.title="Delete this preset",a&&(clearTimeout(a),a=null)};s.addEventListener("click",L=>{if(L.stopPropagation(),s.classList.contains("armed")){j(),xr(A);return}s.classList.add("armed"),s.textContent="?",s.title="Click again to confirm",a=setTimeout(j,2500)}),s.addEventListener("blur",j),l.appendChild(s);let p=document.createElement("canvas");Wr(p,e.board),l.appendChild(p);let d=document.createElement("div");d.className="meta";let m=document.createElement("input");m.className="name",m.value=e.name,m.addEventListener("change",()=>$r(A,m.value)),d.appendChild(m);let f=document.createElement("div");f.className="sub";let k=e.savedAt?new Date(e.savedAt):null;if(f.textContent=k?k.toLocaleString():"",d.appendChild(f),typeof e.iterations=="number"){let L=document.createElement("div");L.className="solve-stats";let T=typeof e.solveMs=="number"?` \xB7 ${ve(e.solveMs)}`:"";L.textContent=`${Y(e.iterations)} iter${T}`,d.appendChild(L)}let y=document.createElement("div");y.className="actions";let b=document.createElement("button");b.textContent="Load",b.title="Replace the current board with this preset",b.addEventListener("click",()=>Or(A)),y.appendChild(b);let w=document.createElement("button");w.textContent="Save",w.title="Overwrite this preset with the current board + counts",w.addEventListener("click",()=>Hr(A)),y.appendChild(w),d.appendChild(y),l.appendChild(d),r.appendChild(l)})}async function Dr(){c("status").textContent="loading wasm\u2026",await V();let t=Ne();n.rows=t.ROWS,n.cols=t.COLS,n.groups=gr(t.ROWS,t.COLS),n.cellToGroup=vr(n.groups,t.ROWS,t.COLS);let r=mr();if(console.log("[legion-solver] localStorage on boot:",{storageKey:"legionSolver.v1",rawAvailable:!!localStorage.getItem("legionSolver.v1"),parsed:r,countsSum:r&&Array.isArray(r.counts)?r.counts.reduce((e,A)=>e+A,0):null}),r&&Array.isArray(r.board)&&r.board.length===t.ROWS*t.COLS){n.board=new Int8Array(r.board);for(let e=0;e<n.board.length;e++)n.board[e]>0&&(n.board[e]=0)}else n.board=De(t.ROWS,t.COLS);r&&Array.isArray(r.counts)&&r.counts.length===18&&(n.counts=new Int32Array(r.counts)),r&&typeof r.bigClick=="boolean"&&(n.bigClick=r.bigClick),r&&typeof r.showMiddle=="boolean"&&(n.showMiddle=r.showMiddle),r&&typeof r.maxIter=="string"&&(c("inpMaxIter").value=r.maxIter),Er(),yr(),$(),q(),c("chkBigClick").checked=n.bigClick,document.body.classList.toggle("hide-middle",!n.showMiddle),c("status").textContent="ready",c("btnSolve").addEventListener("click",Sr),c("btnStop").addEventListener("click",Cr),c("btnClearSolution").addEventListener("click",Rr),c("btnClearBoard").addEventListener("click",Lr),c("btnClearCounts").addEventListener("click",qr),c("chkBigClick").addEventListener("change",e=>Mr(e.target.checked)),c("middleToggle").addEventListener("click",Pr),c("inpMaxIter").addEventListener("change",R),c("btnSavePreset").addEventListener("click",Nr),c("btnSavePiecePreset").addEventListener("click",Gr),c("themeToggle").addEventListener("click",Jr),Q(),ce()}var zr="legionSolver.theme";function Jr(){let t=document.documentElement.classList.toggle("theme-light");try{localStorage.setItem(zr,t?"light":"dark")}catch{}Q()}Dr().catch(t=>{c("status").textContent="load failed: "+(t&&t.message?t.message:String(t)),c("status").className="err",console.error(t)});})();
+
+</script>
+</body>
+</html>

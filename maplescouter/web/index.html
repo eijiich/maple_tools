@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MapleStory stat reader — maplescouter helper</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header>
+  <h1>MapleStory stat reader</h1>
+  <p class="sub">
+    Reads your STAT window straight off a screenshot and hands the numbers to
+    <a href="https://maplescouter.com/en/input" target="_blank" rel="noopener">maplescouter.com</a>.
+    Everything runs in this page &mdash; no upload, no server.
+  </p>
+</header>
+
+<main>
+  <section id="drop" class="drop">
+    <input type="file" id="file" accept="image/*" multiple hidden>
+    <strong>Drop screenshots here</strong>
+    <span>or click to pick &mdash; you can also just press <kbd>Ctrl</kbd>+<kbd>V</kbd></span>
+    <span class="hint">
+      One screenshot per stat, each with its <em>Stat Info</em> panel open, to fill
+      the Base / % / % Not Applied table.
+    </span>
+  </section>
+  <p id="status" class="status"></p>
+
+  <section class="card">
+    <h2>Character</h2>
+    <p class="hint">
+      Picked rather than read. The class list is maplescouter's own 54 options, so
+      there's nothing to guess &mdash; the bookmarklet matches the exact entry.
+      Saved in this browser.
+    </p>
+    <div class="fields">
+      <label>Class <select id="class"></select></label>
+      <label>Level <input type="number" id="level" placeholder="295" min="1" max="300"></label>
+    </div>
+    <p id="classNote" class="hint"></p>
+  </section>
+
+  <div id="results" class="hidden">
+    <section class="card">
+      <h2>Panels found</h2>
+      <p class="hint">
+        The three in-game windows are dragged independently, so each is located by
+        its own title text. If one isn't found, point it out once and it's remembered.
+      </p>
+      <div id="panels"></div>
+      <div class="row">
+        <button id="forgetSaved" class="ghost mini hidden">Forget saved locations</button>
+      </div>
+      <p id="trainNote" class="hint"></p>
+    </section>
+
+    <section id="problems" class="card hidden"></section>
+
+    <section class="card">
+      <h2>Base / % / % Not Applied</h2>
+      <table class="grid">
+        <thead><tr><th>Stat</th><th>Base</th><th>%</th><th>% Not Applied</th></tr></thead>
+        <tbody id="statTable"></tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Values</h2>
+      <p class="hint">
+        Laid out like the in-game STAT window &mdash; same two columns, same order &mdash;
+        so you can check it against your screen line by line. Correct anything wrong;
+        edits flow into the export below. Dimmed entries are ones maplescouter
+        computes itself, shown only for checking.
+      </p>
+      <table class="grid mirror">
+        <thead><tr><th>Stat</th><th>Value</th><th>Stat</th><th>Value</th></tr></thead>
+        <tbody id="values"></tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Send to maplescouter</h2>
+      <p class="hint">
+        A page here can't fill another site directly (different origin), so this
+        builds a bookmarklet that does it from within maplescouter.com.
+      </p>
+
+      <ol class="steps">
+        <li>Drag <a id="bookmarklet" class="bm" href="#">Fill maplescouter</a> to your
+          bookmarks bar &mdash; <strong>once</strong>. It holds no values, so it never
+          goes stale.</li>
+        <li>Press <button id="copyJson">Copy JSON</button> here.</li>
+        <li>On <code>maplescouter.com/en/input</code>, click the bookmark. It reads
+          whatever you last copied.</li>
+      </ol>
+      <p id="bmnote" class="hint"></p>
+
+      <details class="alt">
+        <summary>If your browser blocks clipboard reading</summary>
+        <p class="hint">
+          Firefox doesn't allow a bookmarklet to read the clipboard, so the one above
+          falls back to asking you to paste. Alternatively use this one-shot link,
+          which has the current values baked in &mdash; it needs no clipboard access
+          but must be re-dragged whenever the numbers change.
+        </p>
+        <p>
+          <a id="bookmarkletOneShot" class="bm ghost" href="#">Fill maplescouter (one-shot)</a>
+          <span id="bmnote2" class="hint"></span>
+        </p>
+      </details>
+
+      <div class="row">
+        <button id="clear" class="ghost">Clear screenshots</button>
+      </div>
+      <textarea id="json" class="json" readonly rows="14"></textarea>
+    </section>
+  </div>
+</main>
+
+<div id="manual" class="modal hidden">
+  <div class="modalbox">
+    <div class="modalhead">
+      <span id="manualLabel"></span>
+      <button id="manualClose" class="ghost mini">Cancel</button>
+    </div>
+    <div class="ref">
+      <span class="hint">Look for this:</span>
+      <div id="manualRef"></div>
+    </div>
+
+    <!-- Nothing is committed until Use this is pressed, so a mis-drag costs a
+         click instead of poisoning every later screenshot. -->
+    <div id="manualConfirm" class="confirmbar hidden">
+      <span class="hint">Selected:</span>
+      <div id="manualPreview"></div>
+      <button id="manualUse">Use this</button>
+      <button id="manualRedraw" class="ghost">Draw again</button>
+      <label class="remember">
+        <input type="checkbox" id="manualRemember">
+        Remember for other screenshots
+      </label>
+    </div>
+
+    <div class="canvaswrap"><canvas id="manualCanvas"></canvas></div>
+  </div>
+</div>
+
+<script src="js/glyphs.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/classes.js"></script>
+<script src="js/ocr.js"></script>
+<script src="js/fields.js"></script>
+<script src="js/filler.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Legion Solver</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+
+<script>
+  // Apply persisted theme BEFORE the page renders to avoid a dark→light flash.
+  // The class goes on <html> so the page-bg variable cascades to it too —
+  // otherwise the html element keeps the dark default and shows through
+  // below the body when the page is shorter than the viewport.
+  try {
+    if (localStorage.getItem('legionSolver.theme') === 'light') {
+      document.documentElement.classList.add('theme-light');
+    }
+  } catch (e) {}
+</script>
+
+<div id="errorOverlay" hidden></div>
+<script>
+  // Surface module-load and runtime errors visibly — opening DevTools shouldn't be required.
+  (function () {
+    const overlay = document.getElementById('errorOverlay');
+    function show(msg) {
+      overlay.hidden = false;
+      overlay.textContent = (overlay.textContent ? overlay.textContent + '\n' : '') + msg;
+    }
+    window.addEventListener('error', (ev) => {
+      const where = ev.filename ? ` (${ev.filename}:${ev.lineno}:${ev.colno})` : '';
+      show('ERROR: ' + (ev.message || ev.type) + where);
+    });
+    window.addEventListener('unhandledrejection', (ev) => {
+      const r = ev.reason;
+      show('UNHANDLED: ' + (r && r.stack ? r.stack : String(r)));
+    });
+  })();
+</script>
+
+<header>
+  <h1>Legion Solver</h1>
+  <span class="sub">click cells to toggle · double-click toggles a whole region · enter piece counts on the left · solve</span>
+  <span class="spacer"></span>
+  <button id="middleToggle" class="theme-toggle" title="Show / hide piece middle marker" aria-label="Toggle middle marker">
+    <span class="icon-middle-on">⊙</span>
+    <span class="icon-middle-off">◯</span>
+  </button>
+  <button id="themeToggle" class="theme-toggle" title="Toggle light / dark theme" aria-label="Toggle theme">
+    <span class="icon-light">☀</span>
+    <span class="icon-dark">☾</span>
+  </button>
+</header>
+
+<main>
+ <div class="center-rail">
+  <div class="column trayCol">
+    <div class="trayCol-piecePresets">
+      <h2>Piece presets <span class="counter" id="piecePresetsCount"></span></h2>
+      <div class="presets-controls">
+        <button id="btnSavePiecePreset">Save current</button>
+      </div>
+      <div id="piecePresetsList" class="piece-presets-list">
+        <div class="presets-empty">No piece presets yet — saves only your counts (not the board).</div>
+      </div>
+    </div>
+
+    <div class="trayCol-pieces">
+      <h2>Pieces</h2>
+      <div class="controls">
+        <button id="btnClearCounts">Clear counts</button>
+      </div>
+      <div id="pieceTray"></div>
+    </div>
+  </div>
+
+  <div class="column boardCol">
+    <h1 class="board-title">Legion Solver</h1>
+    <div class="counters">
+      <div><span class="k">characters</span><span class="v" id="counterCharacters">0</span></div>
+      <div><span class="k">piece cells</span><span class="v" id="counterPieceCells">0</span></div>
+      <div><span class="k">marked cells</span><span class="v" id="counterEmpty">0</span></div>
+      <div><span class="k">diff</span><span class="v" id="counterDiff">0</span></div>
+    </div>
+
+    <div class="boardWrap">
+      <table id="legionBoard">
+        <tbody id="boardBody"></tbody>
+      </table>
+    </div>
+
+    <div class="controls below">
+      <button id="btnClearBoard">Clear board</button>
+      <button id="btnClearSolution">Clear solution</button>
+      <label class="check" title="0 = no cap. Solve blocks the UI while it runs.">
+        Max iter
+        <input type="number" id="inpMaxIter" min="0" step="1000000" value="0" />
+      </label>
+      <label class="check"><input type="checkbox" id="chkBigClick" /> Region click</label>
+      <button id="btnStop" class="danger" style="visibility:hidden">Stop</button>
+      <button id="btnSolve" class="primary">Solve</button>
+    </div>
+
+    <div class="stats">
+      <div><span class="k">iterations</span><span class="v" id="statIter">—</span></div>
+      <div><span class="k">time</span><span class="v" id="statTime">—</span></div>
+      <div><span class="k">placements</span><span class="v" id="statPlacements">—</span></div>
+    </div>
+
+    <div id="status"></div>
+  </div>
+
+  <div class="column presetsCol">
+    <h2>Saved presets <span class="counter" id="presetsCount"></span></h2>
+    <div class="presets-controls">
+      <button id="btnSavePreset">Save current</button>
+    </div>
+    <div id="presetsList" class="presets-list">
+      <div class="presets-empty">No saved presets yet — hit “Save current” to remember this board + counts.</div>
+    </div>
+  </div>
+ </div>
+</main>
+
+<script type="module" src="./app.mjs"></script>
+</body>
+</html>

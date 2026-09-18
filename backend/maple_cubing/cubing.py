@@ -7,7 +7,14 @@ probabilities = {
         {"name": "main_stats", "value": 9, "prob":  5/52},
         {"name": "all_stats",  "value": 6, "prob":  4/52},
         {"name": "HP",         "value": 9, "prob":  6/52},
-        {"name": "Zero",       "value": 0, "prob": 41/52},
+        # Was 41/52, which made this pool sum to 56/52 = 1.077 -- the only one of the
+        # 22 pools here that did not sum to 1, so every hat probability came out ~6%
+        # high. The desirable lines are 5+4+6 = 15, so Zero must be 52-15 = 37;
+        # bottom_unique_prob and shoes_unique_prob have this same 5/4/6 shape with
+        # 37/52. Confirmed independently against MathBro's cubing rate tables, where
+        # the hat/black/unique first-line entries not tracked here (STR%, DEX%, LUK%,
+        # two damage-ignore lines, Decent Mystic Door, junk) total exactly 37/52.
+        {"name": "Zero",       "value": 0, "prob": 37/52},
     ],
     "hat_leg_prob": [
         {"name": "main_stats", "value": 12,"prob":  4/41},

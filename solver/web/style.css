@@ -1,0 +1,676 @@
+/* =========================================================================
+ * Theme tokens
+ * Dark theme is the default (variables on :root). Light theme overrides them
+ * on html.theme-light. The class lives on <html> (not <body>) so that
+ * custom-property overrides reach the html element itself — otherwise the
+ * html background stays dark and shows through below short pages.
+ * Piece colours (set via inline style by app.mjs) stay the same in both
+ * themes — they're game data, not theme data.
+ * ========================================================================= */
+:root {
+  /* Backgrounds */
+  --bg-page:           #1d1f23;
+  --bg-card:           #15171b;
+  --bg-input:          #16181c;
+  --bg-board:          #16181c;
+  --bg-button:         #2c2f36;
+  --bg-button-hover:   #3a3e48;
+  --bg-button-disabled:#2c3a52;
+  --bg-thumbnail:      #0e1013;
+  --bg-locked:         #1a1c20;
+  --bg-empty:          #353945;
+  --bg-empty-hover:    #424754;
+
+  /* Text */
+  --text-primary:    #e2e4ea;
+  --text-secondary:  #c8cbd2;
+  --text-muted:      #8b8f99;
+  --text-faded:      #6a6f7a;
+  --text-counter:    #5a6172;
+
+  /* Borders */
+  --border-page:    #2c2f36;
+  --border-card:    #2a2d33;
+  --border-input:   #3a3e48;
+  --border-subtle:  #24262b;
+  --border-cell:    #2a2c32;
+  --border-shape:   #2c2f36;
+  --border-group:   #6c7388;
+
+  /* Accents (action colours — stay vibrant in both themes) */
+  --accent-primary:        #3a7bd5;
+  --accent-primary-hover:  #5b97e8;
+  --accent-success:        #6ad36a;
+  --accent-warning:        #e0a458;
+  --accent-danger:         #d35a5a;
+
+  /* Danger chips (delete buttons) */
+  --danger-text:         #d3a0a0;
+  --danger-border:       #5a3a3a;
+  --danger-bg-hover:     #5a3a3a;
+  --danger-bg-armed:     #d35a5a;
+  --danger-bg-armed-hov: #e07070;
+  --danger-button-bg:    #b04848;
+  --danger-button-bg-hov:#c95a5a;
+
+  /* Hover preview */
+  --preview-on-outline:  #b6c4ff;
+  --preview-off-outline: #8b94b3;
+
+  /* Per-group cell tints — eight subtle variants for locked + eight for empty.
+   * In dark mode these stay close to the base locked/empty colours but
+   * shift hue slightly per group. */
+  --tint-locked-0: #1a1c20;
+  --tint-locked-1: #1c1f24;
+  --tint-locked-2: #1a1d22;
+  --tint-locked-3: #1e2127;
+  --tint-locked-4: #1c1f25;
+  --tint-locked-5: #1e2128;
+  --tint-locked-6: #1c1f25;
+  --tint-locked-7: #1e2229;
+  --tint-empty-0:  #353945;
+  --tint-empty-1:  #383d4a;
+  --tint-empty-2:  #353a48;
+  --tint-empty-3:  #393e4c;
+  --tint-empty-4:  #393e4d;
+  --tint-empty-5:  #3c4250;
+  --tint-empty-6:  #393e4d;
+  --tint-empty-7:  #3d4353;
+
+  /* Error overlay */
+  --error-bg:   #3a1015;
+  --error-text: #ffb4b4;
+
+  /* Placed-piece outline + middle marker */
+  --piece-outline: rgba(0,0,0,0.55);
+  --piece-sep:     rgba(0,0,0,0.95);
+  --piece-middle:  rgba(255,255,255,0.32);
+
+  /* Header bg — same as page in dark mode, slightly darker in light. */
+  --bg-header: transparent;
+}
+
+html.theme-light {
+  --bg-page:           #f3f4f7;
+  --bg-header:         #e6e8ee;       /* a touch darker than page bg */
+  --bg-card:           #ffffff;
+  --bg-input:          #ffffff;
+  --bg-board:          #ffffff;
+  --bg-button:         #eaecf1;
+  --bg-button-hover:   #dde0e8;
+  --bg-button-disabled:#c0c8d6;
+  --bg-thumbnail:      #e8eaef;
+  /* Inverted polarity from dark mode: in light, "untouched" cells are white
+   * (blend with the page) and "marked / available" cells stand out by being
+   * a touch darker. Painting a cell makes it darker, not lighter. */
+  --bg-locked:         #ffffff;
+  --bg-empty:          #dadee5;
+  --bg-empty-hover:    #cbd0d9;
+
+  --text-primary:   #1a1d24;
+  --text-secondary: #3a3e48;
+  --text-muted:     #6a6f7a;
+  --text-faded:     #8b8f99;
+  --text-counter:   #a5aab5;
+
+  --border-page:    #d4d7de;
+  --border-card:    #d8dae0;
+  --border-input:   #bcc0c8;
+  --border-subtle:  #e2e4e8;
+  /* Cell + piece-shape gridlines need to be dark in light mode — otherwise
+   * they vanish against the white board background. */
+  --border-cell:    #3a3e48;
+  --border-shape:   #4a4f5c;
+  --border-group:   #1d1f23;
+
+  --accent-primary:        #3a7bd5;
+  --accent-primary-hover:  #2e6cc4;
+  --accent-success:        #2a8b2a;
+  --accent-warning:        #b5732f;
+  --accent-danger:         #c54040;
+
+  --danger-text:         #b03a3a;
+  --danger-border:       #d8a0a0;
+  --danger-bg-hover:     #f0d8d8;
+  --danger-bg-armed:     #c54040;
+  --danger-bg-armed-hov: #d65555;
+  --danger-button-bg:    #c54040;
+  --danger-button-bg-hov:#d65555;
+
+  --preview-on-outline:  #5470d8;
+  --preview-off-outline: #8b94b3;
+
+  /* Locked = white-ish bands (matches the inverted polarity above). */
+  --tint-locked-0: #ffffff;
+  --tint-locked-1: #fbfcfe;
+  --tint-locked-2: #fdfdff;
+  --tint-locked-3: #f8fafc;
+  --tint-locked-4: #fafbfd;
+  --tint-locked-5: #f6f8fc;
+  --tint-locked-6: #fafbfd;
+  --tint-locked-7: #f4f6fb;
+  /* Empty = mid-gray bands, so painting a cell makes it darker. */
+  --tint-empty-0:  #dadee5;
+  --tint-empty-1:  #d6dae2;
+  --tint-empty-2:  #dadfe6;
+  --tint-empty-3:  #d3d8e0;
+  --tint-empty-4:  #d8dce4;
+  --tint-empty-5:  #d1d6df;
+  --tint-empty-6:  #d8dce4;
+  --tint-empty-7:  #ced3dd;
+
+  --error-bg:   #fff0f0;
+  --error-text: #8a2020;
+
+  /* Light mode: darker outline so it pops against the lighter piece colors,
+   * darker sep separator, and dark middle marker (white would vanish). */
+  --piece-outline: rgba(0,0,0,0.7);
+  --piece-sep:     rgba(0,0,0,1);
+  --piece-middle:  rgba(0,0,0,0.25);
+}
+
+/* =========================================================================
+ * Layout & typography
+ * ========================================================================= */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font: 13px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+header {
+  padding: 12px 18px;
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--border-page);
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+header h1 { font-size: 16px; font-weight: 600; margin: 0; }
+header .sub { color: var(--text-muted); font-size: 12px; }
+header .spacer { flex: 1; }
+
+main { padding: 18px; }
+
+/* Theme toggle (top right of the header) */
+.theme-toggle {
+  background: var(--bg-button);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 4px 10px;
+  font-size: 16px;
+  line-height: 1;
+  align-self: center;
+}
+.theme-toggle:hover { background: var(--bg-button-hover); }
+.theme-toggle .icon-light { display: inline; }
+.theme-toggle .icon-dark  { display: none; }
+html.theme-light .theme-toggle .icon-light { display: none; }
+html.theme-light .theme-toggle .icon-dark  { display: inline; }
+
+/* Middle-marker toggle — same kind of button. Shows ⊙ (filled dot) when the
+ * marker is ON, ◯ (empty circle) when it's OFF. */
+#middleToggle .icon-middle-on  { display: inline; }
+#middleToggle .icon-middle-off { display: none; }
+body.hide-middle #middleToggle .icon-middle-on  { display: none; }
+body.hide-middle #middleToggle .icon-middle-off { display: inline; }
+
+/* The board is the visual anchor: a centered rail that hugs the board's natural
+ * width. The two side panels (pieces, presets) are absolutely positioned just
+ * outside the rail, so the board always sits at the exact horizontal page
+ * centre regardless of how wide the side panels are. */
+.center-rail {
+  position: relative;
+  width: max-content;
+  margin: 0 auto;
+}
+
+.column h2 {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;
+  margin: 0 0 8px;
+}
+
+.trayCol {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  margin-right: 24px;
+  width: 540px;
+  display: flex;
+  gap: 18px;
+}
+.trayCol-piecePresets { flex: 0 0 240px; min-width: 0; }
+.trayCol-pieces       { flex: 1 1 auto;  min-width: 0; }
+.boardCol {
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 0;
+}
+.presetsCol {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: 24px;
+  width: 560px;
+}
+
+.board-title {
+  font-size: 38px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 16px;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+.column h2 .counter {
+  color: var(--text-counter);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  margin-left: 6px;
+}
+
+/* =========================================================================
+ * Saved-preset panel (board + counts; right column)
+ * ========================================================================= */
+.presets-controls { display: flex; gap: 8px; margin-bottom: 10px; }
+.presets-controls button {
+  background: var(--bg-button);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+.presets-controls button:hover    { background: var(--bg-button-hover); }
+.presets-controls button:disabled { opacity: 0.55; cursor: not-allowed; }
+.presets-list {
+  display: grid;
+  grid-template-rows: repeat(5, auto);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-flow: column;
+  gap: 8px;
+}
+.presets-empty {
+  grid-column: 1 / -1;
+  color: var(--text-faded); font-size: 12px; line-height: 1.45;
+  padding: 10px 4px;
+}
+.preset-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 10px;
+  padding: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 4px;
+  min-width: 0;
+}
+.preset-card .corner-delete {
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 20px; height: 20px;
+  padding: 0;
+  background: var(--bg-button);
+  color: var(--danger-text);
+  border: 1px solid var(--danger-border);
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2;
+}
+.preset-card .corner-delete:hover { background: var(--danger-bg-hover); color: #fff; }
+.preset-card .corner-delete.armed {
+  background: var(--danger-bg-armed); color: #fff; border-color: var(--danger-bg-armed);
+}
+.preset-card .corner-delete.armed:hover { background: var(--danger-bg-armed-hov); }
+.preset-card .solve-stats {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.preset-card canvas {
+  width: 88px; height: 80px;
+  align-self: stretch;
+  background: var(--bg-thumbnail);
+  border-radius: 2px;
+  image-rendering: pixelated;
+}
+.preset-card .meta {
+  display: flex; flex-direction: column; gap: 3px;
+  min-width: 0;
+}
+.preset-card .name {
+  width: 100%;
+  background: transparent;
+  color: var(--text-primary);
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 2px 24px 2px 0;
+  font: inherit;
+  font-size: 12px;
+  min-width: 0;
+}
+.preset-card .name:focus,
+.preset-card .name:hover {
+  outline: none;
+  border-bottom-color: var(--border-input);
+}
+.preset-card .sub {
+  font-size: 10px; color: var(--text-faded);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.preset-card .actions {
+  display: flex; gap: 6px;
+  margin-top: auto;
+}
+.preset-card .actions button {
+  background: var(--bg-button);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  border-radius: 3px;
+  padding: 3px 4px;
+  font-size: 11px;
+  line-height: 1.3;
+  cursor: pointer;
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+}
+.preset-card .actions button:hover { background: var(--bg-button-hover); }
+.preset-card .actions button.danger {
+  color: var(--danger-text); border-color: var(--danger-border);
+  flex: 0 0 auto;
+  min-width: 28px;
+  padding: 3px 8px;
+}
+.preset-card .actions button.danger:hover  { background: var(--danger-bg-hover); color: #fff; }
+.preset-card .actions button.danger.armed  {
+  background: var(--danger-bg-armed); color: #fff; border-color: var(--danger-bg-armed);
+}
+.preset-card .actions button.danger.armed:hover { background: var(--danger-bg-armed-hov); }
+
+/* =========================================================================
+ * Board
+ * ========================================================================= */
+.boardWrap {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+#legionBoard {
+  border-collapse: collapse;
+  background: var(--bg-board);
+  user-select: none;
+}
+#legionBoard td {
+  width: 26px; height: 26px;
+  border: 1px solid var(--border-cell);
+  cursor: pointer;
+  position: relative;
+}
+#legionBoard td.locked { background: var(--bg-locked); }
+#legionBoard td.empty  { background: var(--bg-empty); }
+#legionBoard td.empty:hover { background: var(--bg-empty-hover); }
+
+/* Placed pieces.
+ * Filled cells inherit the board's 1px dark gridline like everyone else —
+ * adjacent cells of the same piece show that gridline between them (matches
+ * the user's "internal gridlines same color as the board gridline" call).
+ * Add to it:
+ *   --sep-right / --sep-bottom : a thick (2px) dark line between this cell
+ *                                and a DIFFERENT placement on its right/bottom,
+ *                                so two same-colour pieces that touch still
+ *                                show a clear boundary.
+ *   --middle                   : subtle inset on the piece's center cell. */
+#legionBoard td.filled {
+  --sep-right:  inset 0 0 0 0 transparent;
+  --sep-bottom: inset 0 0 0 0 transparent;
+  --middle:     inset 0 0 0 0 transparent;
+  box-shadow:
+    var(--sep-right),
+    var(--sep-bottom),
+    var(--middle);
+}
+#legionBoard td.filled.middle { --middle:     inset 0 0 0 3px var(--piece-middle); }
+#legionBoard td.filled.sep-r  { --sep-right:  inset -1px 0 0 0 var(--piece-sep); }
+#legionBoard td.filled.sep-b  { --sep-bottom: inset 0 -1px 0 0 var(--piece-sep); }
+
+/* Hide the 1px gridline between two same-piece adjacent cells. The classes
+ * are added in applyPieceSeparators when the cell's neighbour on that side
+ * belongs to the SAME placement. With border-collapse, both adjacent cells
+ * end up with border-width: 0 on the shared edge, so the line disappears. */
+#legionBoard td.filled.no-t { border-top-width:    0; }
+#legionBoard td.filled.no-b { border-bottom-width: 0; }
+#legionBoard td.filled.no-l { border-left-width:   0; }
+#legionBoard td.filled.no-r { border-right-width:  0; }
+
+/* Middle-marker toggle: when the body has .hide-middle, suppress the marker. */
+body.hide-middle #legionBoard td.filled.middle { --middle: inset 0 0 0 0 transparent; }
+
+/* Per-group cell tints — alternate two banks of 4 across the 16 groups. */
+#legionBoard td.locked.g0,  #legionBoard td.locked.g4  { background: var(--tint-locked-0); }
+#legionBoard td.locked.g1,  #legionBoard td.locked.g5  { background: var(--tint-locked-1); }
+#legionBoard td.locked.g2,  #legionBoard td.locked.g6  { background: var(--tint-locked-2); }
+#legionBoard td.locked.g3,  #legionBoard td.locked.g7  { background: var(--tint-locked-3); }
+#legionBoard td.locked.g8,  #legionBoard td.locked.g12 { background: var(--tint-locked-4); }
+#legionBoard td.locked.g9,  #legionBoard td.locked.g13 { background: var(--tint-locked-5); }
+#legionBoard td.locked.g10, #legionBoard td.locked.g14 { background: var(--tint-locked-6); }
+#legionBoard td.locked.g11, #legionBoard td.locked.g15 { background: var(--tint-locked-7); }
+
+#legionBoard td.empty.g0,  #legionBoard td.empty.g4  { background: var(--tint-empty-0); }
+#legionBoard td.empty.g1,  #legionBoard td.empty.g5  { background: var(--tint-empty-1); }
+#legionBoard td.empty.g2,  #legionBoard td.empty.g6  { background: var(--tint-empty-2); }
+#legionBoard td.empty.g3,  #legionBoard td.empty.g7  { background: var(--tint-empty-3); }
+#legionBoard td.empty.g8,  #legionBoard td.empty.g12 { background: var(--tint-empty-4); }
+#legionBoard td.empty.g9,  #legionBoard td.empty.g13 { background: var(--tint-empty-5); }
+#legionBoard td.empty.g10, #legionBoard td.empty.g14 { background: var(--tint-empty-6); }
+#legionBoard td.empty.g11, #legionBoard td.empty.g15 { background: var(--tint-empty-7); }
+
+#legionBoard td.gb-top    { border-top:    2px solid var(--border-group); }
+#legionBoard td.gb-bot    { border-bottom: 2px solid var(--border-group); }
+#legionBoard td.gb-left   { border-left:   2px solid var(--border-group); }
+#legionBoard td.gb-right  { border-right:  2px solid var(--border-group); }
+
+#legionBoard td.preview-on  {
+  outline: 1px solid var(--preview-on-outline); outline-offset: -1px;
+  filter: brightness(1.25);
+}
+#legionBoard td.preview-off {
+  outline: 1px solid var(--preview-off-outline); outline-offset: -1px;
+  filter: brightness(0.9);
+}
+
+/* During a solve: block board interaction, dim it slightly, show 🚫 cursor.
+ * With pointer-events:none on the board, the cursor falls through to its
+ * parent (.boardWrap) which we mark as not-allowed. */
+body.solving #legionBoard { pointer-events: none; opacity: 0.85; }
+body.solving .boardWrap   { cursor: not-allowed; }
+
+/* =========================================================================
+ * Controls (the bar below the board, plus the "Clear counts" in the tray)
+ * ========================================================================= */
+.controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
+.controls button {
+  background: var(--bg-button);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+.controls button:hover                  { background: var(--bg-button-hover); }
+.controls button.primary                { background: var(--accent-primary); border-color: var(--accent-primary); color: #fff; }
+.controls button.primary:hover          { background: var(--accent-primary-hover); }
+.controls button.primary:disabled       { background: var(--bg-button-disabled); border-color: var(--bg-button-disabled); cursor: not-allowed; opacity: 0.6; color: #fff; }
+.controls button:disabled               { cursor: not-allowed; opacity: 0.55; }
+.controls button.danger                 { background: var(--danger-button-bg); border-color: var(--danger-button-bg); color: #fff; }
+.controls button.danger:hover           { background: var(--danger-button-bg-hov); }
+.controls .sep { flex-basis: 100%; height: 0; }
+.controls label.check {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--text-secondary); font-size: 12px; cursor: pointer;
+  padding: 4px 8px;
+}
+.controls input[type=number] {
+  width: 100px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  border-radius: 3px;
+  padding: 4px 6px;
+  font: inherit;
+  text-align: left;
+}
+
+/* Counters above the board */
+.counters { display: flex; gap: 18px; margin-bottom: 8px; font-size: 12px; color: var(--text-muted); }
+.counters .k { color: var(--text-muted); margin-right: 4px; }
+.counters .v { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.counters .v.ok    { color: var(--accent-success); }
+.counters .v.over  { color: var(--accent-warning); }
+.counters .v.under { color: var(--accent-danger); }
+
+/* Last-solve stats (below the board) */
+.stats {
+  display: flex; gap: 24px;
+  margin-top: 10px; padding: 8px 14px;
+  background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 4px;
+  font-size: 12px; color: var(--text-muted);
+}
+.stats .k { color: var(--text-muted); margin-right: 6px; text-transform: uppercase; letter-spacing: 0.05em; font-size: 11px; }
+.stats .v { color: var(--text-primary); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+#status { font-size: 12px; color: var(--text-muted); margin-top: 8px; min-height: 1.2em; text-align: center; }
+#status.ok  { color: var(--accent-success); }
+#status.err { color: var(--accent-danger); }
+
+.controls.below {
+  margin-top: 12px;
+  width: 100%;
+  justify-content: space-between;
+}
+.controls.below > label.check { flex: 0 0 auto; }
+.controls.below > button     { flex: 0 0 auto; }
+
+/* =========================================================================
+ * Piece-only presets (saved counts, no board) — left of the piece tray
+ * ========================================================================= */
+.piece-presets-list {
+  display: flex; flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+.piece-preset-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 5px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 4px;
+  min-width: 0;
+}
+.piece-preset-card .name {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  color: var(--text-primary);
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 1px 0;
+  font: inherit;
+  font-size: 12px;
+}
+.piece-preset-card .name:focus,
+.piece-preset-card .name:hover {
+  outline: none; border-bottom-color: var(--border-input);
+}
+.piece-preset-card .actions {
+  display: flex; gap: 3px;
+  flex: 0 0 auto;
+}
+.piece-preset-card .actions button {
+  background: var(--bg-button);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 10px;
+  line-height: 1.4;
+  cursor: pointer;
+  min-width: 0;
+}
+.piece-preset-card .actions button:hover { background: var(--bg-button-hover); }
+.piece-preset-card .actions button.danger {
+  color: var(--danger-text); border-color: var(--danger-border);
+  padding: 1px 4px;
+  min-width: 20px;
+}
+.piece-preset-card .actions button.danger:hover { background: var(--danger-bg-hover); color: #fff; }
+.piece-preset-card .actions button.danger.armed {
+  background: var(--danger-bg-armed); color: #fff; border-color: var(--danger-bg-armed);
+}
+
+/* =========================================================================
+ * Piece tray
+ * ========================================================================= */
+.piece-row {
+  display: grid;
+  grid-template-columns: 1fr max-content 56px;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.piece-row:last-child { border-bottom: none; }
+.piece-row .label {
+  color: var(--text-secondary); font-size: 12px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Piece shape preview — just coloured cells, no contour, no grid.
+ * Empty cells (shape[i][j] === 0) are fully transparent. */
+.piece-row .shape { border-collapse: collapse; }
+.piece-row .shape td {
+  width: 12px; height: 12px;
+  border: 0;
+  background: transparent;
+}
+.piece-row input[type=number] {
+  width: 56px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font: inherit;
+  text-align: left;
+}
+.piece-row input[type=number]:focus { outline: 1px solid var(--accent-primary); border-color: var(--accent-primary); }
+
+/* =========================================================================
+ * Error overlay
+ * ========================================================================= */
+#errorOverlay {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+  background: var(--error-bg); color: var(--error-text);
+  border-bottom: 1px solid var(--accent-danger);
+  padding: 8px 14px;
+  font: 12px/1.4 ui-monospace, Consolas, monospace;
+  white-space: pre-wrap;
+  max-height: 40vh; overflow: auto;
+}

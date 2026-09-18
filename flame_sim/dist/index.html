@@ -1,0 +1,1985 @@
+<!DOCTYPE html>
+<!--
+  GENERATED FILE -- do not edit.
+
+  Every script from flame_sim/index.html is inlined here so this one file runs on
+  its own. Edit the sources, then regenerate:  python flame_sim/build_sim.py
+
+  Built from: ../gear_progression/js/value.js, ../gear_progression/js/flames.js, sim.js
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flame Reset Simulator</title>
+<style>
+  :root {
+    --bg:#12141a; --panel:#1a1d26; --panel2:#20242f; --line:#2c313d;
+    --fg:#e6e8ee; --dim:#8b93a7; --dimmer:#5b6376;
+    --acc:#6ea8fe; --good:#54c98a; --warn:#e2b344; --bad:#e46b6b; --epic:#a97ee6;
+    --teal:#4fd1b5;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--fg);
+    font:13px/1.45 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  h1 { font-size:15px; margin:0; letter-spacing:.5px; }
+  h2 { font-size:12px; margin:0 0 10px; color:var(--dim);
+       text-transform:uppercase; letter-spacing:1px; font-weight:600; }
+  .wrap { max-width:1100px; margin:0 auto; padding:16px; }
+  .panel { background:var(--panel); border:1px solid var(--line);
+           border-radius:6px; padding:14px; margin-bottom:14px; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .bar .spacer { flex:1; }
+  button {
+    background:var(--panel2); color:var(--fg); border:1px solid var(--line);
+    border-radius:4px; padding:5px 10px; font:inherit; cursor:pointer;
+  }
+  button:hover { border-color:var(--acc); color:var(--acc); }
+  button.on { border-color:var(--acc); color:var(--acc); }
+  button:disabled { opacity:.4; cursor:default; }
+  button.primary { background:#1d8fb8; border-color:#2aa6d4; color:#fff; font-weight:600;
+                   padding:8px 26px; }
+  button.primary:hover { background:#2aa6d4; color:#fff; }
+  input, select, textarea {
+    background:var(--bg); color:var(--fg); border:1px solid var(--line);
+    border-radius:4px; padding:4px 6px; font:inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--acc); }
+  textarea { width:100%; min-height:140px; resize:vertical; line-height:1.5; }
+  details { border:1px solid var(--line); border-radius:6px; background:var(--panel); margin-bottom:14px; }
+  summary { padding:10px 14px; cursor:pointer; color:var(--dim);
+            text-transform:uppercase; font-size:12px; letter-spacing:1px; }
+  summary:hover { color:var(--fg); }
+  details > .body { padding:0 14px 14px; }
+  .note { color:var(--dimmer); font-size:11px; line-height:1.7; }
+  .note b, .note code { color:var(--dim); }
+  .row { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .fld { display:flex; flex-direction:column; gap:3px; }
+  .fld label { color:var(--dim); font-size:11px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px 16px; }
+  .warn { color:var(--warn); } .bad { color:var(--bad); }
+  .hr { height:1px; background:var(--line); margin:12px 0; }
+  kbd { background:var(--panel2); border:1px solid var(--line); border-radius:3px;
+        padding:0 5px; font:inherit; font-size:11px; color:var(--dim); }
+
+  /* ------------------------------------------------ the game's dialog, in our skin */
+  .stage { position:relative; }
+  .item { text-align:center; color:var(--dim); margin-bottom:8px; }
+  .item b { color:var(--fg); }
+  .prompt { text-align:center; background:var(--panel2); border:1px solid var(--line);
+            border-radius:14px; padding:5px 14px; margin:0 auto 12px; width:max-content;
+            max-width:100%; }
+  .prompt em { color:var(--warn); font-style:normal; }
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:640px) { .cols { grid-template-columns:1fr; } }
+  .col { background:var(--panel2); border:1px solid var(--line); border-radius:6px; padding:10px; }
+  .col h3 { margin:0 0 8px; font-size:11px; letter-spacing:1px; text-transform:uppercase; }
+  .col.before h3 { color:var(--warn); } .col.after h3 { color:var(--teal); }
+  .col.after.flash { animation: land .35s ease-out; }
+  @keyframes land { from { box-shadow:0 0 0 2px var(--teal); background:#243a3a; } to { } }
+  .box { background:var(--panel); border:1px solid var(--line); border-radius:5px; padding:8px 10px; margin-bottom:8px; }
+  .badge { text-align:center; color:var(--dim); margin-bottom:6px; }
+  .badge b { color:var(--fg); font-size:14px; }
+  .badge .fire { color:var(--teal); }
+  .line { display:flex; gap:8px; align-items:baseline; padding:2px 0; }
+  .line .dot { width:9px; height:9px; border-radius:2px; background:var(--good); flex:none; transform:translateY(1px); }
+  .line .amt { color:var(--dim); }
+  .line.dim { color:var(--dimmer); justify-content:center; }
+  .boxhead { text-align:center; color:var(--dim); font-size:11px; letter-spacing:.5px; }
+  .totals { display:grid; grid-template-columns:auto 1fr; gap:2px 14px; padding:4px 10px 0; }
+  .totals span:nth-child(even) { text-align:right; color:var(--dim); }
+  .score { text-align:center; padding-top:8px; border-top:1px solid var(--line); margin-top:6px; }
+  .score .lbl { color:var(--teal); font-size:11px; letter-spacing:.5px; }
+  .score .val { font-size:22px; font-weight:700; line-height:1.2; }
+  .score .sub { color:var(--dimmer); font-size:11px; }
+  .score.up .val, .score.up .lbl { color:var(--good); }
+  .score.down .val { color:var(--dim); }
+  .score .arrow { display:inline-block; width:0; height:0; border:5px solid transparent;
+                  border-bottom:7px solid var(--good); border-top:0; margin-right:6px;
+                  transform:translateY(-2px); }
+  .info { text-align:center; color:var(--dim); background:var(--panel2); border-radius:14px;
+          padding:4px 12px; margin:12px auto 10px; width:max-content; max-width:100%; font-size:11px; }
+  .info em { color:var(--warn); font-style:normal; }
+  .ctl { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .ctl .cost { color:var(--warn); }
+  .ctl .cost b { color:var(--fg); }
+  .stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px 16px; margin-top:10px; }
+  .stats .fld b { font-size:15px; }
+  .hist { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; min-height:22px; }
+  .hist span { background:var(--panel2); border:1px solid var(--line); border-radius:3px;
+               padding:0 6px; font-size:11px; color:var(--dim); }
+  .hist span.up { color:var(--good); border-color:#27503b; }
+  .hist span.eq { color:var(--fg); }
+  .editor { display:grid; grid-template-columns:auto 1fr auto; gap:6px 8px; align-items:center; }
+  .editor .n { color:var(--dimmer); }
+
+  /* ------------------------------------------------------------- confirm popup */
+  .modal { position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex;
+           align-items:center; justify-content:center; z-index:10; }
+  .modal[hidden] { display:none; }
+  .popup { background:#1d8fb8; color:#fff; border-radius:6px; padding:14px 18px 12px; width:340px;
+           text-align:center; box-shadow:0 8px 30px rgba(0,0,0,.5); }
+  .popup p { margin:0 0 4px; font-size:12px; }
+  .popup .q { margin:10px 0 12px; }
+  .popup .q em { color:#ffe98a; font-style:normal; }
+  .popup .btns { display:flex; gap:8px; justify-content:center; }
+  .popup button { background:#f0f0f0; color:#222; border:1px solid #bbb; padding:4px 16px; }
+  .popup button.ok { background:#8fd14f; border-color:#6fae37; color:#123; font-weight:600; }
+  .popup button:hover { color:#000; border-color:#333; }
+  .popup label { display:block; margin-top:10px; font-size:11px; opacity:.9; }
+  .popup.decide { width:400px; }
+  .popup .dl { text-align:left; background:rgba(0,0,0,.18); border-radius:4px; padding:6px 10px; margin:8px 0 12px; }
+  .popup .dl .line .amt { color:#e8f6ff; }
+  .popup .dl .dot { background:#8fd14f; }
+  .popup .how { font-size:11px; opacity:.9; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar" style="margin-bottom:12px">
+    <h1>FLAME RESET SIMULATOR</h1>
+    <span class="note" style="margin-left:8px">
+      bonus-stat resets at 3,000,000 mesos, Black Rebirth (eternal) rates &mdash;
+      <kbd>Space</kbd> reset &middot; <kbd>Enter</kbd> confirm (hold it &mdash; it stops on a better roll) &middot;
+      <kbd>U</kbd> keep &middot; <kbd>Esc</kbd> cancel
+    </span>
+  </div>
+
+  <details>
+    <summary>Item, rates and weights</summary>
+    <div class="body">
+      <div class="grid" style="margin-bottom:10px">
+        <div class="fld"><label for="simKind">item</label>
+          <select id="simKind">
+            <option value="armor">armour / accessory (19-line pool)</option>
+            <option value="weapon">weapon (21-line pool)</option>
+          </select></div>
+        <div class="fld"><label for="simLevel">item level</label><select id="simLevel"></select></div>
+        <div class="fld"><label for="simType">rates</label><select id="simType"></select></div>
+        <div class="fld"><label for="simAdv">flame advantage</label>
+          <label class="row" style="color:var(--fg)"><input type="checkbox" id="simAdv"> advantaged (4 lines, tiers 3&ndash;7)</label></div>
+        <div class="fld" id="simBaseAttRow"><label for="simBaseAtt">weapon base attack</label>
+          <input type="number" id="simBaseAtt" min="0" step="1" style="width:90px"></div>
+        <div class="fld"><label for="simSeed">seed (blank = random)</label>
+          <input type="text" id="simSeed" style="width:120px" placeholder="e.g. 42"></div>
+      </div>
+      <div class="fld">
+        <label for="simScouter">MapleScouter weights &mdash; what a point of each stat is worth. Same paste as the gear tool.
+          <span id="simProfile"></span></label>
+        <textarea id="simScouter" spellcheck="false"></textarea>
+      </div>
+      <p class="note" style="margin:8px 0 0">
+        The meso reset always rolls at the <b>eternal (Black Rebirth)</b> table, per the patch
+        note. It is selectable here only so you can compare what a red or abyssal flame would
+        have done. Advantage is a property of the item and your class, not the flame. Junk lines
+        (Speed, Jump, Defense, MP, level requirement) are shown as the game shows them but are
+        worth 0 to every class.
+      </p>
+    </div>
+  </details>
+
+  <div class="panel">
+    <h2>Before &mdash; the flame the item has now</h2>
+    <div class="bar" style="margin-bottom:8px">
+      <button id="beforeRandom" title="roll a random flame to start from">random</button>
+      <button id="beforeNone" title="start from an unflamed item">unflamed</button>
+      <span class="note">or enter the lines off the equip window: pick the line and its tier</span>
+    </div>
+    <div class="editor" id="beforeEditor"></div>
+  </div>
+
+  <div class="panel stage">
+    <div class="item" id="itemLabel"></div>
+    <div class="prompt">Select which <em>Bonus stats</em> to use.</div>
+
+    <div class="cols">
+      <div class="col before">
+        <h3>Before</h3>
+        <div class="box">
+          <div class="badge"><span class="fire">&#x1F525;</span> <b id="beforeBadge">&mdash;</b></div>
+          <div id="beforeLines"></div>
+        </div>
+        <div class="box boxhead">Total Value</div>
+        <div class="box">
+          <div class="totals" id="beforeTotals"></div>
+          <div class="score" id="beforeScore">
+            <div class="lbl">Flame score</div>
+            <div class="val" id="beforeScoreVal">&mdash;</div>
+            <div class="sub" id="beforeSub"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col after" id="afterCol">
+        <h3>After</h3>
+        <div class="box">
+          <div class="badge"><span class="fire">&#x1F525;</span> <b id="afterBadge">&mdash;</b></div>
+          <div id="afterLines"></div>
+        </div>
+        <div class="box boxhead">Total Value</div>
+        <div class="box">
+          <div class="totals" id="afterTotals"></div>
+          <div class="score" id="afterScore">
+            <div class="lbl" id="afterLbl">Flame score change</div>
+            <div class="val" id="afterScoreVal">&mdash;</div>
+            <div class="sub" id="afterSub"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info">&#9432; Pressing <em>Reset</em> will automatically use the <em>BEFORE</em> stats.
+      <b>Use AFTER</b> keeps the new roll.</div>
+
+    <div class="ctl">
+      <div class="row">
+        <button class="primary" id="btnReset" title="Space / Enter">Reset &times;1</button>
+        <button id="btnUse" title="make the AFTER roll the new BEFORE">Use AFTER</button>
+      </div>
+      <div class="cost">&#x1FA99; <b>3,000,000</b></div>
+      <div class="note" id="holdHint" style="min-height:1.4em; color:var(--good)"></div>
+      <div class="row" style="margin-top:4px">
+        <span class="note">auto:</span>
+        <button id="btnAuto10">&times;10</button>
+        <button id="btnAuto100">&times;100</button>
+        <button id="btnAuto1000">&times;1000</button>
+        <select id="autoPolicy" title="what the auto run does with each roll">
+          <option value="first-better">stop at the first roll that beats BEFORE</option>
+          <option value="greedy">take every improvement as it comes</option>
+          <option value="watch">just roll, keep BEFORE</option>
+        </select>
+        <label class="row note" title="roll straight away on Reset, no popup"><input type="checkbox" id="simSkipConfirm"> skip confirmation</label>
+        <label class="row note" title="a held Enter or Space stops the moment AFTER beats BEFORE, instead of resetting it away as the game does. A fresh press still resets."><input type="checkbox" id="simStopBetter"> hold stops on a better roll</label>
+        <button id="btnClear" title="zero the counters; keeps BEFORE">clear counters</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="fld"><label>resets</label><b id="statResets">0</b></div>
+      <div class="fld"><label>mesos spent</label><b id="statSpent">0</b></div>
+      <div class="fld"><label>chance a reset beats BEFORE</label><b id="statP">&mdash;</b></div>
+      <div class="fld"><label>resets to beat it: expected / median / p85</label><b id="statExpected">&mdash;</b></div>
+      <div class="fld"><label>best roll seen</label><b id="statBest">&mdash;</b></div>
+    </div>
+    <div class="note" id="statRun" style="margin-top:6px"></div>
+    <div class="hist" id="history"></div>
+  </div>
+
+  <p class="note">
+    Two flame scores appear per column. The <b>&#x1F525; number</b> is the game's own: the sum of
+    the four line tiers, max 28. <b>Flame score</b> is the flame in main-stat points using your
+    weights, which is what decides whether a roll is actually better &mdash; the recording this
+    was built from shows a 23 &rarr; 22 roll that gained +60,107 combat power. The reset price,
+    tier tables and line pools are shared with the gear-progression tool, and a test there
+    checks this simulator's rolls average to the exact expected value the ranking computes.
+  </p>
+</div>
+
+<div class="modal" id="confirm" hidden>
+  <div class="popup">
+    <p id="confirmItem">Relevant Item: &mdash;</p>
+    <p>Reset Cost: 3,000,000 Mesos</p>
+    <p class="q">Do you want to reset <em>bonus stats</em>?</p>
+    <div class="btns">
+      <button class="ok" id="btnConfirm" title="Enter">Confirm</button>
+      <button id="btnCancel" title="Esc">Cancel</button>
+    </div>
+    <label><input type="checkbox" id="confirmSkip"> don't ask again</label>
+  </div>
+</div>
+
+<div class="modal" id="decide" hidden>
+  <div class="popup decide">
+    <p class="q">This roll beats <em>BEFORE</em>. Use the <em>AFTER</em> stats?</p>
+    <p class="how" id="decideText"></p>
+    <div class="dl" id="decideLines"></div>
+    <div class="btns">
+      <button class="ok" id="btnDecideUse" title="Enter or U">Use AFTER</button>
+      <button id="btnDecideKeep" title="Esc">Keep BEFORE</button>
+    </div>
+    <label style="cursor:default">A held Enter won't choose &mdash; release it and press once. Clicking outside does nothing. Keeping BEFORE leaves the roll up.</label>
+  </div>
+</div>
+
+<script>
+/* ==== ../gear_progression/js/value.js ==== */
+/* ===========================================================================
+ * Turning MapleScouter output into weights the two engines can use.
+ *
+ * MapleScouter's table is three columns wide: a row label, an editable AMOUNT, and
+ * the value of that amount. The value column is a dropdown -- "Main Stat" gives it
+ * in main-stat-equivalent, "Final Damage" gives it as a % of final damage with a %
+ * suffix on every row. Both are the same weight set in different units, so either
+ * ranks identically; only the printed scale differs, since everything downstream is
+ * a ratio of cost to value. `unit` records which arrived so columns can be labelled
+ * honestly. It has nothing to do with class.
+ *
+ * The amount is the catch. Both value columns are per-LINE totals -- one point's
+ * worth times the amount -- and this file has to hand back PER-POINT weights,
+ * because the engines apply their own amounts (a 12% potential line, a tier-7 flame).
+ * Feed totals straight in and every row is counted twice over, by a different factor
+ * each (12x for a 12% line, 9x for a 9% one), which reorders the ranking rather than
+ * just inflating it.
+ *
+ * So amounts are divided back out here, from `opts.amounts`. The amount column does
+ * not survive select-and-copy from the site, hence the UI inputs; a paste that DOES
+ * carry three columns is parsed directly and wins over the UI. With every amount at
+ * 1 -- the default -- this is a no-op and a per-point paste works unchanged.
+ *
+ * Dividing MapleScouter's own defaults out of the Main Stat column reproduces the
+ * per-point figures exactly, including HP 30/30 = 1.
+ *
+ * No threshold anywhere in this tool may compare these weights to an absolute
+ * constant -- only to each other. The scale is set by whichever row MapleScouter
+ * normalised, which differs by class.
+ *
+ * A stat-equivalent paste looks like:
+ *
+ *     Boss Damage         12.53
+ *     M.Attack             2.99
+ *     M.Attack%           53.59
+ *     Critical Dmg        41.26
+ *     Ignore Dff(300)      3.8
+ *     Ignore Dff(380)      4.86
+ *     INT                  1
+ *     INT%                12.21
+ *     Not Affected by % INT 0.14
+ *     LUK                  0.1
+ *     LUK%                 1.64
+ *     All Stat%           13.84
+ *
+ * These are local derivatives at the character's current gear, which is exactly
+ * the right thing for pricing one marginal upgrade -- and a reason to re-paste
+ * after any big change.
+ * ======================================================================== */
+
+const STAT_NAMES = ['STR', 'DEX', 'INT', 'LUK'];
+
+// normalised label -> weight key. Exact matches only, so "Not Affected by % INT"
+// can't be mistaken for "INT".
+const SCOUTER_LABELS = {
+  'str': 'flat.STR', 'dex': 'flat.DEX', 'int': 'flat.INT', 'luk': 'flat.LUK',
+  'str%': 'pct.STR', 'dex%': 'pct.DEX', 'int%': 'pct.INT', 'luk%': 'pct.LUK',
+
+  'not affected by % str': 'nopct.STR',
+  'not affected by % dex': 'nopct.DEX',
+  'not affected by % int': 'nopct.INT',
+  'not affected by % luk': 'nopct.LUK',
+
+  'all stat%': 'allStatPct',
+  'all stats%': 'allStatPct',
+
+  'attack': 'attFlat',
+  'att': 'attFlat',
+  'm.attack': 'mattFlat',
+  'magic attack': 'mattFlat',
+  'matt': 'mattFlat',
+
+  'attack%': 'attPctPhys',
+  'att%': 'attPctPhys',
+  'm.attack%': 'attPctMagic',
+  'magic attack%': 'attPctMagic',
+  'matt%': 'attPctMagic',
+
+  'boss damage': 'boss',
+  'boss dmg': 'boss',
+  'boss': 'boss',
+
+  'critical dmg': 'critDmg',
+  'critical damage': 'critDmg',
+  'crit dmg': 'critDmg',
+
+  'ignore dff(300)': 'ied300',
+  'ignore dff(380)': 'ied380',
+  'ignore def(300)': 'ied300',
+  'ignore def(380)': 'ied380',
+  'ied(300)': 'ied300',
+  'ied(380)': 'ied380',
+
+  'hp%': 'hpPct',
+  'max hp%': 'hpPct',
+  'hp': 'hpFlat',
+  'max hp': 'hpFlat',
+  'not affected by % hp': 'nopct.HP',
+};
+
+// MapleScouter's own default amounts, so "fill defaults" matches an untouched page.
+// One realistic line of each kind: a 12% stat line, a 9% all-stat line, 40% boss.
+const SCOUTER_DEFAULT_AMOUNTS = {
+  boss: 40, critDmg: 8, ied300: 40, ied380: 40,
+  attFlat: 30, mattFlat: 30, attPctPhys: 12, attPctMagic: 12,
+  hpFlat: 30, hpPct: 12, 'nopct.HP': 200,
+  allStatPct: 9,
+  'flat.STR': 30, 'flat.DEX': 30, 'flat.INT': 30, 'flat.LUK': 30,
+  'pct.STR': 12, 'pct.DEX': 12, 'pct.INT': 12, 'pct.LUK': 12,
+  'nopct.STR': 200, 'nopct.DEX': 200, 'nopct.INT': 200, 'nopct.LUK': 200,
+};
+
+function normLabel(s) {
+  return s.toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/\s*%\s*$/, '%')
+    .replace(/\s*\(\s*/g, '(')
+    .replace(/\s*\)\s*/g, ')')
+    .trim();
+}
+
+/**
+ * Parse a pasted table. Each line is a label then a number, separated by tabs or
+ * runs of spaces. Returns the raw key/value map plus which rows were used, so the
+ * UI can show anything it didn't recognise instead of silently dropping it.
+ */
+function parseScouter(text) {
+  const raw = {};
+  const rows = [];
+  const amounts = {};   // only populated when the paste carried three columns
+  let percent = false;
+
+  for (const line of String(text || '').split(/\r?\n/)) {
+    if (!line.trim()) continue;
+    // Last numeric token is the value, everything before it the label. The
+    // trailing %? is needed for the Final Damage column, where every row ends in
+    // "%"; without it those rows matched nothing and the tool rendered blank.
+    //
+    // Two numbers means the amount column came along, so the first is the amount.
+    // Tried first, but only kept when it yields a label we recognise -- otherwise a
+    // label ending in a bare number would eat its own last word as an amount.
+    let label = null, amount = null, value = null, pct = '';
+    const three = line.match(/^(.*?)[\t ]+(-?[\d.,]+)[\t ]+(-?[\d.,]+)\s*(%?)\s*$/);
+    if (three && SCOUTER_LABELS[normLabel(three[1].trim())]) {
+      label = three[1].trim();
+      amount = parseFloat(three[2].replace(/,/g, ''));
+      value = parseFloat(three[3].replace(/,/g, ''));
+      pct = three[4];
+    } else {
+      const m = line.match(/^(.*?)[\t ]+(-?[\d.,]+)\s*(%?)\s*$/);
+      if (!m) { rows.push({ label: line.trim(), value: null, key: null }); continue; }
+      label = m[1].trim();
+      value = parseFloat(m[2].replace(/,/g, ''));
+      pct = m[3];
+    }
+    if (!isFinite(value)) { rows.push({ label, value: null, key: null }); continue; }
+    if (pct) percent = true;
+
+    const key = SCOUTER_LABELS[normLabel(label)] || null;
+    if (key) {
+      raw[key] = value;
+      if (isFinite(amount) && amount > 0) amounts[key] = amount;
+    }
+    rows.push({ label, value, key, amount: isFinite(amount) ? amount : null });
+  }
+  return { raw, rows, percent, amounts };
+}
+
+/**
+ * Which row sits at exactly 1 once amounts are divided out, or null if none does.
+ *
+ * The Main Stat column always has one -- it is what sets the scale, "INT" for a mage
+ * and "HP" for a Demon Avenger, which has no natural stat to normalise against. It is
+ * also the only thing separating per-point weights from per-line totals, since both
+ * use identical row labels. Searched across every parsed row rather than just the
+ * stats, because the normaliser is not always a stat.
+ *
+ * The Final Damage column normalises nothing, so this legitimately returns null for
+ * it -- absence alone is not evidence of a mistake, which is why `suspectTotals`
+ * needs a second signal.
+ *
+ * `weightOf` is buildWeights' amount-aware getter, so this asks about the effective
+ * weight rather than the pasted number.
+ */
+function normaliserOf(parsed, weightOf) {
+  for (const r of parsed.rows || []) {
+    if (r.key && Math.abs(weightOf(r.key) - 1) <= 1e-6) return r.label;
+  }
+  return null;
+}
+
+/**
+ * Build the weight set the engines consume.
+ *
+ * mainStat is normally detected as the largest flat stat weight -- MapleScouter
+ * normalises the main stat to 1, and secondaries come out well below it. Pass an
+ * override when a build makes that ambiguous.
+ *
+ * ied picks between the 300 and 380 def columns; which one is right depends on
+ * the boss you are gearing for.
+ */
+function buildWeights(parsed, opts = {}) {
+  const raw = parsed.raw || {};
+  // Amounts divide the pasted per-line totals back down to per-point. A three-column
+  // paste beats the UI inputs, since it came from the page itself. Everything at the
+  // default 1 makes this the identity, so a per-point paste is untouched.
+  const amountOf = (k) => {
+    const fromPaste = Number((parsed.amounts || {})[k]);
+    if (isFinite(fromPaste) && fromPaste > 0) return fromPaste;
+    const fromUi = Number((opts.amounts || {})[k]);
+    return isFinite(fromUi) && fromUi > 0 ? fromUi : 1;
+  };
+  const g = (k) => (k in raw ? Number(raw[k] || 0) / amountOf(k) : 0);
+
+  let mainStat = opts.mainStat;
+  if (!mainStat || !STAT_NAMES.includes(mainStat)) {
+    mainStat = STAT_NAMES.reduce(
+      (best, s) => (g('flat.' + s) > g('flat.' + best) ? s : best), 'STR');
+  }
+
+  // Star force raises every class-relevant stat by the same amount, so one point
+  // of "Class Stat" is worth the sum of the flat weights -- 1 + 0.1 = 1.1 for a
+  // mage, and correctly larger for a build like Xenon that uses three stats.
+  const statPerPoint = STAT_NAMES.reduce((a, s) => a + g('flat.' + s), 0);
+
+  const iedVariant = opts.iedVariant === 380 ? 380 : 300;
+
+  // Both of these read the weights AFTER dividing, not the pasted numbers -- the
+  // question is whether what the engines will consume is per-point, and that is only
+  // true once the amounts are right. Dividing MapleScouter's defaults out of the Main
+  // Stat column lands HP back on exactly 1, so the normaliser reappears and the
+  // warning goes quiet by itself once the amounts are entered.
+  const normaliser = normaliserOf(parsed, g);
+  const values = (parsed.rows || [])
+    .filter(r => r.key && isFinite(r.value)).map(r => Math.abs(g(r.key)));
+
+  // Star force adds the same amount to every class-relevant stat, so it only ever
+  // needs the sum. Flames don't: a single-stat line hits one stat while a combo
+  // line hits two, so the per-stat split has to survive.
+  const flatByStat = {};
+  for (const s of STAT_NAMES) flatByStat[s] = g('flat.' + s);
+
+  // % weight per individual stat, for classes where more than one stat's % lines
+  // carry real value (Xenon runs on three). Single-stat classes only ever read
+  // the main stat's entry.
+  const pctByStat = {};
+  for (const s of STAT_NAMES) pctByStat[s] = g('pct.' + s);
+
+  return {
+    mainStat,
+    statPerPoint,
+    flatByStat,
+    pctByStat,
+    // Flat attack, whichever of the two the class actually uses -- a flame line
+    // reads "Attack Power +N" or "Magic ATT +N" depending on the weapon, and only
+    // one of the two weights is ever non-zero.
+    attFlat: g('attFlat') || g('mattFlat'),
+
+    // potential lines
+    mainPct:    g('pct.' + mainStat),
+    allStatPct: g('allStatPct'),
+    attPct:     g('attPctPhys') + g('attPctMagic'),  // only one is ever non-zero
+    boss:       g('boss'),
+    ied:        iedVariant === 380 ? g('ied380') : g('ied300'),
+    critDmg:    g('critDmg'),
+    hpPct:      g('hpPct'),
+    // flat max HP -- worthless to most classes, but it is Demon Avenger's whole
+    // game: MathBro's DA flame branch scores hp_tier * hp_per_tier with no
+    // equivalence multiplier at all, because HP IS the currency there.
+    hpFlat:     g('hpFlat'),
+    // Damage% IS boss damage%. Same weight, the only difference being that boss%
+    // applies to bosses only -- which is all this tool is optimising for. MathBro
+    // does the same: worker.js:755 multiplies both by one shared
+    // `stat_equivalences.dmg`, differing only by boss counting 2 per flame tier to
+    // damage's 1. MapleScouter never emits a separate damage row, so there is
+    // nothing to parse and no fallback to arrange.
+    dmgPct:     g('boss'),
+
+    // flat attack from star force
+    att:  g('attFlat'),
+    matt: g('mattFlat'),
+
+    iedVariant,
+    // which value column arrived; only affects how columns are labelled
+    unit: parsed.percent ? '%fd' : 'stat',
+    // the row that set the scale -- "INT" for a mage, "HP" for a Demon Avenger.
+    // null for the Final Damage column, which normalises nothing.
+    normalizedTo: normaliser,
+    // What each row was divided by, so the UI can show what is actually in force
+    // rather than only what was typed. Keyed the same as the weights.
+    amounts: Object.keys(raw).reduce((a, k) => (a[k] = amountOf(k), a), {}),
+    amountsFromPaste: Object.keys(parsed.amounts || {}).length > 0,
+    // Two independent signals that per-line totals were pasted with the amounts
+    // still at 1: nothing sits at 1, and nothing is below 1 either (a real per-point
+    // paste always carries small rows -- "Not Affected by %" lands near 0.1, and
+    // secondary stats lower still). Requiring both keeps a legitimate paste from
+    // being scolded on one coincidence. Only meaningful for the Main Stat column;
+    // Final Damage normalises nothing and its rows are all sub-1 anyway, so it is
+    // excluded rather than false-flagged -- a real gap, noted in the README.
+    suspectTotals: !parsed.percent && !normaliser && values.length > 0
+                   && Math.min.apply(null, values) > 1,
+    // a pure-HP Demon Avenger paste has near-zero stat weights but is not empty
+    empty: statPerPoint === 0 && !g('hpFlat'),
+  };
+}
+
+/**
+ * Human-readable readout of what the weight set implies about the class. This is
+ * the answer to "where is the class selector": the paste already encodes the
+ * class, and this line makes the inference visible instead of magic.
+ */
+function weightsProfileText(w) {
+  const flats = w.flatByStat || {};
+  // Thresholds are RELATIVE to the biggest weight, never absolute. The percent
+  // format normalises nothing, so a Xenon's flats there are ~0.12 rather than ~1
+  // and any fixed cutoff would misread every class.
+  const top = Math.max(...STAT_NAMES.map(s => flats[s] || 0), 0);
+  const primaries = STAT_NAMES.filter(s => top > 0 && (flats[s] || 0) >= 0.5 * top);
+  const secondaries = STAT_NAMES.filter(s =>
+    (flats[s] || 0) > 0 && !primaries.includes(s));
+  const bits = [];
+  // Demon Avenger scales off HP%, so HP% outweighing the stat's own % is the
+  // scale-free signature -- true in both formats.
+  if ((w.hpFlat || 0) > 0 && (w.hpPct || 0) >= (w.mainPct || 0)) {
+    bits.push('HP-based build (Demon Avenger)');
+  } else if (primaries.length > 1) {
+    bits.push(primaries.join('/') + ' all primary (Xenon-style)');
+  } else {
+    bits.push(`${w.mainStat} main` + (secondaries.length ? `, ${secondaries.join('/')} secondary` : ''));
+  }
+  bits.push(cubeStatCollapsed(w)
+    ? 'main% and all-stat% priced as one currency'
+    : 'all-stat% kept at its own, higher weight');
+  const subs = cubeSubStats(w);
+  if (subs.length) bits.push('counting ' + subs.map(s => s + '%').join(' and ') + ' potential lines');
+  if ((w.hpFlat || 0) > 0) bits.push('flat-HP flame lines valued');
+  const divided = Object.keys(w.amounts || {}).filter(k => w.amounts[k] !== 1);
+  if (divided.length) {
+    bits.push(`${divided.length} row${divided.length > 1 ? 's' : ''} divided by `
+      + `${w.amountsFromPaste ? 'amounts in the paste' : 'the amounts you set'}`);
+  }
+  if (w.suspectTotals) {
+    bits.push('SCALE UNVERIFIED - no row lands on 1, so amounts are probably needed');
+  } else {
+    bits.push(w.unit === '%fd'
+      ? 'the Final Damage column, so costs read as meso per 1% final damage'
+      : `the Main Stat column, per point, scaled against ${w.normalizedTo || 'the main stat'} = 1`);
+  }
+  return bits.join(' · ');
+}
+
+/** Rows it did not recognise -- shown so a mapping gap is visible, not silent. */
+function scouterUnknownRows(parsed) {
+  return (parsed.rows || []).filter(r => !r.key);
+}
+
+const SCOUTER_EXAMPLE = `Boss Damage\t\t12.53
+M.Attack\t\t2.99
+M.Attack%\t\t53.59
+Critical Dmg\t\t41.26
+Ignore Dff(300)\t\t3.8
+Ignore Dff(380)\t\t4.86
+INT\t\t1
+INT%\t\t12.21
+Not Affected by % INT\t\t0.14
+LUK\t\t0.1
+LUK%\t\t1.64
+Not Affected by % LUK\t\t0.04
+All Stat%\t\t13.84`;
+</script>
+<script>
+/* ==== ../gear_progression/js/flames.js ==== */
+/* ===========================================================================
+ * Flames (bonus stats).
+ *
+ * Every constant here is taken from MathBro's flame calculator, specifically
+ * reference/MathBro's Flaming Calculator_files/worker.js -- NOT from the copy of
+ * the same tables in main_IRbm.js, which disagrees on `reincarnation`
+ * (main has 4:0/7:0.03, worker has 4:0.01/7:0.02). worker.js is the file that
+ * actually computes, so it wins. worker.js in turn cites
+ * strategywiki.org/wiki/MapleStory/Bonus_Stats#Flame_Advantage.
+ *
+ * The mechanics, from getLineProbability() and worker.js:755:
+ *
+ *   - A flame-advantaged item rolls exactly 4 lines, drawn as a uniform 4-subset
+ *     of 19 possible bonus-stat slots (21 on a weapon, which adds boss% and
+ *     damage%).
+ *   - A non-advantaged item rolls 1/2/3/4 lines at 40/40/15/5%, and every tier
+ *     shifts DOWN by two, so the range becomes 1-5 instead of 3-7. Both effects
+ *     together make advantage worth a great deal.
+ *   - Each line's tier is drawn independently from the flame type's distribution.
+ *
+ * Bonus stats can now be reset for a flat meso price as well as by burning a
+ * flame item, so flames DO have a meso denominator and can be ranked next to
+ * star force and cubing. See FLAME_RESET_MESO below. The separate flames panel
+ * still ranks by stat gained per reroll, which is the right question when you
+ * are spending flames you already own rather than mesos.
+ *
+ * Classes fall out of the weights rather than a dropdown. MathBro needs per-class
+ * branches (choose_from = 10 / 8 / 8 junk slots for a standard class / Xenon /
+ * DB-Shadower-Cadena) because he asks for hand-typed equivalences; here every
+ * single-stat slot is valued at flat[s] and every combo pair at flat[a]+flat[b],
+ * so Xenon's double-counted pairs and a Shadower's DEX/STR secondaries emerge on
+ * their own, and the tracked/junk splits land on his constants by construction.
+ * Kanna was reworked into a standard mage and needs nothing special.
+ * ======================================================================== */
+
+// tier -> probability, per flame type. Advantaged range is 3-7.
+const FLAME_TIER_PROBS = {
+  drop:          { 3: 0.25, 4: 0.3,  5: 0.3,  6: 0.14, 7: 0.01 },
+  powerful:      { 3: 0.2,  4: 0.3,  5: 0.36, 6: 0.14, 7: 0    },
+  eternal:       { 3: 0,    4: 0.29, 5: 0.45, 6: 0.25, 7: 0.01 },
+  reincarnation: { 3: 0,    4: 0.01, 5: 0.63, 6: 0.34, 7: 0.02 },
+  fusion:        { 3: 0.5,  4: 0.4,  5: 0.1,  6: 0,    7: 0    },
+  masterFusion:  { 3: 0.25, 4: 0.35, 5: 0.3,  6: 0.1,  7: 0    },
+  meisterFusion: { 3: 0,    4: 0.4,  5: 0.45, 6: 0.14, 7: 0.01 },
+};
+
+/*
+ * The flame types actually offered, in dropdown order.
+ *
+ * Keys stay as worker.js names them so the tables above remain traceable to their
+ * source and saved state keeps working -- `reincarnation` is the in-game Abyssal
+ * flame, which is what it is labelled here.
+ *
+ * The other four types worker.js carries (dropped, fusion, master fusion, meister
+ * fusion) keep their data in FLAME_TIER_PROBS but are not offered: not worth
+ * cluttering the picker with flames that aren't used. Add a line here to surface
+ * one again.
+ */
+const FLAME_TYPES = [
+  ['eternal', 'eternal (rainbow/black)'],
+  ['powerful', 'powerful (red)'],
+  ['reincarnation', 'abyssal'],
+];
+
+const FLAME_TYPE_LABELS = Object.fromEntries(FLAME_TYPES);
+
+/** Fall back to eternal for a type that is no longer offered. */
+function flameTypeOrDefault(t) {
+  return FLAME_TYPE_LABELS[t] ? t : 'eternal';
+}
+
+// line count on a non-advantaged item
+const FLAME_LINES_NON_ADV = { 1: 0.40, 2: 0.40, 3: 0.15, 4: 0.05 };
+
+// [minLevel, maxLevel, valuePerTier]
+const FLAME_STAT_PER_TIER = [
+  [120, 139, 7], [140, 159, 8], [160, 179, 9], [180, 199, 10],
+  [200, 229, 11], [230, 249, 12], [250, Infinity, 12],
+];
+const FLAME_COMBO_PER_TIER = [
+  [120, 139, 4], [140, 159, 4], [160, 179, 5], [180, 199, 5],
+  [200, 229, 6], [230, 249, 6], [250, Infinity, 7],
+];
+
+// Flat max-HP flame line, per tier. Ten-level brackets, unlike the stat tables.
+// This is Demon Avenger's score: worker.js's da branch (line 871) is
+// attack_gain + hp_tier * hp_stat_per_tier, no equivalence multiplier.
+const FLAME_HP_PER_TIER = [
+  [120, 129, 360], [130, 139, 390], [140, 149, 420], [150, 159, 450],
+  [160, 169, 480], [170, 179, 510], [180, 189, 540], [190, 199, 570],
+  [200, 209, 600], [210, 219, 620], [220, 229, 640], [230, 239, 660],
+  [240, 249, 680], [250, Infinity, 700],
+];
+
+// weapon attack flame, as a fraction of the weapon's base attack
+const FLAME_WATT_ADV = {
+  '160-199': { 3: 0.15, 4: 0.22,  5: 0.3025, 6: 0.3993,  7: 0.512435 },
+  '200+':    { 3: 0.18, 4: 0.264, 5: 0.363,  6: 0.47916, 7: 0.614922 },
+};
+const FLAME_WATT_NON_ADV = {
+  '160-199': { 1: 0.05, 2: 0.11,  3: 0.185,  4: 0.2662,  5: 0.366025, 6: 0.43923,  7: 0.512435 },
+  '200+':    { 1: 0.06, 2: 0.132, 3: 0.2178, 4: 0.31944, 5: 0.43923,  6: 0.527076, 7: 0.614922 },
+};
+
+// boss damage is 2 points per tier, plain damage 1 (worker.js:755)
+const FLAME_BOSS_PER_TIER = 2;
+const FLAME_DMG_PER_TIER = 1;
+
+// Total bonus-stat slots a roll draws from. Exactly two pools exist: a weapon rolls
+// from 21 (the 19 plus boss% and damage%), everything else from 19. Level changes
+// the per-tier values, never the pool.
+const FLAME_SLOTS_ARMOR = 19;
+const FLAME_SLOTS_WEAPON = 21;
+
+const FLAME_STATS = ['STR', 'DEX', 'INT', 'LUK'];
+
+function flameBracket(table, level) {
+  for (const [lo, hi, v] of table) if (level >= lo && level <= hi) return v;
+  return level > 250 ? table[table.length - 1][2] : 0;
+}
+
+/** Tier -> probability, shifted down by 2 for a non-advantaged item. */
+function flameTierProbs(flameType, nonAdvantaged) {
+  const base = FLAME_TIER_PROBS[flameType] || FLAME_TIER_PROBS.eternal;
+  if (!nonAdvantaged) return base;
+  const out = {};
+  for (const t in base) out[Number(t) - 2] = base[t];
+  return out;
+}
+
+function _comb(n, r) {
+  if (r < 0 || r > n) return 0;
+  let v = 1;
+  for (let i = 0; i < r; i++) v = v * (n - i) / (i + 1);
+  return v;
+}
+
+/**
+ * The bonus-stat slots worth anything to this character, each with the value it
+ * contributes at a given tier.
+ *
+ * Only nonzero slots are enumerated; everything else is left in the junk pool.
+ * That is self-consistent for any weight set -- P(a specific k-subset of the
+ * tracked slots is present) = C(junk, lines-k)/C(total, lines), and Vandermonde's
+ * identity makes those sum to 1 regardless of how many slots are tracked.
+ *
+ * Sanity check on the inventory: for a mage the tracked slots come to exactly 9
+ * (main, secondary, the 5 pairs containing one of them, all-stat, MATT), leaving
+ * 10 junk out of 19 -- which is precisely the `choose_from = 10` constant in
+ * MathBro's own code.
+ */
+function flameTrackedSlots(kind, level, w, opts = {}) {
+  const { baseAtt = 0, nonAdvantaged = false } = opts;
+  const isWeapon = kind === 'weapon' || kind === 'secondary';
+  const flat = w.flatByStat || {};
+  const statPer = flameBracket(FLAME_STAT_PER_TIER, level);
+  const comboPer = flameBracket(FLAME_COMBO_PER_TIER, level);
+  const slots = [];
+  const lin = (label, coeff) => {
+    if (coeff) slots.push({ label, at: (t) => coeff * t });
+  };
+
+  for (const s of FLAME_STATS) lin(s, statPer * (flat[s] || 0));
+
+  // combo lines grant the combo amount to BOTH stats in the pair
+  for (let i = 0; i < FLAME_STATS.length; i++) {
+    for (let j = i + 1; j < FLAME_STATS.length; j++) {
+      const a = FLAME_STATS[i], b = FLAME_STATS[j];
+      lin(`${a}+${b}`, comboPer * ((flat[a] || 0) + (flat[b] || 0)));
+    }
+  }
+
+  lin('all stat', w.allStatPct);
+
+  // flat max HP -- Demon Avenger's whole game, zero weight for everyone else,
+  // in which case it stays untracked and the junk count is unaffected
+  lin('HP', flameBracket(FLAME_HP_PER_TIER, level) * (w.hpFlat || 0));
+
+  if (isWeapon) {
+    // weapon attack is a fraction of base attack and the fractions are not
+    // linear in tier, so this slot needs the table rather than a coefficient
+    const tbl = (nonAdvantaged ? FLAME_WATT_NON_ADV : FLAME_WATT_ADV)[
+      level >= 200 ? '200+' : '160-199'];
+    for (const [label, weight] of [['ATT', w.att], ['MATT', w.matt]]) {
+      if (weight) {
+        slots.push({ label, at: (t) => baseAtt * (tbl[t] || 0) * weight });
+      }
+    }
+    lin('boss', FLAME_BOSS_PER_TIER * w.boss);
+    lin('damage', FLAME_DMG_PER_TIER * (w.dmgPct || 0));
+  } else {
+    lin('ATT', w.att);
+    lin('MATT', w.matt);
+  }
+
+  return slots;
+}
+
+/**
+ * Full distribution of the flame score a reroll produces, as a sorted array of
+ * { score, prob }. Exact, not sampled: at most sum over k of C(|tracked|,k)*5^k
+ * outcomes, which is about 90k for armour and 150k for a weapon.
+ */
+// ~38k leaves per slot, and the distribution is independent of what the item
+// already has, so cache it and let only flameReroll() re-run while typing.
+const _flameCache = new Map();
+
+function flameCacheClear() { _flameCache.clear(); }
+
+function flameDistributionCached(kind, level, w, opts = {}) {
+  // Every weight field flameTrackedSlots reads must be in here, or two characters that
+  // differ only in an omitted one share a wrong distribution. hpFlat was missing, which
+  // meant a Demon Avenger and a mage with otherwise identical listed weights collided --
+  // latent while only one character was ever computed per session, and reachable the
+  // moment the compare panel started switching between them.
+  const key = [kind, level, opts.flameType, !!opts.nonAdvantaged, opts.baseAtt || 0,
+               w.mainStat, w.allStatPct, w.att, w.matt, w.boss, w.dmgPct || 0,
+               w.hpFlat || 0,
+               JSON.stringify(w.flatByStat || {})].join('|');
+  let hit = _flameCache.get(key);
+  if (!hit) {
+    hit = flameDistribution(kind, level, w, opts);
+    _flameCache.set(key, hit);
+  }
+  return hit;
+}
+
+function flameDistribution(kind, level, w, opts = {}) {
+  const { flameType = 'eternal', nonAdvantaged = false } = opts;
+  const isWeapon = kind === 'weapon' || kind === 'secondary';
+  const total = isWeapon ? FLAME_SLOTS_WEAPON : FLAME_SLOTS_ARMOR;
+
+  const tracked = flameTrackedSlots(kind, level, w, opts);
+  const junk = total - tracked.length;
+  if (junk < 0) return [];
+
+  const tp = flameTierProbs(flameType, nonAdvantaged);
+  const tiers = Object.keys(tp).map(Number).filter(t => tp[t] > 0);
+
+  const lineCounts = nonAdvantaged ? FLAME_LINES_NON_ADV : { 4: 1 };
+
+  // P(exactly k of the tracked slots appear), summed over how many lines rolled
+  const subsetProb = [];
+  for (let k = 0; k <= 4; k++) {
+    let p = 0;
+    for (const L in lineCounts) {
+      const n = Number(L);
+      if (k > n) continue;
+      p += lineCounts[L] * _comb(junk, n - k) / _comb(total, n);
+    }
+    subsetProb[k] = p;
+  }
+
+  const acc = new Map();
+  const add = (score, prob) => {
+    if (prob <= 0) return;
+    const key = Math.round(score * 100) / 100;
+    acc.set(key, (acc.get(key) || 0) + prob);
+  };
+
+  // Walk every subset of the tracked slots up to size 4, with every tier
+  // assignment. Emit ONLY at a leaf -- once every tracked slot has been decided
+  // present or absent. Emitting at interior nodes as well would count a partial
+  // subset and then count its own extensions again, which inflates the total mass
+  // (it read 3.90 instead of 1 before this was fixed).
+  const walk = (idx, chosen, score, prob) => {
+    if (idx >= tracked.length || chosen === 4) {
+      // any remaining slots are implicitly absent, so this is one complete outcome
+      add(score, prob * subsetProb[chosen]);
+      return;
+    }
+    walk(idx + 1, chosen, score, prob);                 // slot absent
+    for (const t of tiers) {                            // slot present at tier t
+      walk(idx + 1, chosen + 1, score + tracked[idx].at(t), prob * tp[t]);
+    }
+  };
+  walk(0, 0, 0, 1);
+
+  return [...acc.entries()]
+    .map(([score, prob]) => ({ score, prob }))
+    .sort((a, b) => a.score - b.score);
+}
+
+/**
+ * What one reroll is worth against what the item already has.
+ *
+ * gainPerRoll is E[max(0, new - current)] -- you keep the better outcome, so a
+ * worse roll costs nothing but the flame. That is the figure the flame table
+ * ranks on. rollsToBeat is the mean of the geometric distribution, i.e. how many
+ * flames it takes to see any improvement at all.
+ */
+function flameReroll(dist, currentValue = 0) {
+  let mass = 0, eScore = 0, pImprove = 0, gain = 0, best = 0;
+  for (const { score, prob } of dist) {
+    mass += prob;
+    eScore += prob * score;
+    best = Math.max(best, score);
+    if (score > currentValue) {
+      pImprove += prob;
+      gain += prob * (score - currentValue);
+    }
+  }
+  return {
+    mass,                     // must be 1; exposed so the self test can assert it
+    expected: eScore,
+    max: best,
+    pImprove,
+    gainPerRoll: gain,
+    rollsToBeat: pImprove > 0 ? 1 / pImprove : Infinity,
+    expectedIfBetter: pImprove > 0 ? gain / pImprove + currentValue : 0,
+  };
+}
+
+/* ------------------------------------------------------------- meso reset ---
+ *
+ * Bonus stats can be reset for a flat meso price instead of consuming a flame
+ * item. That is what lets flames into the main ranking at all: its denominator
+ * is meso per point of main stat, and until this existed a flame had no meso
+ * price to divide by.
+ *
+ * Two things from the patch note drive everything here.
+ *
+ *   - It costs FLAME_RESET_MESO per reset.
+ *   - "The reset rates are identical to Black Rebirth Flames", i.e. the
+ *     `eternal` distribution above -- NOT whichever flame the slot is set to in
+ *     the flames panel. That panel is about flames you own; this is about
+ *     mesos, so it always prices the eternal rates.
+ *
+ * Flame advantage is still taken from the slot: it is a property of the item and
+ * class pairing, not of the flame item being consumed, so the meso reset does
+ * not change it.
+ */
+const FLAME_RESET_MESO = 3000000;
+const FLAME_RESET_TYPE = 'eternal';
+
+/**
+ * Cost and gain of "reset until it beats what is there, then keep it".
+ *
+ * The patch lets you choose whether to apply the new bonus stats, so a bad reset
+ * costs only the mesos -- exactly the E[max(0, new - now)] that flameReroll
+ * already models, which is why no new probability work is needed here.
+ *
+ * Both the cost and the gain scale with how many resets it takes, and the
+ * scaling cancels:
+ *
+ *   E[resets] = 1 / p
+ *   E[cost]   = price / p
+ *   E[gain]   = gainPerRoll / p     (the gain given that you stopped on an improvement)
+ *   per       = cost / gain         = price / gainPerRoll
+ *
+ * So the headline meso-per-point does not depend on how many resets it takes --
+ * only on how much one reset adds on average. rollsToBeat still sets the cost
+ * column, because that is the meso the plan actually consumes.
+ *
+ * `pct` follows the ranking's percentile box: blank is the mean number of
+ * resets, 85 is enough resets to be 85% sure of seeing an improvement. Exact
+ * rather than fitted, because reset count is geometric -- the same footing as
+ * the cube percentile, not the lognormal star force one.
+ */
+function flameResetPlan(reroll, pct = 0, price = FLAME_RESET_MESO) {
+  // pImprove 0 means the item already holds the best roll the pool can produce,
+  // so there is nothing to buy at any price.
+  if (!(reroll.pImprove > 0) || !(reroll.gainPerRoll > 0)) {
+    return { resets: Infinity, cost: Infinity, gain: 0, per: Infinity };
+  }
+  const resets = pct ? geometricPct(reroll.pImprove, pct) : reroll.rollsToBeat;
+  const gain = reroll.gainPerRoll / reroll.pImprove;
+  const cost = resets * price;
+  return { resets, cost, gain, per: cost / gain };
+}
+
+/*
+ * The six numbers a flame can contribute, as read straight off the item.
+ * Keys are the per-slot state fields; the label is the column heading.
+ */
+/*
+ * One column per stat, not Main/Sec. Main/Sec was a two-stat worldview: the Sec
+ * column multiplied a single typed number by the SUM of every non-main weight,
+ * which is only correct when exactly one secondary exists (a mage's LUK). A
+ * Xenon has three primaries and a Shadower two secondaries with different
+ * weights -- their flames were impossible to enter correctly. Per-stat columns
+ * are exact for every class, and the ones the paste gives no weight to are
+ * hidden, so each class only ever sees its own stats.
+ */
+const FLAME_INPUTS = [
+  ['fSTR',  'STR',   'flat STR from the flame'],
+  ['fDEX',  'DEX',   'flat DEX from the flame'],
+  ['fINT',  'INT',   'flat INT from the flame'],
+  ['fLUK',  'LUK',   'flat LUK from the flame'],
+  ['fAtt',  'Atk',   'flat attack or magic attack'],
+  ['fHp',   'HP',    'flat max HP (Demon Avenger)'],
+  ['fAll',  'All%',  'all stat %'],
+  ['fDmg',  'Dmg%',  'damage %'],
+  ['fBoss', 'Boss%', 'boss damage %'],
+];
+
+// stat and HP columns disappear entirely when the paste gives them no weight;
+// the rest stay visible and merely warn if filled against a zero weight
+const FLAME_INPUTS_HIDEABLE = new Set(['fSTR', 'fDEX', 'fINT', 'fLUK', 'fHp']);
+
+/**
+ * What an item's existing flame is worth, from the amounts shown on the item.
+ *
+ * Replaces asking for one pre-computed score: these are numbers readable straight
+ * off the equip window, converted with the same weights the reroll distribution
+ * uses, so "now" and "after" sit on one scale by construction.
+ */
+function flameCurrentValue(f, w) {
+  if (!f) return 0;
+  let total = 0;
+  for (const [key] of FLAME_INPUTS) {
+    total += Number(f[key] || 0) * flameInputWeight(key, w);
+  }
+  return total;
+}
+
+/**
+ * The flame in main-stat points -- the figure people quote as a "flame score".
+ *
+ * Every other column follows the paste's unit, which for a Final Damage paste is
+ * %fd: a strong flame reads "1.32", which means nothing to anyone used to hearing
+ * "130 flame score". Dividing by the main stat's own weight -- %fd per point in
+ * that mode, exactly 1 in stat mode -- recovers the familiar number. So in stat
+ * mode this equals Now, and in %fd mode it is Now translated. Either way it is
+ * invariant to how the paste was scaled, which is the property that makes it
+ * comparable across characters and between pastes.
+ *
+ * Demon Avenger's currency is HP, and hpFlat is the one flat weight that
+ * dominates only for that class, so the larger of the two decides. Zero means the
+ * paste carries no row to convert with, and there is no honest number to show.
+ */
+function flameScoreDivisor(w) {
+  if (!w) return 0;
+  const main = (w.flatByStat && w.flatByStat[w.mainStat]) || 0;
+  return Math.max(main, w.hpFlat || 0);
+}
+
+function flameScore(value, w) {
+  const d = flameScoreDivisor(w);
+  return d > 0 ? value / d : NaN;
+}
+
+/**
+ * The weight one point of a given flame input converts at.
+ *
+ * Single source of truth so the UI can warn about a weight of zero using exactly
+ * the number the valuation uses. A zero here means the amount typed in that column
+ * contributes nothing -- which is the case for Dmg% unless the MapleScouter paste
+ * actually carries a damage weight, since most of them don't.
+ */
+function flameInputWeight(key, w) {
+  switch (key) {
+    case 'fSTR': case 'fDEX': case 'fINT': case 'fLUK':
+      return (w.flatByStat && w.flatByStat[key.slice(1)]) || 0;
+    case 'fAtt':  return w.attFlat || 0;
+    case 'fHp':   return w.hpFlat || 0;
+    case 'fAll':  return w.allStatPct || 0;
+    case 'fDmg':  return w.dmgPct || 0;
+    case 'fBoss': return w.boss || 0;
+    default:      return 0;
+  }
+}
+
+/**
+ * Slots that can carry flames.
+ *
+ * Armour, the weapon, the accessories, the pocket item and the medal. Note what is
+ * NOT here, all three confirmed rather than assumed:
+ *
+ *   secondary -- takes potential but no flames, despite sitting beside the weapon
+ *                everywhere else in this tool
+ *   shoulder  -- no flames, even though it is part of the armour set and every
+ *                other piece of that set does take them
+ *   emblem    -- no flames
+ *   rings     -- no flames, even though pendants and earrings do take them
+ *
+ * The pocket item is flame-only: it takes no potential (see SLOTS in app.js) but
+ * does take bonus stats.
+ *
+ * There are only two bonus-stat pools: weapons and everything else. Which one
+ * applies depends on the equip being a weapon, and the *values* then scale with
+ * item level -- there is no per-slot pool. So accessories, the pocket item and the
+ * medal all correctly share the 19-slot non-weapon pool with armour; that is the
+ * rule, not an approximation standing in for missing data.
+ */
+const FLAMEABLE = new Set([
+  'hat', 'top', 'bottom', 'shoes', 'gloves', 'cape', 'belt',
+  'weapon',
+  'face', 'eye', 'ear', 'pend1', 'pend2',
+  'pocket', 'medal',
+]);
+
+/* ------------------------------------------------------------------ sampling
+ *
+ * flameDistribution enumerates only the slots worth something to this
+ * character and lumps everything else together as "junk", which is all the
+ * ranking needs. A simulator has to show a roll the way the game does --
+ * "Jump +6", "Max MP +2880", "Reduced level requirement -25" -- so it needs the
+ * whole named pool, junk included.
+ *
+ * The valued lines use the same per-tier amounts as flameTrackedSlots, so a
+ * sample's worth (flameSampleValue) is drawn from exactly the distribution the
+ * ranking integrates over; check_js.py asserts the two agree to within sampling
+ * error. The junk lines carry weight 0 everywhere, so their amounts are
+ * display-only. They come from StrategyWiki's Bonus Stats page and were
+ * cross-checked against a recording of the reset dialog on a lv160 item:
+ * DEF +54 is 6 x 9, Speed +5 is tier 5, level requirement -25 is 5 x 5,
+ * Max MP +2880 is 6 x 480.
+ *
+ * The game shows a fifth number beside the flame icon -- 23, 20, 22 in that
+ * recording -- and it is simply the sum of the four line tiers (max 28). It is
+ * exposed as tierTotal because it is what people compare in-game, and because
+ * the recording caught it going DOWN (23 -> 22) on a roll that was better: the
+ * tier total ignores which stats the character actually uses.
+ */
+
+/** Weapon attack per tier is a fraction of base attack and not linear in tier. */
+function flameWeaponAttFrac(level, tier, nonAdvantaged) {
+  const tbl = (nonAdvantaged ? FLAME_WATT_NON_ADV : FLAME_WATT_ADV)[
+    level >= 200 ? '200+' : '160-199'];
+  return tbl[tier] || 0;
+}
+
+const _statAmt  = (lv, t) => flameBracket(FLAME_STAT_PER_TIER, lv) * t;
+const _comboAmt = (lv, t) => flameBracket(FLAME_COMBO_PER_TIER, lv) * t;
+const _hpAmt    = (lv, t) => flameBracket(FLAME_HP_PER_TIER, lv) * t;
+const _attAmt   = (lv, t, c) => c.isWeapon ? c.baseAtt * flameWeaponAttFrac(lv, t, c.nonAdvantaged) : t;
+
+// Every line a bonus-stat roll can produce. `stats` is the stat(s) a line credits
+// in the Total Value box -- a combo credits both. Pool order here is only an
+// inventory; the game lists a roll's lines in the order they came out.
+const FLAME_LINES = [
+  { key: 'STR', label: 'STR', stats: ['STR'], amount: _statAmt },
+  { key: 'DEX', label: 'DEX', stats: ['DEX'], amount: _statAmt },
+  { key: 'INT', label: 'INT', stats: ['INT'], amount: _statAmt },
+  { key: 'LUK', label: 'LUK', stats: ['LUK'], amount: _statAmt },
+  { key: 'STR+DEX', label: 'STR, DEX', stats: ['STR', 'DEX'], amount: _comboAmt },
+  { key: 'STR+INT', label: 'STR, INT', stats: ['STR', 'INT'], amount: _comboAmt },
+  { key: 'STR+LUK', label: 'STR, LUK', stats: ['STR', 'LUK'], amount: _comboAmt },
+  { key: 'DEX+INT', label: 'DEX, INT', stats: ['DEX', 'INT'], amount: _comboAmt },
+  { key: 'DEX+LUK', label: 'DEX, LUK', stats: ['DEX', 'LUK'], amount: _comboAmt },
+  { key: 'INT+LUK', label: 'INT, LUK', stats: ['INT', 'LUK'], amount: _comboAmt },
+  { key: 'HP',    label: 'Max HP',       amount: _hpAmt },
+  { key: 'MP',    label: 'Max MP',       amount: _hpAmt },
+  { key: 'DEF',   label: 'Defense',      amount: _statAmt },
+  { key: 'ATT',   label: 'Attack Power', amount: _attAmt },
+  { key: 'MATT',  label: 'Magic ATT',    amount: _attAmt },
+  { key: 'SPEED', label: 'Speed',        amount: (lv, t) => t },
+  { key: 'JUMP',  label: 'Jump',         amount: (lv, t) => t },
+  { key: 'ALL',   label: 'All Stats',    amount: (lv, t) => t, suffix: '%' },
+  { key: 'LEVEL', label: 'Reduced level requirement', amount: (lv, t) => -5 * t },
+  { key: 'BOSS',  label: 'Boss Damage',  amount: (lv, t) => FLAME_BOSS_PER_TIER * t, suffix: '%', weaponOnly: true },
+  { key: 'DMG',   label: 'Damage',       amount: (lv, t) => FLAME_DMG_PER_TIER * t, suffix: '%', weaponOnly: true },
+];
+
+const FLAME_LINE_BY_KEY = Object.fromEntries(FLAME_LINES.map(l => [l.key, l]));
+
+/** The lines an item of this kind can roll: 19 for armour, 21 for a weapon. */
+function flamePool(kind) {
+  const isWeapon = kind === 'weapon' || kind === 'secondary';
+  return FLAME_LINES.filter(l => isWeapon || !l.weaponOnly);
+}
+
+/**
+ * Deterministic RNG (mulberry32) for reproducible runs and testable sampling.
+ * Returns a function like Math.random.
+ */
+function flameRng(seed) {
+  let a = (Number(seed) || 0) >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Draw a key from a {key: probability} table. */
+function _flamePick(probs, rng) {
+  const r = rng();
+  let acc = 0, last = null;
+  for (const k of Object.keys(probs)) {
+    const p = probs[k];
+    if (p <= 0) continue;
+    acc += p;
+    last = Number(k);
+    if (r < acc) return last;
+  }
+  return last;   // rounding left r a hair above the total
+}
+
+function _flameLine(def, level, tier, ctx) {
+  return {
+    key: def.key, label: def.label, tier,
+    amount: def.amount(level, tier, ctx),
+    suffix: def.suffix || '',
+    stats: def.stats || null,
+  };
+}
+
+function _flameCtx(kind, opts) {
+  return {
+    isWeapon: kind === 'weapon' || kind === 'secondary',
+    nonAdvantaged: !!opts.nonAdvantaged,
+    baseAtt: Number(opts.baseAtt) || 0,
+  };
+}
+
+/**
+ * One bonus-stat roll, as the game would show it.
+ *
+ * Mechanics as documented at the top of this file: an advantaged item rolls
+ * exactly 4 lines, a non-advantaged one 1-4 at 40/40/15/5%; lines are a uniform
+ * subset of the pool (no line twice); each line's tier is independent, drawn
+ * from the flame type's table, shifted down two when non-advantaged.
+ */
+function flameSample(kind, level, opts = {}, rng = Math.random) {
+  const { flameType = 'eternal', nonAdvantaged = false } = opts;
+  const pool = flamePool(kind);
+  const ctx = _flameCtx(kind, opts);
+  const count = nonAdvantaged ? _flamePick(FLAME_LINES_NON_ADV, rng) : 4;
+
+  // uniform subset without replacement: a partial Fisher-Yates over the indices
+  const idx = pool.map((_, i) => i);
+  for (let i = 0; i < count; i++) {
+    const j = i + Math.floor(rng() * (idx.length - i));
+    [idx[i], idx[j]] = [idx[j], idx[i]];
+  }
+
+  const tp = flameTierProbs(flameType, nonAdvantaged);
+  const lines = [];
+  for (let i = 0; i < count; i++) {
+    lines.push(_flameLine(pool[idx[i]], level, _flamePick(tp, rng), ctx));
+  }
+  return {
+    lines,
+    count,
+    tierTotal: lines.reduce((a, l) => a + l.tier, 0),
+  };
+}
+
+/**
+ * A flame from explicit [{key, tier}] picks -- how the BEFORE side is entered,
+ * and what "use the AFTER" turns a sample back into. Unknown keys and keys the
+ * item kind can't roll are dropped, so a weapon-only line disappears when the
+ * kind is switched to armour rather than lingering as a phantom.
+ */
+function flameCompose(kind, level, opts = {}, picks = []) {
+  const pool = flamePool(kind);
+  const allowed = new Set(pool.map(l => l.key));
+  const ctx = _flameCtx(kind, opts);
+  const lines = [];
+  for (const p of picks) {
+    const def = FLAME_LINE_BY_KEY[p && p.key];
+    const tier = Number(p && p.tier);
+    if (!def || !allowed.has(def.key) || !(tier >= 1 && tier <= 7)) continue;
+    lines.push(_flameLine(def, level, tier, ctx));
+  }
+  return { lines, count: lines.length, tierTotal: lines.reduce((a, l) => a + l.tier, 0) };
+}
+
+// Order the game's Total Value box uses, as far as the recording shows it.
+const FLAME_TOTAL_ORDER = ['STR', 'DEX', 'INT', 'LUK', 'HP', 'MP', 'ATT', 'MATT',
+                           'DEF', 'SPEED', 'JUMP', 'ALL', 'BOSS', 'DMG', 'LEVEL'];
+
+/** Per-stat totals of a sample, combos credited to both of their stats. */
+function flameSampleTotals(sample) {
+  const t = {};
+  for (const l of (sample && sample.lines) || []) {
+    for (const k of l.stats || [l.key]) t[k] = (t[k] || 0) + l.amount;
+  }
+  return t;
+}
+
+/**
+ * The flame-table inputs a sample corresponds to, so it can be valued with the
+ * same flameCurrentValue the ranking uses -- one scale by construction.
+ *
+ * The table has a single attack column, weighted by whichever of the two the
+ * class uses. Only the matching line counts; the other is junk here, exactly as
+ * flameTrackedSlots treats it (a mage rolling "Attack Power +6" gains nothing).
+ */
+function flameSampleToInputs(sample, w) {
+  const t = flameSampleTotals(sample);
+  return {
+    fSTR: t.STR || 0, fDEX: t.DEX || 0, fINT: t.INT || 0, fLUK: t.LUK || 0,
+    fAtt: ((w && w.att) ? (t.ATT || 0) : 0) + ((w && w.matt) ? (t.MATT || 0) : 0),
+    fHp: t.HP || 0, fAll: t.ALL || 0, fDmg: t.DMG || 0, fBoss: t.BOSS || 0,
+  };
+}
+
+function flameSampleValue(sample, w) {
+  return sample ? flameCurrentValue(flameSampleToInputs(sample, w), w) : 0;
+}
+</script>
+<script>
+/* ==== sim.js ==== */
+/* ===========================================================================
+ * Flame reset simulator -- the game's "Select which Bonus stats to use" dialog,
+ * driven by the same tables the gear-progression ranking uses.
+ *
+ * Built from a recording of the real thing (data/video/2026-09-10 10-28-21.mkv):
+ *   - BEFORE and AFTER columns, each with its lines, the tier total beside the
+ *     flame icon, a Total Value box, and a change figure that is green with an
+ *     up-arrow when AFTER is better and plain grey when it is not.
+ *   - Reset x1 -> a confirm popup -> the AFTER column refreshes and 3m leaves.
+ *   - "Pressing Reset will automatically use the BEFORE stats" -- every reset
+ *     discards the AFTER; you choose the AFTER column to keep it.
+ *   - The player drives it from the keyboard: Space presses Reset, and holding
+ *     Enter confirms the popup and presses Reset again, so the two alternate.
+ *
+ * What replaces Combat Power Change: the flame score in main-stat points, from
+ * the MapleScouter weights, because Combat Power needs the game's formula and
+ * the whole character. The tier total is still shown, because it is the number
+ * people compare in-game -- and the recording caught it dropping 23 -> 22 on a
+ * roll that was +60,107 combat power better, which is exactly the lesson.
+ *
+ * Everything this file computes with comes from ../gear_progression/js:
+ * flameSample and friends for rolling, flameCurrentValue / flameScore for
+ * worth, flameDistributionCached + flameReroll for the odds shown under BEFORE.
+ * It is wrapped so its helpers can't collide with app.js when both are loaded
+ * into one test context, and exposes SIM for that test.
+ * ======================================================================== */
+(function () {
+  'use strict';
+
+  const LS_KEY = 'maple_flame_sim';
+  const PRICE = FLAME_RESET_MESO;
+  const LEVELS = [120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250];
+  const HISTORY = 40;
+
+  // Persisted: how the item and weights are set up, and the BEFORE flame. Not
+  // persisted: the run counters, which describe a session rather than an item.
+  const S = {
+    kind: 'armor', level: 160, adv: true, flameType: FLAME_RESET_TYPE, baseAtt: 150,
+    scouter: SCOUTER_EXAMPLE, seed: '', skipConfirm: false, stopOnBetter: true,
+    beforePicks: [],
+    // runtime
+    before: null, after: null,
+    resets: 0, spent: 0, best: null, history: [], run: '',
+    confirmOpen: false,
+    decideOpen: false,   // the end-of-auto-run "use this?" dialog
+  };
+  const PERSIST = ['kind', 'level', 'adv', 'flameType', 'baseAtt', 'scouter', 'seed',
+                   'skipConfirm', 'stopOnBetter', 'beforePicks'];
+
+  let weights = null;
+  let rng = Math.random;
+
+  /* ------------------------------------------------------------ helpers */
+
+  const $ = (id) => document.getElementById(id);
+
+  function el(tag, attrs, kids) {
+    const n = document.createElement(tag);
+    for (const k in attrs || {}) {
+      if (k === 'class') n.className = attrs[k];
+      else if (k === 'text') n.textContent = attrs[k];
+      else if (k.startsWith('on')) n.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] === true) n.setAttribute(k, '');
+      else if (attrs[k] !== false && attrs[k] != null) n.setAttribute(k, attrs[k]);
+    }
+    for (const kid of [].concat(kids || [])) if (kid != null) n.append(kid);
+    return n;
+  }
+
+  // ~3 significant figures, same rule as the gear tool
+  function fmt(n) {
+    if (!isFinite(n)) return '—';
+    const a = Math.abs(n);
+    if (a >= 100) return Math.round(n).toLocaleString();
+    if (a >= 10) return n.toFixed(1);
+    if (a >= 1) return n.toFixed(2);
+    return n.toFixed(3);
+  }
+  const signed = (n) => (n > 0 ? '+' : '') + fmt(n);
+  function meso(n) {
+    if (!isFinite(n)) return '—';
+    if (n >= 1e9) return (n / 1e9).toFixed(2) + 'b';
+    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'm';
+    if (n >= 1e3) return Math.round(n / 1e3) + 'k';
+    return Math.round(n).toLocaleString();
+  }
+  /** pXX of a geometric count. p >= 1 means the first reset always does it. */
+  function geoPct(p, pct) {
+    if (!(p > 0)) return Infinity;
+    if (p >= 1) return 1;
+    return Math.ceil(Math.log(1 - pct / 100) / Math.log(1 - p));
+  }
+
+  function load() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+      if (raw && typeof raw === 'object') for (const k of PERSIST) if (k in raw) S[k] = raw[k];
+    } catch (_) { /* private mode, or no storage in a test */ }
+    S.flameType = flameTypeOrDefault(S.flameType);
+    if (!LEVELS.includes(Number(S.level))) S.level = 160;
+    S.level = Number(S.level);
+    if (!Array.isArray(S.beforePicks)) S.beforePicks = [];
+  }
+  function save() {
+    try {
+      const out = {};
+      for (const k of PERSIST) out[k] = S[k];
+      localStorage.setItem(LS_KEY, JSON.stringify(out));
+    } catch (_) { /* ignore */ }
+  }
+
+  /* -------------------------------------------------------------- model */
+
+  function opts() {
+    return {
+      flameType: S.flameType,
+      nonAdvantaged: !S.adv,
+      baseAtt: S.kind === 'weapon' ? Number(S.baseAtt) || 0 : 0,
+    };
+  }
+  function refreshWeights() {
+    weights = buildWeights(parseScouter(S.scouter));
+    // The seed is re-applied whenever settings change so a run is reproducible
+    // from the moment you set it; blank means the browser's own randomness.
+    rng = String(S.seed).trim() === '' ? Math.random : flameRng(S.seed);
+  }
+  const valueOf = (sample) => flameSampleValue(sample, weights);
+  const scoreOf = (sample) => flameScore(valueOf(sample), weights);
+  function odds() {
+    if (!weights || weights.empty) return null;
+    return flameReroll(flameDistributionCached(S.kind, S.level, weights, opts()), valueOf(S.before));
+  }
+  function composeBefore() {
+    S.before = S.beforePicks.length ? flameCompose(S.kind, S.level, opts(), S.beforePicks) : null;
+    // A pick the new kind can't roll is dropped by flameCompose; mirror that in
+    // the stored picks so the editor shows what is actually in force.
+    if (S.before) S.beforePicks = S.before.lines.map(l => ({ key: l.key, tier: l.tier }));
+  }
+
+  function roll() {
+    S.after = flameSample(S.kind, S.level, opts(), rng);
+    S.resets += 1;
+    S.spent += PRICE;
+    if (!S.best || valueOf(S.after) > valueOf(S.best)) S.best = S.after;
+    S.history.push(valueOf(S.after));
+    if (S.history.length > HISTORY) S.history.shift();
+  }
+
+  function reset() {
+    if (!weights || weights.empty) return;
+    if (S.skipConfirm) { roll(); render(true); return; }
+    S.confirmOpen = true;
+    renderConfirm();
+  }
+  function confirm() {
+    if (!S.confirmOpen) return;
+    S.confirmOpen = false;
+    renderConfirm();
+    roll();
+    render(true);
+  }
+  function cancel() {
+    if (!S.confirmOpen) return;
+    S.confirmOpen = false;
+    renderConfirm();
+  }
+  // The decision an auto run ends on. Keeping BEFORE leaves the roll up as AFTER,
+  // so the Use AFTER button still works afterwards -- nothing is thrown away.
+  function decideUse() {
+    if (!S.decideOpen) return;
+    S.decideOpen = false;
+    useAfter();
+  }
+  function decideKeep() {
+    if (!S.decideOpen) return;
+    S.decideOpen = false;
+    renderDecide();
+  }
+  function useAfter() {
+    if (!S.after) return;
+    S.beforePicks = S.after.lines.map(l => ({ key: l.key, tier: l.tier }));
+    composeBefore();
+    S.after = null;
+    S.run = '';
+    save();
+    render();
+  }
+
+  /**
+   * Auto-roll. Every policy is one a player can actually follow in-game, where
+   * you only ever see the latest AFTER and can only keep that one:
+   *   first-better  reset until a roll beats BEFORE, leave it up as AFTER
+   *   greedy        whenever AFTER beats BEFORE, use it, keep going
+   *   watch         reset n times without keeping anything
+   */
+  function auto(n, policy) {
+    if (!weights || weights.empty) return;
+    S.decideOpen = false;   // a new run supersedes an unanswered dialog; the AFTER it asked about is replaced
+    const o = odds();
+    const startBefore = valueOf(S.before);
+    let taken = 0, found = 0;
+    for (let i = 0; i < n; i++) {
+      roll();
+      const v = valueOf(S.after);
+      if (policy === 'first-better' && v > startBefore) { found = i + 1; break; }
+      if (policy === 'greedy' && v > valueOf(S.before)) {
+        S.beforePicks = S.after.lines.map(l => ({ key: l.key, tier: l.tier }));
+        composeBefore();
+        taken += 1;
+      }
+    }
+    const exp = o && o.pImprove > 0
+      ? ` · expected ${(1 / o.pImprove).toFixed(1)}, median ${geoPct(o.pImprove, 50)}`
+      : '';
+    if (policy === 'first-better') {
+      S.run = found
+        ? `beat it after ${found} reset${found === 1 ? '' : 's'} (${meso(found * PRICE)})${exp}`
+        : `${n} resets (${meso(n * PRICE)}) and nothing better${exp}`;
+    } else if (policy === 'greedy') {
+      S.run = `${n} resets (${meso(n * PRICE)}), took ${taken} improvement${taken === 1 ? '' : 's'}: `
+        + `flame score ${fmt(flameScore(startBefore, weights))} → ${fmt(scoreOf(S.before))}`;
+    } else {
+      const better = S.history.slice(-Math.min(n, HISTORY)).filter(v => v > startBefore).length;
+      S.run = `${n} resets (${meso(n * PRICE)}) watched` +
+        (n <= HISTORY ? `, ${better} would have beaten BEFORE` : '') + exp;
+    }
+    save();
+    render(true);
+    // The run is over. If what it left up beats BEFORE, ask now -- this is the
+    // moment the game itself puts in front of you -- rather than leave the roll
+    // to be noticed among the counters.
+    if (afterIsBetter()) { S.decideOpen = true; renderDecide(); }
+  }
+
+  function clearCounters() {
+    S.resets = 0; S.spent = 0; S.best = null; S.history = []; S.run = '';
+    render();
+  }
+
+  /* ------------------------------------------------------------ keyboard */
+
+  const afterIsBetter = () => !!S.after && valueOf(S.after) > valueOf(S.before);
+
+  // Keys currently held, so a hold is recognised even where the browser does not
+  // set e.repeat (some Android keyboards). keyup clears; a keydown for a key that
+  // is already down is a hold.
+  const down = new Set();
+
+  // Space presses Reset; Enter confirms the popup, and with no popup open it is
+  // the dialog's default button, i.e. Reset again -- so a held Enter alternates
+  // the two exactly as it does in the game. Ignored while typing in a field.
+  //
+  // One deliberate departure from the game: in-game, the Reset that follows a
+  // good roll under a held Enter throws that roll away. Here a HELD key stops the
+  // moment AFTER beats BEFORE, leaving the roll up for a decision. A fresh press
+  // still resets (and discards), and U keeps the roll. stopOnBetter turns the
+  // guard off for anyone who wants the raw game behaviour.
+  function onKey(e) {
+    const tag = ((e.target && e.target.tagName) || '').toUpperCase();
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    const key = e.key === ' ' || e.code === 'Space' ? ' ' : e.key;
+    const held = !!e.repeat || down.has(key);
+    down.add(key);
+    const guarded = held && S.stopOnBetter && afterIsBetter();
+
+    // The end-of-run dialog owns the keyboard while it is up. Only a FRESH Enter
+    // accepts: the hand that was holding Enter to roll must not accept by inertia.
+    if (S.decideOpen) {
+      if ((key === ' ' || key === 'Enter') && e.preventDefault) e.preventDefault();
+      if ((key === 'Enter' && !held) || key === 'u' || key === 'U') decideUse();
+      else if (key === 'Escape') decideKeep();
+      return;
+    }
+
+    if (key === ' ') {
+      if (e.preventDefault) e.preventDefault();
+      if (S.confirmOpen || guarded) return;
+      reset();
+    } else if (key === 'Enter') {
+      if (e.preventDefault) e.preventDefault();
+      if (S.confirmOpen) { confirm(); return; }
+      if (guarded) return;
+      reset();
+    } else if (key === 'Escape') {
+      cancel();
+    } else if (key === 'u' || key === 'U') {
+      if (!S.confirmOpen) useAfter();
+    }
+  }
+  function onKeyUp(e) {
+    down.delete(e.key === ' ' || e.code === 'Space' ? ' ' : e.key);
+  }
+
+  /* ------------------------------------------------------------- render */
+
+  function amountText(line) {
+    // weapon attack is a fraction of base attack; the game shows it whole
+    const a = line.key === 'ATT' || line.key === 'MATT' ? Math.round(line.amount) : line.amount;
+    return (a > 0 ? '+' : '') + a + line.suffix;
+  }
+
+  function renderLines(target, sample, emptyText) {
+    if (!sample || !sample.lines.length) {
+      target.replaceChildren(el('div', { class: 'line dim', text: emptyText }));
+      return;
+    }
+    target.replaceChildren(...sample.lines.map(l => el('div', { class: 'line' }, [
+      el('span', { class: 'dot', title: `tier ${l.tier}` }),
+      el('span', { text: l.label }),
+      el('span', { class: 'amt', text: amountText(l) }),
+    ])));
+  }
+
+  function renderTotals(target, sample) {
+    const t = flameSampleTotals(sample);
+    const kids = [];
+    for (const k of FLAME_TOTAL_ORDER) {
+      if (!t[k]) continue;
+      const def = FLAME_LINE_BY_KEY[k];
+      const label = def ? def.label : k;
+      const a = (k === 'ATT' || k === 'MATT') ? Math.round(t[k]) : t[k];
+      kids.push(el('span', { text: label }),
+                el('span', { text: (a > 0 ? '+' : '') + a + ((def && def.suffix) || '') }));
+    }
+    if (!kids.length) kids.push(el('span', { class: 'line dim', text: '—' }), el('span'));
+    target.replaceChildren(...kids);
+  }
+
+  function unitSub(value) {
+    if (!weights || weights.unit !== '%fd') return '';
+    return `= ${fmt(value)} %fd`;
+  }
+
+  function renderDialog(flash) {
+    $('itemLabel').replaceChildren(
+      el('b', { text: `Lv.${S.level} ${S.kind === 'weapon' ? 'weapon' : 'armour / accessory'}` }),
+      document.createTextNode(` · ${S.adv ? 'advantaged' : 'non-advantaged'} · ` +
+        `${FLAME_TYPE_LABELS[S.flameType] || S.flameType} rates` +
+        (S.kind === 'weapon' ? ` · base attack ${Number(S.baseAtt) || 0}` : '')),
+    );
+
+    // BEFORE
+    $('beforeBadge').textContent = S.before ? String(S.before.tierTotal) : '—';
+    renderLines($('beforeLines'), S.before, 'no flame');
+    renderTotals($('beforeTotals'), S.before);
+    const bv = valueOf(S.before);
+    $('beforeScoreVal').textContent = S.before ? fmt(flameScore(bv, weights)) : '0';
+    const o = odds();
+    $('beforeSub').textContent = o
+      ? `${unitSub(bv)}${unitSub(bv) ? ' · ' : ''}a reset beats this ${(o.pImprove * 100).toFixed(2)}% of the time`
+      : (weights && weights.empty ? 'paste MapleScouter weights first' : '');
+
+    // AFTER
+    const col = $('afterCol');
+    $('afterBadge').textContent = S.after ? String(S.after.tierTotal) : '—';
+    renderLines($('afterLines'), S.after, 'press Reset');
+    renderTotals($('afterTotals'), S.after);
+    const score = $('afterScore');
+    score.classList.remove('up', 'down');
+    if (S.after) {
+      const av = valueOf(S.after);
+      const d = flameScore(av, weights) - flameScore(bv, weights);
+      const better = av > bv, same = Math.abs(av - bv) < 1e-9;
+      score.classList.toggle('up', better);
+      score.classList.toggle('down', !better && !same);
+      $('afterLbl').replaceChildren(
+        better ? el('span', { class: 'arrow' }) : null,
+        document.createTextNode('Flame score change'));
+      $('afterScoreVal').textContent = same ? '0' : signed(d);
+      $('afterSub').textContent =
+        `flame score ${fmt(flameScore(av, weights))}` + (unitSub(av) ? ` ${unitSub(av)}` : '');
+    } else {
+      $('afterLbl').textContent = 'Flame score change';
+      $('afterScoreVal').textContent = '—';
+      $('afterSub').textContent = '';
+    }
+    if (flash && col && col.classList) {
+      col.classList.remove('flash');
+      // restart the CSS animation; offsetWidth is undefined outside a browser
+      void col.offsetWidth;
+      col.classList.add('flash');
+    }
+
+    $('btnUse').disabled = !S.after;
+    // The stopped-on-a-better-roll moment needs saying, or a held key that
+    // suddenly does nothing reads as a bug.
+    $('holdHint').textContent = afterIsBetter()
+      ? (S.stopOnBetter
+          ? 'better roll — a held key stops here. U keeps it · Enter / Space resets again and discards it'
+          : 'better roll — U keeps it')
+      : '';
+    const ready = !!(weights && !weights.empty);
+    $('btnReset').disabled = !ready;
+    for (const id of ['btnAuto10', 'btnAuto100', 'btnAuto1000']) $(id).disabled = !ready;
+  }
+
+  function renderStats() {
+    $('statResets').textContent = S.resets.toLocaleString();
+    $('statSpent').textContent = meso(S.spent);
+    const o = odds();
+    if (o && o.pImprove > 0 && isFinite(o.rollsToBeat)) {
+      $('statP').textContent = `${(o.pImprove * 100).toFixed(2)}%`;
+      $('statExpected').textContent =
+        `${o.rollsToBeat.toFixed(1)} / ${geoPct(o.pImprove, 50)} / ${geoPct(o.pImprove, 85)}`;
+    } else if (o) {
+      $('statP').textContent = '0%';
+      $('statExpected').textContent = 'already the best roll possible';
+    } else {
+      $('statP').textContent = '—';
+      $('statExpected').textContent = '—';
+    }
+    $('statBest').textContent = S.best ? `${fmt(scoreOf(S.best))} (\u{1F525} ${S.best.tierTotal})` : '—';
+    $('statRun').textContent = S.run;
+
+    const bv = valueOf(S.before);
+    $('history').replaceChildren(...S.history.map(v => el('span', {
+      class: v > bv ? 'up' : (Math.abs(v - bv) < 1e-9 ? 'eq' : ''),
+      text: fmt(flameScore(v, weights)),
+      title: v > bv ? 'would beat BEFORE' : 'not better than BEFORE',
+    })));
+  }
+
+  function renderDecide() {
+    const m = $('decide');
+    m.hidden = !S.decideOpen;
+    if (!S.decideOpen || !S.after) return;
+    const bs = flameScore(valueOf(S.before), weights);
+    const as = flameScore(valueOf(S.after), weights);
+    const how = S.run ? S.run.split(' \u00b7 ')[0] : 'this roll';
+    $('decideText').textContent =
+      `${how} \u2014 flame score ${fmt(bs)} \u2192 ${fmt(as)} (${signed(as - bs)}), ` +
+      `\u{1F525} ${S.before ? S.before.tierTotal : '\u2014'} \u2192 \u{1F525} ${S.after.tierTotal}`;
+    $('decideLines').replaceChildren(...S.after.lines.map(l => el('div', { class: 'line' }, [
+      el('span', { class: 'dot', title: `tier ${l.tier}` }),
+      el('span', { text: l.label }),
+      el('span', { class: 'amt', text: amountText(l) }),
+    ])));
+  }
+
+  function renderConfirm() {
+    const m = $('confirm');
+    m.hidden = !S.confirmOpen;
+    $('confirmItem').textContent =
+      `Relevant Item: Lv.${S.level} ${S.kind === 'weapon' ? 'weapon' : 'armour / accessory'}`;
+    $('confirmSkip').checked = !!S.skipConfirm;
+  }
+
+  /** The BEFORE editor: up to four (line, tier) rows, written from state. */
+  function renderEditor() {
+    const box = $('beforeEditor');
+    const pool = flamePool(S.kind);
+    const rows = [];
+    const slots = S.adv ? 4 : 4;   // the editor always offers four; blanks are simply absent
+    for (let i = 0; i < slots; i++) {
+      const pick = S.beforePicks[i] || { key: '', tier: 5 };
+      const lineSel = el('select', { onchange: () => {
+        setPick(i, { key: lineSel.value, tier: Number(tierSel.value) });
+      } });
+      lineSel.append(el('option', { value: '', text: '— none —' }));
+      for (const def of pool) {
+        const o = el('option', { value: def.key, text: def.label });
+        if (def.key === pick.key) o.selected = true;
+        lineSel.append(o);
+      }
+      lineSel.value = pick.key;
+      const tierSel = el('select', { onchange: () => {
+        setPick(i, { key: lineSel.value, tier: Number(tierSel.value) });
+      } });
+      for (let t = 1; t <= 7; t++) {
+        const o = el('option', { value: String(t), text: `tier ${t}` });
+        if (t === Number(pick.tier)) o.selected = true;
+        tierSel.append(o);
+      }
+      tierSel.value = String(pick.tier || 5);
+      rows.push(el('span', { class: 'n', text: `line ${i + 1}` }), lineSel, tierSel);
+    }
+    box.replaceChildren(...rows);
+  }
+
+  function setPick(i, pick) {
+    const picks = [];
+    for (let k = 0; k < 4; k++) picks[k] = k === i ? pick : (S.beforePicks[k] || { key: '', tier: 5 });
+    // keep positions so the editor rows don't shuffle under the cursor, but drop
+    // blanks from what is actually in force
+    S.beforePicks = picks.filter(p => p && p.key);
+    // re-pad by position for the editor's benefit
+    S._editorPicks = picks;
+    composeBefore();
+    S.after = null;
+    S.run = '';
+    save();
+    render();
+  }
+
+  function renderSetup() {
+    $('simKind').value = S.kind;
+    const lv = $('simLevel');
+    if (!lv.children.length) {
+      for (const L of LEVELS) lv.append(el('option', { value: String(L), text: `Lv.${L}` }));
+    }
+    lv.value = String(S.level);
+    const ty = $('simType');
+    if (!ty.children.length) {
+      for (const [k, label] of FLAME_TYPES) ty.append(el('option', { value: k, text: label }));
+    }
+    ty.value = S.flameType;
+    $('simAdv').checked = !!S.adv;
+    $('simBaseAtt').value = S.baseAtt;
+    $('simBaseAttRow').hidden = S.kind !== 'weapon';
+    $('simSeed').value = S.seed;
+    $('simSkipConfirm').checked = !!S.skipConfirm;
+    $('simStopBetter').checked = !!S.stopOnBetter;
+    if ($('simScouter').value !== S.scouter) $('simScouter').value = S.scouter;
+    $('simProfile').textContent = weights && !weights.empty
+      ? `— read as ${weights.mainStat} main, ${weights.unit === '%fd' ? '% final damage' : 'main-stat points'}`
+      : '— nothing usable in the paste';
+  }
+
+  function render(flash) {
+    renderSetup();
+    renderEditor();
+    renderDialog(flash);
+    renderStats();
+    renderConfirm();
+    renderDecide();
+  }
+
+  /* -------------------------------------------------------------- wiring */
+
+  function settingsChanged() {
+    refreshWeights();
+    composeBefore();
+    S.after = null;
+    S.run = '';
+    save();
+    render();
+  }
+
+  function wire() {
+    $('simKind').addEventListener('change', (e) => {
+      S.kind = e.target.value === 'weapon' ? 'weapon' : 'armor';
+      if (S.kind === 'weapon' && !(Number(S.baseAtt) > 0)) S.baseAtt = 150;
+      settingsChanged();
+    });
+    $('simLevel').addEventListener('change', (e) => { S.level = Number(e.target.value); settingsChanged(); });
+    $('simType').addEventListener('change', (e) => { S.flameType = flameTypeOrDefault(e.target.value); settingsChanged(); });
+    $('simAdv').addEventListener('change', (e) => { S.adv = !!e.target.checked; settingsChanged(); });
+    $('simBaseAtt').addEventListener('input', (e) => { S.baseAtt = Number(e.target.value) || 0; settingsChanged(); });
+    $('simSeed').addEventListener('input', (e) => { S.seed = e.target.value; settingsChanged(); });
+    $('simScouter').addEventListener('input', (e) => { S.scouter = e.target.value; settingsChanged(); });
+    $('simSkipConfirm').addEventListener('change', (e) => { S.skipConfirm = !!e.target.checked; save(); renderConfirm(); });
+    $('simStopBetter').addEventListener('change', (e) => { S.stopOnBetter = !!e.target.checked; save(); render(); });
+    $('confirmSkip').addEventListener('change', (e) => { S.skipConfirm = !!e.target.checked; save(); renderSetup(); });
+
+    $('beforeRandom').addEventListener('click', () => {
+      const s = flameSample(S.kind, S.level, opts(), rng);
+      S.beforePicks = s.lines.map(l => ({ key: l.key, tier: l.tier }));
+      S._editorPicks = null;
+      composeBefore(); S.after = null; S.run = ''; save(); render();
+    });
+    $('beforeNone').addEventListener('click', () => {
+      S.beforePicks = []; S._editorPicks = null;
+      composeBefore(); S.after = null; S.run = ''; save(); render();
+    });
+
+    $('btnReset').addEventListener('click', reset);
+    $('btnConfirm').addEventListener('click', confirm);
+    $('btnCancel').addEventListener('click', cancel);
+    $('btnUse').addEventListener('click', useAfter);
+    $('btnClear').addEventListener('click', clearCounters);
+    $('btnAuto10').addEventListener('click', () => auto(10, $('autoPolicy').value));
+    $('btnAuto100').addEventListener('click', () => auto(100, $('autoPolicy').value));
+    $('btnAuto1000').addEventListener('click', () => auto(1000, $('autoPolicy').value));
+    $('btnDecideUse').addEventListener('click', decideUse);
+    $('btnDecideKeep').addEventListener('click', decideKeep);
+    // Deliberately NO backdrop-click handler on either popup. A click that lands
+    // outside the box is almost always the mouse still spamming the button that
+    // opened it -- Reset, or x1000 -- and closing on it meant Reset never rolled
+    // and the end-of-run decision vanished under the hand that asked for it. Only
+    // the buttons and the keys act, as with the game's own modals.
+
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('keyup', onKeyUp);
+  }
+
+  function init() {
+    load();
+    refreshWeights();
+    composeBefore();
+    wire();
+    render();
+  }
+
+  init();
+
+  // For the test harness, which drives the page without a browser.
+  globalThis.SIM = {
+    state: S, reset, confirm, cancel, useAfter, auto, onKey, onKeyUp, clearCounters, render,
+    afterIsBetter, decideUse, decideKeep,
+    valueOf, scoreOf, odds, get weights() { return weights; },
+    setBeforePicks(picks) { S.beforePicks = picks.slice(); composeBefore(); S.after = null; render(); },
+    setSeed(seed) { S.seed = seed; refreshWeights(); },
+    setScouter(text) { S.scouter = text; settingsChanged(); },
+  };
+})();
+</script>
+</body>
+</html>

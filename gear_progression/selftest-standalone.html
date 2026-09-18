@@ -2327,6 +2327,210 @@ const FLAMEABLE = new Set([
   'face', 'eye', 'ear', 'pend1', 'pend2',
   'pocket', 'medal',
 ]);
+
+/* ------------------------------------------------------------------ sampling
+ *
+ * flameDistribution enumerates only the slots worth something to this
+ * character and lumps everything else together as "junk", which is all the
+ * ranking needs. A simulator has to show a roll the way the game does --
+ * "Jump +6", "Max MP +2880", "Reduced level requirement -25" -- so it needs the
+ * whole named pool, junk included.
+ *
+ * The valued lines use the same per-tier amounts as flameTrackedSlots, so a
+ * sample's worth (flameSampleValue) is drawn from exactly the distribution the
+ * ranking integrates over; check_js.py asserts the two agree to within sampling
+ * error. The junk lines carry weight 0 everywhere, so their amounts are
+ * display-only. They come from StrategyWiki's Bonus Stats page and were
+ * cross-checked against a recording of the reset dialog on a lv160 item:
+ * DEF +54 is 6 x 9, Speed +5 is tier 5, level requirement -25 is 5 x 5,
+ * Max MP +2880 is 6 x 480.
+ *
+ * The game shows a fifth number beside the flame icon -- 23, 20, 22 in that
+ * recording -- and it is simply the sum of the four line tiers (max 28). It is
+ * exposed as tierTotal because it is what people compare in-game, and because
+ * the recording caught it going DOWN (23 -> 22) on a roll that was better: the
+ * tier total ignores which stats the character actually uses.
+ */
+
+/** Weapon attack per tier is a fraction of base attack and not linear in tier. */
+function flameWeaponAttFrac(level, tier, nonAdvantaged) {
+  const tbl = (nonAdvantaged ? FLAME_WATT_NON_ADV : FLAME_WATT_ADV)[
+    level >= 200 ? '200+' : '160-199'];
+  return tbl[tier] || 0;
+}
+
+const _statAmt  = (lv, t) => flameBracket(FLAME_STAT_PER_TIER, lv) * t;
+const _comboAmt = (lv, t) => flameBracket(FLAME_COMBO_PER_TIER, lv) * t;
+const _hpAmt    = (lv, t) => flameBracket(FLAME_HP_PER_TIER, lv) * t;
+const _attAmt   = (lv, t, c) => c.isWeapon ? c.baseAtt * flameWeaponAttFrac(lv, t, c.nonAdvantaged) : t;
+
+// Every line a bonus-stat roll can produce. `stats` is the stat(s) a line credits
+// in the Total Value box -- a combo credits both. Pool order here is only an
+// inventory; the game lists a roll's lines in the order they came out.
+const FLAME_LINES = [
+  { key: 'STR', label: 'STR', stats: ['STR'], amount: _statAmt },
+  { key: 'DEX', label: 'DEX', stats: ['DEX'], amount: _statAmt },
+  { key: 'INT', label: 'INT', stats: ['INT'], amount: _statAmt },
+  { key: 'LUK', label: 'LUK', stats: ['LUK'], amount: _statAmt },
+  { key: 'STR+DEX', label: 'STR, DEX', stats: ['STR', 'DEX'], amount: _comboAmt },
+  { key: 'STR+INT', label: 'STR, INT', stats: ['STR', 'INT'], amount: _comboAmt },
+  { key: 'STR+LUK', label: 'STR, LUK', stats: ['STR', 'LUK'], amount: _comboAmt },
+  { key: 'DEX+INT', label: 'DEX, INT', stats: ['DEX', 'INT'], amount: _comboAmt },
+  { key: 'DEX+LUK', label: 'DEX, LUK', stats: ['DEX', 'LUK'], amount: _comboAmt },
+  { key: 'INT+LUK', label: 'INT, LUK', stats: ['INT', 'LUK'], amount: _comboAmt },
+  { key: 'HP',    label: 'Max HP',       amount: _hpAmt },
+  { key: 'MP',    label: 'Max MP',       amount: _hpAmt },
+  { key: 'DEF',   label: 'Defense',      amount: _statAmt },
+  { key: 'ATT',   label: 'Attack Power', amount: _attAmt },
+  { key: 'MATT',  label: 'Magic ATT',    amount: _attAmt },
+  { key: 'SPEED', label: 'Speed',        amount: (lv, t) => t },
+  { key: 'JUMP',  label: 'Jump',         amount: (lv, t) => t },
+  { key: 'ALL',   label: 'All Stats',    amount: (lv, t) => t, suffix: '%' },
+  { key: 'LEVEL', label: 'Reduced level requirement', amount: (lv, t) => -5 * t },
+  { key: 'BOSS',  label: 'Boss Damage',  amount: (lv, t) => FLAME_BOSS_PER_TIER * t, suffix: '%', weaponOnly: true },
+  { key: 'DMG',   label: 'Damage',       amount: (lv, t) => FLAME_DMG_PER_TIER * t, suffix: '%', weaponOnly: true },
+];
+
+const FLAME_LINE_BY_KEY = Object.fromEntries(FLAME_LINES.map(l => [l.key, l]));
+
+/** The lines an item of this kind can roll: 19 for armour, 21 for a weapon. */
+function flamePool(kind) {
+  const isWeapon = kind === 'weapon' || kind === 'secondary';
+  return FLAME_LINES.filter(l => isWeapon || !l.weaponOnly);
+}
+
+/**
+ * Deterministic RNG (mulberry32) for reproducible runs and testable sampling.
+ * Returns a function like Math.random.
+ */
+function flameRng(seed) {
+  let a = (Number(seed) || 0) >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Draw a key from a {key: probability} table. */
+function _flamePick(probs, rng) {
+  const r = rng();
+  let acc = 0, last = null;
+  for (const k of Object.keys(probs)) {
+    const p = probs[k];
+    if (p <= 0) continue;
+    acc += p;
+    last = Number(k);
+    if (r < acc) return last;
+  }
+  return last;   // rounding left r a hair above the total
+}
+
+function _flameLine(def, level, tier, ctx) {
+  return {
+    key: def.key, label: def.label, tier,
+    amount: def.amount(level, tier, ctx),
+    suffix: def.suffix || '',
+    stats: def.stats || null,
+  };
+}
+
+function _flameCtx(kind, opts) {
+  return {
+    isWeapon: kind === 'weapon' || kind === 'secondary',
+    nonAdvantaged: !!opts.nonAdvantaged,
+    baseAtt: Number(opts.baseAtt) || 0,
+  };
+}
+
+/**
+ * One bonus-stat roll, as the game would show it.
+ *
+ * Mechanics as documented at the top of this file: an advantaged item rolls
+ * exactly 4 lines, a non-advantaged one 1-4 at 40/40/15/5%; lines are a uniform
+ * subset of the pool (no line twice); each line's tier is independent, drawn
+ * from the flame type's table, shifted down two when non-advantaged.
+ */
+function flameSample(kind, level, opts = {}, rng = Math.random) {
+  const { flameType = 'eternal', nonAdvantaged = false } = opts;
+  const pool = flamePool(kind);
+  const ctx = _flameCtx(kind, opts);
+  const count = nonAdvantaged ? _flamePick(FLAME_LINES_NON_ADV, rng) : 4;
+
+  // uniform subset without replacement: a partial Fisher-Yates over the indices
+  const idx = pool.map((_, i) => i);
+  for (let i = 0; i < count; i++) {
+    const j = i + Math.floor(rng() * (idx.length - i));
+    [idx[i], idx[j]] = [idx[j], idx[i]];
+  }
+
+  const tp = flameTierProbs(flameType, nonAdvantaged);
+  const lines = [];
+  for (let i = 0; i < count; i++) {
+    lines.push(_flameLine(pool[idx[i]], level, _flamePick(tp, rng), ctx));
+  }
+  return {
+    lines,
+    count,
+    tierTotal: lines.reduce((a, l) => a + l.tier, 0),
+  };
+}
+
+/**
+ * A flame from explicit [{key, tier}] picks -- how the BEFORE side is entered,
+ * and what "use the AFTER" turns a sample back into. Unknown keys and keys the
+ * item kind can't roll are dropped, so a weapon-only line disappears when the
+ * kind is switched to armour rather than lingering as a phantom.
+ */
+function flameCompose(kind, level, opts = {}, picks = []) {
+  const pool = flamePool(kind);
+  const allowed = new Set(pool.map(l => l.key));
+  const ctx = _flameCtx(kind, opts);
+  const lines = [];
+  for (const p of picks) {
+    const def = FLAME_LINE_BY_KEY[p && p.key];
+    const tier = Number(p && p.tier);
+    if (!def || !allowed.has(def.key) || !(tier >= 1 && tier <= 7)) continue;
+    lines.push(_flameLine(def, level, tier, ctx));
+  }
+  return { lines, count: lines.length, tierTotal: lines.reduce((a, l) => a + l.tier, 0) };
+}
+
+// Order the game's Total Value box uses, as far as the recording shows it.
+const FLAME_TOTAL_ORDER = ['STR', 'DEX', 'INT', 'LUK', 'HP', 'MP', 'ATT', 'MATT',
+                           'DEF', 'SPEED', 'JUMP', 'ALL', 'BOSS', 'DMG', 'LEVEL'];
+
+/** Per-stat totals of a sample, combos credited to both of their stats. */
+function flameSampleTotals(sample) {
+  const t = {};
+  for (const l of (sample && sample.lines) || []) {
+    for (const k of l.stats || [l.key]) t[k] = (t[k] || 0) + l.amount;
+  }
+  return t;
+}
+
+/**
+ * The flame-table inputs a sample corresponds to, so it can be valued with the
+ * same flameCurrentValue the ranking uses -- one scale by construction.
+ *
+ * The table has a single attack column, weighted by whichever of the two the
+ * class uses. Only the matching line counts; the other is junk here, exactly as
+ * flameTrackedSlots treats it (a mage rolling "Attack Power +6" gains nothing).
+ */
+function flameSampleToInputs(sample, w) {
+  const t = flameSampleTotals(sample);
+  return {
+    fSTR: t.STR || 0, fDEX: t.DEX || 0, fINT: t.INT || 0, fLUK: t.LUK || 0,
+    fAtt: ((w && w.att) ? (t.ATT || 0) : 0) + ((w && w.matt) ? (t.MATT || 0) : 0),
+    fHp: t.HP || 0, fAll: t.ALL || 0, fDmg: t.DMG || 0, fBoss: t.BOSS || 0,
+  };
+}
+
+function flameSampleValue(sample, w) {
+  return sample ? flameCurrentValue(flameSampleToInputs(sample, w), w) : 0;
+}
 </script>
 <script>
 const results = [];

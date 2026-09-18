@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flame Reset Simulator</title>
+<style>
+  :root {
+    --bg:#12141a; --panel:#1a1d26; --panel2:#20242f; --line:#2c313d;
+    --fg:#e6e8ee; --dim:#8b93a7; --dimmer:#5b6376;
+    --acc:#6ea8fe; --good:#54c98a; --warn:#e2b344; --bad:#e46b6b; --epic:#a97ee6;
+    --teal:#4fd1b5;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--fg);
+    font:13px/1.45 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  h1 { font-size:15px; margin:0; letter-spacing:.5px; }
+  h2 { font-size:12px; margin:0 0 10px; color:var(--dim);
+       text-transform:uppercase; letter-spacing:1px; font-weight:600; }
+  .wrap { max-width:1100px; margin:0 auto; padding:16px; }
+  .panel { background:var(--panel); border:1px solid var(--line);
+           border-radius:6px; padding:14px; margin-bottom:14px; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .bar .spacer { flex:1; }
+  button {
+    background:var(--panel2); color:var(--fg); border:1px solid var(--line);
+    border-radius:4px; padding:5px 10px; font:inherit; cursor:pointer;
+  }
+  button:hover { border-color:var(--acc); color:var(--acc); }
+  button.on { border-color:var(--acc); color:var(--acc); }
+  button:disabled { opacity:.4; cursor:default; }
+  button.primary { background:#1d8fb8; border-color:#2aa6d4; color:#fff; font-weight:600;
+                   padding:8px 26px; }
+  button.primary:hover { background:#2aa6d4; color:#fff; }
+  input, select, textarea {
+    background:var(--bg); color:var(--fg); border:1px solid var(--line);
+    border-radius:4px; padding:4px 6px; font:inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--acc); }
+  textarea { width:100%; min-height:140px; resize:vertical; line-height:1.5; }
+  details { border:1px solid var(--line); border-radius:6px; background:var(--panel); margin-bottom:14px; }
+  summary { padding:10px 14px; cursor:pointer; color:var(--dim);
+            text-transform:uppercase; font-size:12px; letter-spacing:1px; }
+  summary:hover { color:var(--fg); }
+  details > .body { padding:0 14px 14px; }
+  .note { color:var(--dimmer); font-size:11px; line-height:1.7; }
+  .note b, .note code { color:var(--dim); }
+  .row { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .fld { display:flex; flex-direction:column; gap:3px; }
+  .fld label { color:var(--dim); font-size:11px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px 16px; }
+  .warn { color:var(--warn); } .bad { color:var(--bad); }
+  .hr { height:1px; background:var(--line); margin:12px 0; }
+  kbd { background:var(--panel2); border:1px solid var(--line); border-radius:3px;
+        padding:0 5px; font:inherit; font-size:11px; color:var(--dim); }
+
+  /* ------------------------------------------------ the game's dialog, in our skin */
+  .stage { position:relative; }
+  .item { text-align:center; color:var(--dim); margin-bottom:8px; }
+  .item b { color:var(--fg); }
+  .prompt { text-align:center; background:var(--panel2); border:1px solid var(--line);
+            border-radius:14px; padding:5px 14px; margin:0 auto 12px; width:max-content;
+            max-width:100%; }
+  .prompt em { color:var(--warn); font-style:normal; }
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:640px) { .cols { grid-template-columns:1fr; } }
+  .col { background:var(--panel2); border:1px solid var(--line); border-radius:6px; padding:10px; }
+  .col h3 { margin:0 0 8px; font-size:11px; letter-spacing:1px; text-transform:uppercase; }
+  .col.before h3 { color:var(--warn); } .col.after h3 { color:var(--teal); }
+  .col.after.flash { animation: land .35s ease-out; }
+  @keyframes land { from { box-shadow:0 0 0 2px var(--teal); background:#243a3a; } to { } }
+  .box { background:var(--panel); border:1px solid var(--line); border-radius:5px; padding:8px 10px; margin-bottom:8px; }
+  .badge { text-align:center; color:var(--dim); margin-bottom:6px; }
+  .badge b { color:var(--fg); font-size:14px; }
+  .badge .fire { color:var(--teal); }
+  .line { display:flex; gap:8px; align-items:baseline; padding:2px 0; }
+  .line .dot { width:9px; height:9px; border-radius:2px; background:var(--good); flex:none; transform:translateY(1px); }
+  .line .amt { color:var(--dim); }
+  .line.dim { color:var(--dimmer); justify-content:center; }
+  .boxhead { text-align:center; color:var(--dim); font-size:11px; letter-spacing:.5px; }
+  .totals { display:grid; grid-template-columns:auto 1fr; gap:2px 14px; padding:4px 10px 0; }
+  .totals span:nth-child(even) { text-align:right; color:var(--dim); }
+  .score { text-align:center; padding-top:8px; border-top:1px solid var(--line); margin-top:6px; }
+  .score .lbl { color:var(--teal); font-size:11px; letter-spacing:.5px; }
+  .score .val { font-size:22px; font-weight:700; line-height:1.2; }
+  .score .sub { color:var(--dimmer); font-size:11px; }
+  .score.up .val, .score.up .lbl { color:var(--good); }
+  .score.down .val { color:var(--dim); }
+  .score .arrow { display:inline-block; width:0; height:0; border:5px solid transparent;
+                  border-bottom:7px solid var(--good); border-top:0; margin-right:6px;
+                  transform:translateY(-2px); }
+  .info { text-align:center; color:var(--dim); background:var(--panel2); border-radius:14px;
+          padding:4px 12px; margin:12px auto 10px; width:max-content; max-width:100%; font-size:11px; }
+  .info em { color:var(--warn); font-style:normal; }
+  .ctl { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .ctl .cost { color:var(--warn); }
+  .ctl .cost b { color:var(--fg); }
+  .stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px 16px; margin-top:10px; }
+  .stats .fld b { font-size:15px; }
+  .hist { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; min-height:22px; }
+  .hist span { background:var(--panel2); border:1px solid var(--line); border-radius:3px;
+               padding:0 6px; font-size:11px; color:var(--dim); }
+  .hist span.up { color:var(--good); border-color:#27503b; }
+  .hist span.eq { color:var(--fg); }
+  .editor { display:grid; grid-template-columns:auto 1fr auto; gap:6px 8px; align-items:center; }
+  .editor .n { color:var(--dimmer); }
+
+  /* ------------------------------------------------------------- confirm popup */
+  .modal { position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex;
+           align-items:center; justify-content:center; z-index:10; }
+  .modal[hidden] { display:none; }
+  .popup { background:#1d8fb8; color:#fff; border-radius:6px; padding:14px 18px 12px; width:340px;
+           text-align:center; box-shadow:0 8px 30px rgba(0,0,0,.5); }
+  .popup p { margin:0 0 4px; font-size:12px; }
+  .popup .q { margin:10px 0 12px; }
+  .popup .q em { color:#ffe98a; font-style:normal; }
+  .popup .btns { display:flex; gap:8px; justify-content:center; }
+  .popup button { background:#f0f0f0; color:#222; border:1px solid #bbb; padding:4px 16px; }
+  .popup button.ok { background:#8fd14f; border-color:#6fae37; color:#123; font-weight:600; }
+  .popup button:hover { color:#000; border-color:#333; }
+  .popup label { display:block; margin-top:10px; font-size:11px; opacity:.9; }
+  .popup.decide { width:400px; }
+  .popup .dl { text-align:left; background:rgba(0,0,0,.18); border-radius:4px; padding:6px 10px; margin:8px 0 12px; }
+  .popup .dl .line .amt { color:#e8f6ff; }
+  .popup .dl .dot { background:#8fd14f; }
+  .popup .how { font-size:11px; opacity:.9; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar" style="margin-bottom:12px">
+    <h1>FLAME RESET SIMULATOR</h1>
+    <span class="note" style="margin-left:8px">
+      bonus-stat resets at 3,000,000 mesos, Black Rebirth (eternal) rates &mdash;
+      <kbd>Space</kbd> reset &middot; <kbd>Enter</kbd> confirm (hold it &mdash; it stops on a better roll) &middot;
+      <kbd>U</kbd> keep &middot; <kbd>Esc</kbd> cancel
+    </span>
+  </div>
+
+  <details>
+    <summary>Item, rates and weights</summary>
+    <div class="body">
+      <div class="grid" style="margin-bottom:10px">
+        <div class="fld"><label for="simKind">item</label>
+          <select id="simKind">
+            <option value="armor">armour / accessory (19-line pool)</option>
+            <option value="weapon">weapon (21-line pool)</option>
+          </select></div>
+        <div class="fld"><label for="simLevel">item level</label><select id="simLevel"></select></div>
+        <div class="fld"><label for="simType">rates</label><select id="simType"></select></div>
+        <div class="fld"><label for="simAdv">flame advantage</label>
+          <label class="row" style="color:var(--fg)"><input type="checkbox" id="simAdv"> advantaged (4 lines, tiers 3&ndash;7)</label></div>
+        <div class="fld" id="simBaseAttRow"><label for="simBaseAtt">weapon base attack</label>
+          <input type="number" id="simBaseAtt" min="0" step="1" style="width:90px"></div>
+        <div class="fld"><label for="simSeed">seed (blank = random)</label>
+          <input type="text" id="simSeed" style="width:120px" placeholder="e.g. 42"></div>
+      </div>
+      <div class="fld">
+        <label for="simScouter">MapleScouter weights &mdash; what a point of each stat is worth. Same paste as the gear tool.
+          <span id="simProfile"></span></label>
+        <textarea id="simScouter" spellcheck="false"></textarea>
+      </div>
+      <p class="note" style="margin:8px 0 0">
+        The meso reset always rolls at the <b>eternal (Black Rebirth)</b> table, per the patch
+        note. It is selectable here only so you can compare what a red or abyssal flame would
+        have done. Advantage is a property of the item and your class, not the flame. Junk lines
+        (Speed, Jump, Defense, MP, level requirement) are shown as the game shows them but are
+        worth 0 to every class.
+      </p>
+    </div>
+  </details>
+
+  <div class="panel">
+    <h2>Before &mdash; the flame the item has now</h2>
+    <div class="bar" style="margin-bottom:8px">
+      <button id="beforeRandom" title="roll a random flame to start from">random</button>
+      <button id="beforeNone" title="start from an unflamed item">unflamed</button>
+      <span class="note">or enter the lines off the equip window: pick the line and its tier</span>
+    </div>
+    <div class="editor" id="beforeEditor"></div>
+  </div>
+
+  <div class="panel stage">
+    <div class="item" id="itemLabel"></div>
+    <div class="prompt">Select which <em>Bonus stats</em> to use.</div>
+
+    <div class="cols">
+      <div class="col before">
+        <h3>Before</h3>
+        <div class="box">
+          <div class="badge"><span class="fire">&#x1F525;</span> <b id="beforeBadge">&mdash;</b></div>
+          <div id="beforeLines"></div>
+        </div>
+        <div class="box boxhead">Total Value</div>
+        <div class="box">
+          <div class="totals" id="beforeTotals"></div>
+          <div class="score" id="beforeScore">
+            <div class="lbl">Flame score</div>
+            <div class="val" id="beforeScoreVal">&mdash;</div>
+            <div class="sub" id="beforeSub"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col after" id="afterCol">
+        <h3>After</h3>
+        <div class="box">
+          <div class="badge"><span class="fire">&#x1F525;</span> <b id="afterBadge">&mdash;</b></div>
+          <div id="afterLines"></div>
+        </div>
+        <div class="box boxhead">Total Value</div>
+        <div class="box">
+          <div class="totals" id="afterTotals"></div>
+          <div class="score" id="afterScore">
+            <div class="lbl" id="afterLbl">Flame score change</div>
+            <div class="val" id="afterScoreVal">&mdash;</div>
+            <div class="sub" id="afterSub"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info">&#9432; Pressing <em>Reset</em> will automatically use the <em>BEFORE</em> stats.
+      <b>Use AFTER</b> keeps the new roll.</div>
+
+    <div class="ctl">
+      <div class="row">
+        <button class="primary" id="btnReset" title="Space / Enter">Reset &times;1</button>
+        <button id="btnUse" title="make the AFTER roll the new BEFORE">Use AFTER</button>
+      </div>
+      <div class="cost">&#x1FA99; <b>3,000,000</b></div>
+      <div class="note" id="holdHint" style="min-height:1.4em; color:var(--good)"></div>
+      <div class="row" style="margin-top:4px">
+        <span class="note">auto:</span>
+        <button id="btnAuto10">&times;10</button>
+        <button id="btnAuto100">&times;100</button>
+        <button id="btnAuto1000">&times;1000</button>
+        <select id="autoPolicy" title="what the auto run does with each roll">
+          <option value="first-better">stop at the first roll that beats BEFORE</option>
+          <option value="greedy">take every improvement as it comes</option>
+          <option value="watch">just roll, keep BEFORE</option>
+        </select>
+        <label class="row note" title="roll straight away on Reset, no popup"><input type="checkbox" id="simSkipConfirm"> skip confirmation</label>
+        <label class="row note" title="a held Enter or Space stops the moment AFTER beats BEFORE, instead of resetting it away as the game does. A fresh press still resets."><input type="checkbox" id="simStopBetter"> hold stops on a better roll</label>
+        <button id="btnClear" title="zero the counters; keeps BEFORE">clear counters</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="fld"><label>resets</label><b id="statResets">0</b></div>
+      <div class="fld"><label>mesos spent</label><b id="statSpent">0</b></div>
+      <div class="fld"><label>chance a reset beats BEFORE</label><b id="statP">&mdash;</b></div>
+      <div class="fld"><label>resets to beat it: expected / median / p85</label><b id="statExpected">&mdash;</b></div>
+      <div class="fld"><label>best roll seen</label><b id="statBest">&mdash;</b></div>
+    </div>
+    <div class="note" id="statRun" style="margin-top:6px"></div>
+    <div class="hist" id="history"></div>
+  </div>
+
+  <p class="note">
+    Two flame scores appear per column. The <b>&#x1F525; number</b> is the game's own: the sum of
+    the four line tiers, max 28. <b>Flame score</b> is the flame in main-stat points using your
+    weights, which is what decides whether a roll is actually better &mdash; the recording this
+    was built from shows a 23 &rarr; 22 roll that gained +60,107 combat power. The reset price,
+    tier tables and line pools are shared with the gear-progression tool, and a test there
+    checks this simulator's rolls average to the exact expected value the ranking computes.
+  </p>
+</div>
+
+<div class="modal" id="confirm" hidden>
+  <div class="popup">
+    <p id="confirmItem">Relevant Item: &mdash;</p>
+    <p>Reset Cost: 3,000,000 Mesos</p>
+    <p class="q">Do you want to reset <em>bonus stats</em>?</p>
+    <div class="btns">
+      <button class="ok" id="btnConfirm" title="Enter">Confirm</button>
+      <button id="btnCancel" title="Esc">Cancel</button>
+    </div>
+    <label><input type="checkbox" id="confirmSkip"> don't ask again</label>
+  </div>
+</div>
+
+<div class="modal" id="decide" hidden>
+  <div class="popup decide">
+    <p class="q">This roll beats <em>BEFORE</em>. Use the <em>AFTER</em> stats?</p>
+    <p class="how" id="decideText"></p>
+    <div class="dl" id="decideLines"></div>
+    <div class="btns">
+      <button class="ok" id="btnDecideUse" title="Enter or U">Use AFTER</button>
+      <button id="btnDecideKeep" title="Esc">Keep BEFORE</button>
+    </div>
+    <label style="cursor:default">A held Enter won't choose &mdash; release it and press once. Clicking outside does nothing. Keeping BEFORE leaves the roll up.</label>
+  </div>
+</div>
+
+<script src="../gear_progression/js/value.js"></script>
+<script src="../gear_progression/js/flames.js"></script>
+<script src="sim.js"></script>
+</body>
+</html>
