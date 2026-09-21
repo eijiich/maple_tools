@@ -87,8 +87,9 @@
   td .csel:focus{border-color:var(--acc);background:var(--panel2);}
   td .ignlink{color:var(--acc);text-decoration:none;font-weight:600;}
   td .ignlink:hover{text-decoration:none;color:#9cc2ff;}
-  td .tog{cursor:pointer;user-select:none;}
-  td .tricell{cursor:pointer;user-select:none;}
+  td .tog,td .tricell{cursor:pointer;user-select:none;font-size:15px;}
+  td.tcell{cursor:pointer;}                       /* whole cell is a click target */
+  tbody td.tcell:hover{background:#2a3040;}
 
   /* editor */
   .edgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;}
@@ -741,7 +742,7 @@
   }
   function colCls(col){   // center toggle/check columns (drop any left-align on them)
     var base=col.cls||"";
-    if(col.et==="toggle"||col.et==="tri"||col.et==="badge")base=base.replace(/\bl\b/,"").trim()+" ctr";
+    if(col.et==="toggle"||col.et==="tri"||col.et==="badge")base=base.replace(/\bl\b/,"").trim()+" ctr tcell";
     return base.trim();
   }
   function clamp(v,lo,hi){v=num(v);return v<lo?lo:(v>hi?hi:v);}
@@ -1365,21 +1366,16 @@
       if(!el.classList.contains("csel"))return;
       if(k==="class"){c.class=el.value;save();renderTable();return;} // job re-derives faction/class/legion bonus
     });
-    tbody.addEventListener("click",function(e){          // IGN opens editor; On toggles
+    tbody.addEventListener("click",function(e){          // IGN opens editor; click anywhere in a toggle/badge/tri cell flips it
       var t=e.target;
       if(t.classList&&t.classList.contains("ignlink")){
-        e.preventDefault();var tr=t.closest("tr");if(tr){curId=tr.getAttribute("data-id");show("edit");}return;
+        e.preventDefault();var tri=t.closest("tr");if(tri){curId=tri.getAttribute("data-id");show("edit");}return;
       }
-      if(t.classList&&t.classList.contains("tog")){
-        var tr=t.closest("tr"),td=t.closest("td");var c=byId(tr.getAttribute("data-id"));if(!c)return;
-        var col=COL_BY_K[tdKey(td)];if(!col||!col.set)return;
-        col.set(c,!col.get(c));save();td.innerHTML=cellInner(col,c);refreshTotals(tr,c);return;
-      }
-      if(t.classList&&t.classList.contains("tricell")){
-        var tr2=t.closest("tr"),td2=t.closest("td");var c2=byId(tr2.getAttribute("data-id"));if(!c2)return;
-        var col2=COL_BY_K[tdKey(td2)];if(!col2||!col2.set)return;
-        col2.set(c2,(num(col2.get(c2))+1)%3);save();td2.innerHTML=cellInner(col2,c2);
-      }
+      var td=t.closest&&t.closest("td");if(!td)return;
+      var tr=t.closest("tr");var c=byId(tr&&tr.getAttribute("data-id"));if(!c)return;
+      var col=COL_BY_K[tdKey(td)];if(!col||!col.set)return;
+      if(col.et==="toggle"||col.et==="badge"){col.set(c,!col.get(c));save();td.innerHTML=cellInner(col,c);refreshTotals(tr,c);return;}
+      if(col.et==="tri"){col.set(c,(num(col.get(c))+1)%3);save();td.innerHTML=cellInner(col,c);}
     });
   })();
   document.getElementById("charSel").onchange=function(){curId=this.value;renderEditor();};
