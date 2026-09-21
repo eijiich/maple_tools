@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Characters</title>
+<title>Tracker</title>
 <style>
   :root{
     color-scheme:dark;   /* render native spinners / select arrows in dark theme */
@@ -49,7 +49,10 @@
   .legion-summary .lg-chip{color:var(--dim);}
   .legion-summary .lg-chip b{color:var(--fg);}
   .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;}
-  table{border-collapse:collapse;width:auto;font-size:12px;white-space:nowrap;}   /* auto = column widths stay stable across Show sets */
+  table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap;}
+  /* trailing spacer column absorbs leftover width, so real columns stay content-sized
+     (stable across Show sets) while the table still fills the viewport */
+  th.tspace,td.tspace{width:100%;padding:0;border-right:none;}
   td.rownum,th.rownum{text-align:right;color:var(--dimmer);width:1%;padding-right:9px;white-space:nowrap;user-select:none;}
   th.rownum{cursor:pointer;} th.rownum.on{color:var(--acc);}
   .draghandle{cursor:grab;color:var(--dimmer);}
@@ -130,10 +133,9 @@
     padding:6px 9px;color:var(--fg);font-size:14px;}
   .readfld .rf-sub{color:var(--dim);font-size:11px;font-weight:400;}
   h3.sub2{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin:12px 0 4px;font-weight:600;}
-  .ia-row{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0;}
   .ia-line{display:flex;align-items:center;gap:5px;}
-  .ia-line select{min-width:150px;}
-  .ia-line .ia-val{width:52px;text-align:right;}
+  .ia-line select{flex:1;min-width:0;}
+  .ia-line .ia-val{width:48px;flex:none;text-align:right;}
   .ia-line .ia-unit{color:var(--dim);font-size:11px;min-width:8px;}
   .warn{color:var(--warn);}
   .badgegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;margin:6px 0;}
@@ -232,7 +234,6 @@
     <span class="muted" id="count"></span>
     <button id="btnExport">export</button>
     <button id="btnImport">import</button>
-    <button id="btnReset" class="danger">reset to seed</button>
     <input type="file" id="importFile" accept=".json,application/json" hidden>
   </div>
 
@@ -800,7 +801,7 @@
     thead.innerHTML='<tr><th class="rownum'+(manual?" on":"")+'" data-k="manual" title="manual order — drag the handles to reorder">#'+(manual?" ⇅":"")+'</th>'+COLS.map(function(col){
       var arrow=sortKey===col.k?(sortDir<0?" ▾":" ▴"):"";
       return '<th class="'+colCls(col)+'" data-k="'+col.k+'">'+col.t+arrow+"</th>";
-    }).join("")+"</tr>";
+    }).join("")+'<th class="tspace"></th></tr>';
     var sorted=manual?chars.slice():chars.slice().sort(function(a,b){
       var col=COL_BY_K[sortKey]||COLS[1];
       var va=col.get(a),vb=col.get(b);
@@ -813,7 +814,7 @@
       return '<tr data-id="'+c.id+'">'+
         '<td class="rownum">'+handle+(idx+1)+'</td>'+COLS.map(function(col){
         return '<td class="'+colCls(col)+' k-'+col.k+'">'+cellInner(col,c)+"</td>";
-      }).join("")+"</tr>";
+      }).join("")+'<td class="tspace"></td></tr>';
     }).join("");
     document.getElementById("count").textContent=chars.length+" characters"+(manual?" · manual order (drag ⠿)":"");
     renderLegionSummary();
@@ -919,11 +920,11 @@
     v=v||{s:"",val:""};var first=(i===0),st=IA_BY_K[v.s];
     var opts='<option value="">— line '+(i+1)+'</option>'+IA_STATS.filter(function(s){return first||!s.first;}).map(function(s){
       return '<option value="'+s.k+'"'+(v.s===s.k?" selected":"")+'>'+s.n+'</option>';}).join("");
-    return '<div class="ia-line">'+
+    return '<div class="field ia-field"><label>Line '+(i+1)+'</label><div class="ia-line">'+
       '<select data-ia="'+kind+'" data-i="'+i+'">'+opts+'</select>'+
       '<input type="number" class="ia-val" data-iav="'+kind+'" data-i="'+i+'" value="'+(v.val===0||v.val?v.val:"")+
         '" placeholder="'+(st?String(first?st.l1:st.l23):"")+'"'+(st?"":" disabled")+'>'+
-      '<span class="ia-unit">'+(st&&st.pct?"%":"")+'</span></div>';
+      '<span class="ia-unit">'+(st&&st.pct?"%":"")+'</span></div></div>';
   }
   function bossPanel(c){
     var b=ensureBoss(c);
@@ -941,8 +942,8 @@
     return '<div class="panel"><h2>Combat</h2>'+
       '<div class="edgrid">'+numHTML+weaponHTML+skillHTML+'</div>'+
       '<h3 class="sub2">Gear / prep</h3><div class="toggles">'+flagHTML+'</div>'+
-      '<h3 class="sub2">Inner ability — current</h3><div class="ia-row">'+iaHTML+'</div>'+
-      '<h3 class="sub2">Inner ability — goal</h3><div class="ia-row">'+diaHTML+'</div>'+
+      '<h3 class="sub2">Inner ability — current</h3><div class="edgrid">'+iaHTML+'</div>'+
+      '<h3 class="sub2">Inner ability — goal</h3><div class="edgrid">'+diaHTML+'</div>'+
       '</div>';
   }
 
@@ -1394,10 +1395,6 @@
     var f=e.target.files[0];if(!f)return;var rd=new FileReader();
     rd.onload=function(){try{chars=normalize(JSON.parse(rd.result));curId=chars.length?chars[0].id:null;save();show("table");}catch(err){alert("Bad JSON: "+err);}};
     rd.readAsText(f);
-  };
-  document.getElementById("btnReset").onclick=function(){
-    if(!confirm("Reset to the spreadsheet seed? This discards your local edits."))return;
-    localStorage.removeItem(KEY);chars=load();curId=chars.length?chars[0].id:null;show("table");
   };
 
   // spreadsheet-style grid nav: Enter = same column next row, Shift+Enter = prev row

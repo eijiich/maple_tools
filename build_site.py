@@ -30,6 +30,10 @@ ROOT = Path(__file__).resolve().parent
 
 # (slug, source dir, items to copy, nav label, hub blurb)
 APPS = [
+    ('tracker', 'characters',
+     ['index.html', 'seed.js'],
+     'Tracker',
+     'Full per-character tracker — symbols, combat, badges, drop, links, IA and weekly bosses across your roster.'),
     ('gear_progression', 'gear_progression',
      ['index.html', 'js'],
      'Gear Progression',
@@ -43,10 +47,6 @@ APPS = [
       'solve-impl.mjs', 'worker.mjs', 'legion.js', 'legion.wasm'],
      'Solver',
      'Legion board solver — place your pieces and let the WASM search fill the board.'),
-    ('characters', 'characters',
-     ['index.html', 'seed.js'],
-     'Characters',
-     'Your account roster — table view to compare, per-character view to edit. Symbols first.'),
 ]
 
 NAV = [(slug, label) for slug, _s, _i, label, _b in APPS]
@@ -147,6 +147,62 @@ def hub_html():
 """
 
 
+def not_found_html():
+    # Served by GitHub Pages for any unrouted path. Because the browser URL stays the
+    # (missing) path, links can't be relative — a small script computes the site root
+    # (repo base on github.io, '/' on a custom domain) and fills every href.
+    links = ''.join(
+        f'<a class="mtnav-link" data-slug="{slug}" href="#">{label}</a>' for slug, label in NAV)
+    cards = ''.join(
+        f'<a class="mt-card" data-slug="{slug}" href="#">'
+        f'<span class="mt-card-title">{label}</span>'
+        f'<span class="mt-card-blurb">{blurb}</span></a>'
+        for slug, _s, _i, label, blurb in APPS)
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>404 — Ayamushy Tools</title>
+<style>
+  :root{{--bg:#12141a;--panel:#1a1d26;--line:#2c313d;--fg:#e6e8ee;--dim:#8b93a7;--acc:#6ea8fe;}}
+  *{{box-sizing:border-box;}}
+  body{{margin:0;background:var(--bg);color:var(--fg);
+    font:14px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace;}}
+  .wrap{{max-width:820px;margin:0 auto;padding:48px 16px;}}
+  .code{{font-size:64px;font-weight:700;letter-spacing:2px;color:var(--acc);margin:0;line-height:1;}}
+  h1{{font-size:18px;letter-spacing:.5px;margin:14px 0 4px;}}
+  .sub{{color:var(--dim);margin:0 0 28px;}}
+  .mt-grid{{display:grid;gap:12px;}}
+  a.mt-card{{display:block;background:var(--panel);border:1px solid var(--line);
+    border-radius:8px;padding:16px 18px;text-decoration:none;color:var(--fg);}}
+  a.mt-card:hover{{border-color:var(--acc);}}
+  .mt-card-title{{display:block;font-size:15px;color:var(--acc);margin-bottom:4px;}}
+  .mt-card-blurb{{display:block;color:var(--dim);font-size:13px;}}
+</style>
+</head>
+<body>
+{NAV_CSS}
+<nav id="mtnav" class="mtnav"><a class="mtnav-brand" data-home href="#">Ayamushy</a>{links}</nav>
+<div class="wrap">
+  <p class="code">404</p>
+  <h1>This page wandered off to grind.</h1>
+  <p class="sub">That page isn&rsquo;t here. Pick a tool:</p>
+  <div class="mt-grid">{cards}</div>
+</div>
+<script>
+(function(){{
+  var base=location.hostname.indexOf('github.io')>=0?'/'+location.pathname.split('/')[1]+'/':'/';
+  var els=document.querySelectorAll('[data-slug]');
+  for(var i=0;i<els.length;i++)els[i].href=base+els[i].getAttribute('data-slug')+'/';
+  var h=document.querySelector('[data-home]');if(h)h.href=base;
+}})();
+</script>
+</body>
+</html>
+"""
+
+
 def build(out: Path):
     out.mkdir(parents=True, exist_ok=True)
     # clean generated content but keep .git and .nojekyll
@@ -165,8 +221,9 @@ def build(out: Path):
                        encoding='utf-8', newline='\n')
         print(f'  {slug:16s} <- {src_rel}  ({len(items)} items)')
     (out / 'index.html').write_text(hub_html(), encoding='utf-8', newline='\n')
+    (out / '404.html').write_text(not_found_html(), encoding='utf-8', newline='\n')
     (out / '.nojekyll').write_text('', encoding='utf-8')
-    print(f'  hub + .nojekyll')
+    print(f'  hub + 404 + .nojekyll')
     print(f'built -> {out}')
 
 
