@@ -31,6 +31,13 @@
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
   .muted{color:var(--dim);}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px;}
+  /* loading overlay shown while a heavy view renders */
+  #loader{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(18,20,26,.5);z-index:9999;}
+  #loader.on{display:flex;}
+  #loader .spin{width:32px;height:32px;border-radius:50%;border:3px solid var(--line);
+    border-top-color:var(--acc);animation:ldspin .7s linear infinite;}
+  @keyframes ldspin{to{transform:rotate(360deg);}}
 
   /* table view */
   .legion-summary{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 10px;padding:9px 12px;
@@ -43,7 +50,12 @@
   .legion-summary .lg-chip b{color:var(--fg);}
   .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;}
   table{border-collapse:collapse;width:auto;font-size:12px;white-space:nowrap;}   /* auto = column widths stay stable across Show sets */
-  td.rownum,th.rownum{text-align:right;color:var(--dimmer);width:1%;padding-right:9px;cursor:default;user-select:none;}
+  td.rownum,th.rownum{text-align:right;color:var(--dimmer);width:1%;padding-right:9px;white-space:nowrap;user-select:none;}
+  th.rownum{cursor:pointer;} th.rownum.on{color:var(--acc);}
+  .draghandle{cursor:grab;color:var(--dimmer);}
+  .draghandle:active{cursor:grabbing;}
+  tr.dragging{opacity:.4;}
+  tbody tr.draghint{box-shadow:inset 0 2px 0 var(--acc);}
   .iacell{display:inline-block;padding:1px 6px;border-radius:3px;white-space:nowrap;}
   .iacell.iagoal{color:var(--dim);}
   td .iacell.ia-green{background:rgba(84,201,138,.18);color:var(--good);}
@@ -79,6 +91,8 @@
   .edgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;}
   .field{display:flex;flex-direction:column;gap:3px;}
   .field label{color:var(--dim);font-size:11px;}
+  .ign2{display:flex;gap:6px;}
+  .ign2 input{flex:1;min-width:0;width:100%;}
   .symrow{display:grid;grid-template-columns:96px 58px 58px 1fr;gap:8px;align-items:center;
     padding:4px 0;border-bottom:1px solid var(--line);}
   .symrow .nm{color:var(--fg);}
@@ -150,15 +164,21 @@
   #bsetTbl thead th{position:sticky;top:0;z-index:3;background:var(--panel2);color:var(--dim);font-weight:600;}
   #bsetTbl .bs-boss{white-space:normal;min-width:118px;max-width:132px;line-height:1.12;color:var(--fg);border-left:2px solid var(--line);}
   #bsetTbl .bs-boss .bs-sub{color:var(--dimmer);font-size:9px;font-weight:400;letter-spacing:.5px;text-transform:uppercase;}
-  #bsetTbl .bs-corner{left:0;z-index:5;text-align:left;background:var(--panel2);}
-  #bsetTbl .bs-name{position:sticky;left:0;z-index:2;background:var(--panel);text-align:left;min-width:150px;}
-  #bsetTbl tbody tr:hover .bs-name{background:#1e2330;}
-  #bsetTbl .bs-ntop{display:flex;align-items:center;gap:6px;}
+  /* three pinned-left columns: Character (150) | Meso/wk (74) | Cry (46) */
+  #bsetTbl .bs-corner{left:0;width:150px;min-width:150px;max-width:150px;z-index:6;text-align:left;background:var(--panel2);}
+  #bsetTbl .bs-name{position:sticky;left:0;width:150px;min-width:150px;max-width:150px;z-index:2;background:var(--panel);text-align:left;overflow:hidden;}
+  #bsetTbl .bs-mwh{left:150px;z-index:6;} #bsetTbl .bs-cyh{left:216px;z-index:6;}
+  #bsetTbl td.bs-mw{position:sticky;left:150px;z-index:2;background:var(--panel);}
+  #bsetTbl td.bs-cy{position:sticky;left:216px;z-index:2;background:var(--panel);}
+  #bsetTbl .bs-mw,#bsetTbl .bs-mwh{width:66px;min-width:66px;max-width:66px;text-align:right;}
+  #bsetTbl .bs-cy,#bsetTbl .bs-cyh{width:32px;min-width:32px;max-width:32px;text-align:center;}
+  #bsetTbl tbody tr:hover .bs-name,#bsetTbl tbody tr:hover .bs-mw,#bsetTbl tbody tr:hover .bs-cy{background:#1e2330;}
+  #bsetTbl .bs-ntop{display:flex;align-items:center;gap:6px;min-width:0;}
   #bsetTbl .bset-trk{padding:0;margin:0;width:14px;height:14px;flex:none;background:transparent;accent-color:var(--acc);cursor:pointer;}
-  #bsetTbl .bs-name a{font-weight:600;font-size:12px;color:var(--acc);text-decoration:none;}
+  #bsetTbl .bs-name a{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;font-size:12px;color:var(--acc);text-decoration:none;}
   #bsetTbl .bs-name a:visited{color:var(--acc);}
   #bsetTbl .bs-name a:hover{color:#9cc2ff;}
-  #bsetTbl .bs-nsub{color:var(--dim);font-size:10px;}
+  #bsetTbl .bs-nsub{color:var(--dim);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   #bsetTbl td.bs-c{padding:2px 3px;}
   #bsetTbl td.bs-c:first-of-type,#bsetTbl .bs-boss{border-left:2px solid var(--line);}
   #bsetTbl .bset-d{width:78px;padding:2px 4px;font-size:11px;background:transparent;border-color:transparent;}
@@ -166,8 +186,8 @@
   #bsetTbl .bset-p{width:36px;padding:2px;text-align:center;font-size:11px;background:transparent;border-color:transparent;}
   #bsetTbl .bset-p:hover:not(:disabled){border-color:var(--line);} #bsetTbl .bset-p:focus{border-color:var(--acc);background:var(--panel2);}
   #bsetTbl .bset-p:disabled{opacity:.25;}
-  #bsetTbl .bs-mw{text-align:right;color:var(--acc);font-weight:600;border-left:2px solid var(--line);}
-  #bsetTbl .bs-cy{text-align:right;color:var(--dim);}
+  #bsetTbl .bs-mw{color:var(--acc);font-weight:600;}
+  #bsetTbl .bs-cy{color:var(--dim);}
   #bsetTbl tbody .bs-off{opacity:.45;}
   /* bosses (weekly tracker) view */
   .boss-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;}
@@ -237,6 +257,8 @@
     <div class="bar">
       <label class="muted">Character</label>
       <select id="charSel"></select>
+      <button id="btnUp" title="Move up in the order">↑</button>
+      <button id="btnDown" title="Move down in the order">↓</button>
       <button id="btnAdd">+ add</button>
       <button id="btnDup">duplicate</button>
       <button id="btnDel" class="danger">delete</button>
@@ -256,6 +278,12 @@
     </div>
     <div id="bossTrackWrap">
       <div id="bossSummary" class="boss-summary"></div>
+      <div class="bar" style="margin:12px 0 0">
+        <span class="muted">Show:</span>
+        <button id="bfUnfinished" class="on">Unfinished</button>
+        <button id="bfFinished">Finished</button>
+        <button id="bfAll">All</button>
+      </div>
       <div id="bossCards" class="boss-cards" style="margin-top:12px"></div>
     </div>
     <div id="bossSetupWrap" hidden>
@@ -611,7 +639,8 @@
   function bossDiffValue(bk,diff){var b=BOSS_BY_K[bk];if(!b)return 0;for(var i=0;i<b.d.length;i++)if(b.d[i][0]===diff)return b.d[i][1];return 0;}
   function bossMesos(c){var t=0,bs=c.bosses||{};for(var bk in bs){if(bs.hasOwnProperty(bk))t+=bossDiffValue(bk,bs[bk].d)/(num(bs[bk].p)||1);}return t;}
   function bossCrystals(c){var t=0,bs=c.bosses||{};for(var bk in bs){if(bs.hasOwnProperty(bk)){var b=BOSS_BY_K[bk];t+=(b&&b.cr)||1;}}return t;}
-  function formatMeso(n){n=num(n);if(n>=1e9)return (n/1e9).toFixed(2)+"B";if(n>=1e6)return (n/1e6).toFixed(1)+"M";if(n>=1e3)return Math.round(n/1e3)+"K";return String(Math.round(n));}
+  function mtrim(x){return parseFloat(x.toFixed(3))+"";}   // up to 3 decimals, trailing zeros stripped
+  function formatMeso(n){n=num(n);if(n>=1e9)return mtrim(n/1e9)+"B";if(n>=1e6)return mtrim(n/1e6)+"M";if(n>=1e3)return Math.round(n/1e3)+"K";return String(Math.round(n));}
   // selected bosses for a char, each at its picked difficulty/party, sorted by value desc
   function bossSelList(c){
     var bs=c.bosses||{},arr=[];
@@ -747,6 +776,7 @@
   function computeLegion(){
     var levels=[],cat={},i;
     chars.forEach(function(c){var lv=num(c.level);if(lv<60)return;levels.push(lv);
+      if(!c.onBoard)return;                       // board pieces = only characters placed on the board
       var k=pieceCat(classOf(c),lv);if(k)cat[k]=(cat[k]||0)+1;});
     levels.sort(function(a,b){return b-a;});
     var legion=0,members=Math.min(42,levels.length);for(i=0;i<members;i++)legion+=levels[i];
@@ -764,12 +794,14 @@
       '<span class="lg-chip">= <b>'+g.pieces+'</b> pieces · <b>'+g.cells+'</b> cells</span>';
   }
   function renderTable(){
+    if(document.getElementById("viewTable").hidden)return;   // skip rebuilding a hidden table
     var thead=document.querySelector("#tbl thead"), tb=document.querySelector("#tbl tbody");
-    thead.innerHTML='<tr><th class="rownum">#</th>'+COLS.map(function(col){
+    var manual=sortKey==="manual";
+    thead.innerHTML='<tr><th class="rownum'+(manual?" on":"")+'" data-k="manual" title="manual order — drag the handles to reorder">#'+(manual?" ⇅":"")+'</th>'+COLS.map(function(col){
       var arrow=sortKey===col.k?(sortDir<0?" ▾":" ▴"):"";
       return '<th class="'+colCls(col)+'" data-k="'+col.k+'">'+col.t+arrow+"</th>";
     }).join("")+"</tr>";
-    var sorted=chars.slice().sort(function(a,b){
+    var sorted=manual?chars.slice():chars.slice().sort(function(a,b){
       var col=COL_BY_K[sortKey]||COLS[1];
       var va=col.get(a),vb=col.get(b);
       if(typeof va==="boolean"){va=va?1:0;vb=vb?1:0;}
@@ -777,11 +809,13 @@
       return String(va).localeCompare(String(vb))*sortDir;
     });
     tb.innerHTML=sorted.map(function(c,idx){
-      return '<tr data-id="'+c.id+'"><td class="rownum">'+(idx+1)+'</td>'+COLS.map(function(col){
+      var handle=manual?'<span class="draghandle" draggable="true" title="drag to reorder">⠿</span> ':'';
+      return '<tr data-id="'+c.id+'">'+
+        '<td class="rownum">'+handle+(idx+1)+'</td>'+COLS.map(function(col){
         return '<td class="'+colCls(col)+' k-'+col.k+'">'+cellInner(col,c)+"</td>";
       }).join("")+"</tr>";
     }).join("");
-    document.getElementById("count").textContent=chars.length+" characters";
+    document.getElementById("count").textContent=chars.length+" characters"+(manual?" · manual order (drag ⠿)":"");
     renderLegionSummary();
   }
 
@@ -816,11 +850,20 @@
       card3("Weekly crystals remaining",String(WEEKLY_CRYSTAL_CAP-doneCry),"Weekly bosses used",Math.min(tCry,WEEKLY_CRYSTAL_CAP)+" / "+WEEKLY_CRYSTAL_CAP)+
       card3("Characters done",charsDone+" / "+tracked.length,"Weekly reset",fmtCountdown(nextResetMs()));
     var withBosses=chars.filter(function(c){return bossSelList(c).length>0;});
+    var total=withBosses.length;
+    if(bossFilter==="unfinished")withBosses=withBosses.filter(function(c){return !allDone(c);});
+    else if(bossFilter==="finished")withBosses=withBosses.filter(function(c){return allDone(c);});
     withBosses.sort(function(a,b){var ta=isTracked(a)?0:1,tb=isTracked(b)?0:1;if(ta!==tb)return ta-tb;return totalMesos(b)-totalMesos(a);});
-    document.getElementById("bossCards").innerHTML=withBosses.length?withBosses.map(bossCard).join(""):'<p class="muted">No characters have bosses yet — add them in <b>Setup</b> mode.</p>';
+    var empty=bossFilter==="unfinished"?(total?'All characters are done for the week 🎉':'No characters have bosses yet — add them in <b>Setup</b> mode.')
+             :bossFilter==="finished"?'No characters finished yet.'
+             :'No characters have bosses yet — add them in <b>Setup</b> mode.';
+    document.getElementById("bossCards").innerHTML=withBosses.length?withBosses.map(bossCard).join(""):'<p class="muted">'+empty+'</p>';
     document.getElementById("bossHint").innerHTML=tracked.length+" tracked · untick <b>track</b> to exclude a character";
+    document.getElementById("bfUnfinished").classList.toggle("on",bossFilter==="unfinished");
+    document.getElementById("bfFinished").classList.toggle("on",bossFilter==="finished");
+    document.getElementById("bfAll").classList.toggle("on",bossFilter==="all");
   }
-  var bossMode="track";
+  var bossMode="track", bossFilter="unfinished";
   function renderBossesView(){
     var setup=bossMode==="setup";
     document.getElementById("bossTrackWrap").hidden=setup;
@@ -949,36 +992,38 @@
   function updateLinkRank(c){var o=document.querySelector('#editor .lk-out');if(o)o.innerHTML=linkOutHTML(c);}
 
   // ---------- bosses SETUP sheet (rows = characters, 2 cols per boss) ----------
-  function setupChars(){  // stable order: strongest first, independent of boss edits
-    return chars.slice().sort(function(a,b){
-      var lv=num(b.level)-num(a.level);if(lv)return lv;
-      return String(fullIgn(a)).localeCompare(String(fullIgn(b)));
-    });
+  function setupChars(){return chars.slice();}   // follow the roster (manual) order
+  function bsetPartyInput(cid,bk,p){return '<input class="bset-p" type="number" min="0" max="6" data-cid="'+cid+'" data-bk="'+bk+'" value="'+p+'">';}
+  var bsetSig=null;
+  function bsetSignature(){   // rebuild only when the roster/order/level/class actually changes
+    var s="";chars.forEach(function(c){s+=c.id+":"+num(c.level)+":"+c.class+"|";});return s;
   }
-  function renderBossSetup(){
-    var head='<tr><th class="bs-corner">Character</th>';
+  function renderBossSetup(force){
+    var host=document.getElementById("bossSetup"),sig=bsetSignature();
+    if(!force&&bsetSig===sig&&host.querySelector("#bsetTbl")){bsetSummary();return;}  // reuse cached DOM
+    bsetSig=sig;
+    var head='<tr><th class="bs-corner">Character</th><th class="bs-mwh">Meso/wk</th><th class="bs-cyh" title="weekly crystals">◆</th>';
     BOSSES.forEach(function(b){
       head+='<th class="bs-boss" colspan="2" title="'+esc(b.name)+'">'+b.name+'<div class="bs-sub">diff · party</div></th>';
     });
-    head+='<th class="bs-tot">Meso/wk</th><th class="bs-tot">Cry</th></tr>';
+    head+='</tr>';
     var body=setupChars().map(function(c){
       var bs=ensureBosses(c),cells="";
       BOSSES.forEach(function(b){
         var cur=bs[b.k];
         var opts='<option value="">—</option>'+b.d.map(function(dd){
           return '<option value="'+dd[0]+'"'+(cur&&cur.d===dd[0]?" selected":"")+'>'+dd[0]+'</option>';}).join("");
-        var p=cur?num(cur.p)||1:1;
         cells+='<td class="bs-c"><select class="bset-d" data-cid="'+c.id+'" data-bk="'+b.k+'">'+opts+'</select></td>'+
-               '<td class="bs-c"><input class="bset-p" type="number" min="0" max="6" data-cid="'+c.id+'" data-bk="'+b.k+'" value="'+p+'"'+(cur?"":" disabled")+'></td>';
+               '<td class="bs-c">'+(cur?bsetPartyInput(c.id,b.k,num(cur.p)||1):"")+'</td>';   // party input only when selected
       });
-      cells+='<td class="bs-mw">'+formatMeso(bossMesos(c))+'</td><td class="bs-cy">'+bossCrystals(c)+'</td>';
       return '<tr data-cid="'+c.id+'"'+(isTracked(c)?"":' class="bs-off"')+'>'+
         '<th class="bs-name" scope="row">'+
           '<div class="bs-ntop"><input type="checkbox" class="bset-trk" data-cid="'+c.id+'"'+(isTracked(c)?" checked":"")+' title="track this character">'+
             '<a class="ignlink bset-name" data-cid="'+c.id+'" href="#">'+esc(fullIgn(c)||c.class)+'</a></div>'+
-          '<div class="bs-nsub">Lv '+num(c.level)+' · '+esc(c.class)+'</div></th>'+cells+'</tr>';
+          '<div class="bs-nsub">Lv '+num(c.level)+' · '+esc(c.class)+'</div></th>'+
+        '<td class="bs-mw">'+formatMeso(bossMesos(c))+'</td><td class="bs-cy">'+bossCrystals(c)+'</td>'+cells+'</tr>';
     }).join("");
-    document.getElementById("bossSetup").innerHTML='<table id="bsetTbl"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>';
+    host.innerHTML='<table id="bsetTbl"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>';
     bsetSummary();
   }
   function bsetRowUpdate(c){
@@ -1010,10 +1055,11 @@
       '<div class="field"><label>Class</label><div class="readfld">'+(classOf(c)||'<span class="rf-sub">—</span>')+'</div></div>'+
       '<div class="field"><label>Legion Bonus</label><div class="readfld">'+(legionBonusType(c)||'<span class="rf-sub">—</span>')+'</div></div>'+
       '<div class="field"><label>Legion Bonus value</label><div class="readfld lb-val">'+lbValDisplay(c)+'</div></div>'+
-      fld("IGN (1st)","name1","text",c.name1||"")+
-      fld("IGN (2nd)","name2","text",c.name2||"")+
-      fld("Level","level","number",num(c.level))+
+      '<div class="field"><label>IGN</label><div class="ign2">'+
+        '<input data-id="name1" type="text" placeholder="1st" value="'+esc(c.name1||"")+'">'+
+        '<input data-id="name2" type="text" placeholder="2nd" value="'+esc(c.name2||"")+'"></div></div>'+
       '<div class="field"><label>On Board</label>'+tgl(c.onBoard,"onBoard")+'</div>'+
+      fld("Level","level","number",num(c.level))+
       '</div></div>';
     document.getElementById("editor").innerHTML=
       idHTML+
@@ -1149,6 +1195,13 @@
   }
 
   // ---------- view switch + top bar ----------
+  (function(){var l=document.createElement("div");l.id="loader";l.innerHTML='<div class="spin"></div>';document.body.appendChild(l);})();
+  function showLoading(){var l=document.getElementById("loader");if(l)l.classList.add("on");}
+  function hideLoading(){var l=document.getElementById("loader");if(l)l.classList.remove("on");}
+  // paint the spinner first (two frames), then run the heavy render, then hide it —
+  // so slow machines show a spinner during the lag instead of a frozen UI.
+  function withLoading(fn){showLoading();requestAnimationFrame(function(){requestAnimationFrame(function(){
+    try{fn();}finally{hideLoading();}});});}
   function show(view){
     document.getElementById("viewTable").hidden=view!=="table";
     document.getElementById("viewEdit").hidden=view!=="edit";
@@ -1156,13 +1209,18 @@
     document.getElementById("tabTable").classList.toggle("on",view==="table");
     document.getElementById("tabEdit").classList.toggle("on",view==="edit");
     document.getElementById("tabBosses").classList.toggle("on",view==="bosses");
-    if(view==="table")renderTable(); else if(view==="bosses")renderBossesView(); else renderEditor();
+    withLoading(function(){
+      if(view==="table")renderTable(); else if(view==="bosses")renderBossesView(); else renderEditor();
+    });
   }
   document.getElementById("tabTable").onclick=function(){show("table");};
   document.getElementById("tabEdit").onclick=function(){show("edit");};
   document.getElementById("tabBosses").onclick=function(){show("bosses");};
-  document.getElementById("bmTrack").onclick=function(){bossMode="track";renderBossesView();};
-  document.getElementById("bmSetup").onclick=function(){bossMode="setup";renderBossesView();};
+  document.getElementById("bmTrack").onclick=function(){bossMode="track";withLoading(renderBossesView);};
+  document.getElementById("bmSetup").onclick=function(){bossMode="setup";withLoading(renderBossesView);};
+  document.getElementById("bfUnfinished").onclick=function(){bossFilter="unfinished";renderBosses();};
+  document.getElementById("bfFinished").onclick=function(){bossFilter="finished";renderBosses();};
+  document.getElementById("bfAll").onclick=function(){bossFilter="all";renderBosses();};
   document.getElementById("btnBossReset").onclick=function(){
     if(!confirm("Reset this week's boss checkmarks for all characters?"))return;
     chars.forEach(function(c){c.bossDone={};});save();renderBosses();
@@ -1180,16 +1238,17 @@
         return;
       }
       if(t.classList.contains("bset-d")){
-        var c=byId(t.getAttribute("data-cid")),bk=t.getAttribute("data-bk"),bs=ensureBosses(c),p=pin(c.id,bk);
-        if(t.value){bs[bk]=bs[bk]||{p:1};bs[bk].d=t.value;if(!(num(bs[bk].p)>=1))bs[bk].p=1;
-          if(p){p.disabled=false;p.value=bs[bk].p;}}
-        else{delete bs[bk];if(p){p.disabled=true;p.value=1;}}
+        var c=byId(t.getAttribute("data-cid")),bk=t.getAttribute("data-bk"),bs=ensureBosses(c);
+        var ptd=t.closest("td").nextElementSibling;    // sibling cell holds the party input
+        if(t.value){var pv=(bs[bk]&&num(bs[bk].p)>=1)?bs[bk].p:1;bs[bk]={d:t.value,p:pv};
+          if(ptd)ptd.innerHTML=bsetPartyInput(c.id,bk,pv);}
+        else{delete bs[bk];if(ptd)ptd.innerHTML="";}
         save();bsetRowUpdate(c);return;
       }
       if(t.classList.contains("bset-p")){        // commit: 0 (or blank) drops the boss
         var c2=byId(t.getAttribute("data-cid")),bk2=t.getAttribute("data-bk"),bs2=ensureBosses(c2);
         var v=Math.max(0,Math.min(6,num(t.value))),d=din(c2.id,bk2);
-        if(v<1){delete bs2[bk2];if(d)d.value="";t.value=1;t.disabled=true;}
+        if(v<1){delete bs2[bk2];if(d)d.value="";var ptd2=t.closest("td");if(ptd2)ptd2.innerHTML="";}
         else if(bs2[bk2]){bs2[bk2].p=v;t.value=v;}
         save();bsetRowUpdate(c2);
       }
@@ -1203,6 +1262,19 @@
     cont.addEventListener("click",function(e){
       var link=e.target.closest&&e.target.closest(".bset-name");
       if(link){e.preventDefault();curId=link.getAttribute("data-cid");show("edit");}
+    });
+  })();
+  (function(){                                   // keep a focused field clear of the pinned columns
+    var wrap=document.querySelector(".bset-wrap");if(!wrap)return;
+    wrap.addEventListener("focusin",function(e){
+      var el=e.target;if(!el||(el.tagName!=="INPUT"&&el.tagName!=="SELECT"))return;
+      if(el.closest(".bs-name,.bs-mw,.bs-cy"))return;   // pinned cells are always visible
+      var tbl=wrap.querySelector("#bsetTbl");if(!tbl)return;
+      var stick=0,heads=tbl.querySelectorAll("thead .bs-corner,thead .bs-mwh,thead .bs-cyh");
+      for(var i=0;i<heads.length;i++)stick+=heads[i].offsetWidth;
+      var wr=wrap.getBoundingClientRect(),er=el.getBoundingClientRect(),lim=wr.left+stick+6;
+      if(er.left<lim)wrap.scrollLeft-=(lim-er.left);
+      else if(er.right>wr.right-6)wrap.scrollLeft+=(er.right-(wr.right-6));
     });
   })();
   (function(){
@@ -1230,17 +1302,38 @@
     document.getElementById("setIA").classList.toggle("on",tableSet==="ia");
     document.getElementById("iaHlWrap").hidden=tableSet!=="ia";
   }
-  document.getElementById("setSymbols").onclick=function(){tableSet="symbols";setCols();renderTable();syncSetBtns();};
-  document.getElementById("setBossing").onclick=function(){tableSet="bossing";setCols();renderTable();syncSetBtns();};
-  document.getElementById("setBadges").onclick=function(){tableSet="badges";setCols();renderTable();syncSetBtns();};
-  document.getElementById("setDrop").onclick=function(){tableSet="drop";setCols();renderTable();syncSetBtns();};
-  document.getElementById("setIA").onclick=function(){tableSet="ia";setCols();renderTable();syncSetBtns();};
+  function pickSet(s){tableSet=s;setCols();syncSetBtns();withLoading(renderTable);}
+  document.getElementById("setSymbols").onclick=function(){pickSet("symbols");};
+  document.getElementById("setBossing").onclick=function(){pickSet("bossing");};
+  document.getElementById("setBadges").onclick=function(){pickSet("badges");};
+  document.getElementById("setDrop").onclick=function(){pickSet("drop");};
+  document.getElementById("setIA").onclick=function(){pickSet("ia");};
   document.getElementById("iaHl").onchange=function(){iaHighlight=this.checked;renderTable();};
   document.querySelector("#tbl thead").addEventListener("click",function(e){
     var th=e.target.closest("th");if(!th)return;var k=th.getAttribute("data-k");if(!k)return;   // ignore the # column
     if(sortKey===k)sortDir=-sortDir; else {sortKey=k;sortDir=-1;}
     renderTable();
   });
+  (function(){                                          // drag-to-reorder rows (manual order only)
+    var tbody=document.querySelector("#tbl tbody"),dragId=null;
+    tbody.addEventListener("dragstart",function(e){
+      var h=e.target.closest&&e.target.closest(".draghandle");if(!h)return;
+      var tr=h.closest("tr");dragId=tr&&tr.getAttribute("data-id");
+      if(dragId){e.dataTransfer.effectAllowed="move";try{e.dataTransfer.setData("text/plain",dragId);}catch(_){}
+        if(tr)tr.classList.add("dragging");}
+    });
+    tbody.addEventListener("dragover",function(e){if(dragId!=null){e.preventDefault();e.dataTransfer.dropEffect="move";}});
+    tbody.addEventListener("drop",function(e){
+      if(dragId==null)return;e.preventDefault();
+      var tr=e.target.closest&&e.target.closest("tr");
+      if(tr){var toId=tr.getAttribute("data-id");
+        if(toId&&toId!==dragId){var from=charIndex(dragId),to=charIndex(toId);
+          var item=chars.splice(from,1)[0];var t2=charIndex(toId);
+          chars.splice(from<to?t2+1:t2,0,item);save();}}
+      dragId=null;sortKey="manual";renderTable();
+    });
+    tbody.addEventListener("dragend",function(){dragId=null;var d=tbody.querySelector(".dragging");if(d)d.classList.remove("dragging");});
+  })();
   (function(){
     var tbody=document.querySelector("#tbl tbody");
     tbody.addEventListener("input",function(e){         // number cells: live totals, keep focus
@@ -1280,6 +1373,12 @@
     });
   })();
   document.getElementById("charSel").onchange=function(){curId=this.value;renderEditor();};
+  function charIndex(id){for(var i=0;i<chars.length;i++)if(chars[i].id===id)return i;return -1;}
+  function moveCurChar(dir){var i=charIndex(curId),j=i+dir;if(i<0||j<0||j>=chars.length)return;
+    var t=chars[i];chars[i]=chars[j];chars[j]=t;save();renderEditor();
+    sortKey="manual";renderTable();}   // show the manual order so the move is visible
+  document.getElementById("btnUp").onclick=function(){moveCurChar(-1);};
+  document.getElementById("btnDown").onclick=function(){moveCurChar(1);};
   document.getElementById("btnAdd").onclick=function(){newChar(null);renderEditor();};
   document.getElementById("btnDup").onclick=function(){var c=byId(curId);if(c){newChar(c);renderEditor();}};
   document.getElementById("btnDel").onclick=function(){
@@ -1300,6 +1399,26 @@
     if(!confirm("Reset to the spreadsheet seed? This discards your local edits."))return;
     localStorage.removeItem(KEY);chars=load();curId=chars.length?chars[0].id:null;show("table");
   };
+
+  // spreadsheet-style grid nav: Enter = same column next row, Shift+Enter = prev row
+  // (skips cells with no control). Tab / Shift+Tab keep the browser's native order.
+  function gridNav(e){
+    if(e.key!=="Enter")return;
+    var el=e.target;if(!el||(el.tagName!=="INPUT"&&el.tagName!=="SELECT"))return;
+    var td=el.closest("td"),tr=el.closest("tr");if(!td||!tr)return;
+    var col=Array.prototype.indexOf.call(tr.children,td);
+    var step=e.shiftKey?"previousElementSibling":"nextElementSibling";
+    for(var row=tr[step];row;row=row[step]){
+      var cell=row.children[col],next=cell&&cell.querySelector("input, select");
+      if(!next||next.disabled)continue;
+      e.preventDefault();next.focus();
+      if(typeof next.select==="function"&&next.type!=="checkbox")next.select();
+      return;
+    }
+    e.preventDefault();
+  }
+  document.querySelector("#tbl tbody").addEventListener("keydown",gridNav);
+  document.getElementById("bossSetup").addEventListener("keydown",gridNav);
 
   checkWeeklyReset();
   show("table");

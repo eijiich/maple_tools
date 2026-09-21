@@ -1743,6 +1743,18 @@ document.getElementById('flameRecalc').addEventListener('click', () => {
 document.getElementById('charSel').addEventListener('change', (e) => {
   state.active = e.target.value; save(); renderAll();
 });
+function moveChar(dir) {                       // reorder the active char in the list
+  const ids = Object.keys(state.chars);
+  const i = ids.indexOf(state.active), j = i + dir;
+  if (i < 0 || j < 0 || j >= ids.length) return;
+  ids.splice(j, 0, ids.splice(i, 1)[0]);       // pull out and reinsert at the new spot
+  const next = {};
+  for (const id of ids) next[id] = state.chars[id];
+  state.chars = next; save(); renderChars();
+  if (state.tab === 'compare') renderCompare(false);
+}
+document.getElementById('charUp').addEventListener('click', () => moveChar(-1));
+document.getElementById('charDown').addEventListener('click', () => moveChar(1));
 document.getElementById('charAdd').addEventListener('click', () => {
   const name = prompt('Character name?');
   if (!name) return;
