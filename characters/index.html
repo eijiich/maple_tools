@@ -300,13 +300,14 @@
 (function(){
   "use strict";
   // ---------- game constants (validated against the sheet) ----------
-  var ARC_FORCE=[0,0,12,27,47,74,110,157,217,292,384,495,627,782,962,1169,1405,1672,1972,2307,2679];
-  var SAC_FORCE=[0,0,29,105,246,470,795,1239,1820,2556,3465,4565];
+  // cumulative symbols needed to reach each level (index = level); [cap] = total to max
+  var ARC_CUM=[0,0,12,27,47,74,110,157,217,292,384,495,627,782,962,1169,1405,1672,1972,2307,2679];
+  var SAC_CUM=[0,0,29,105,246,470,795,1239,1820,2556,3465,4565];
   var ARC_SYM=["VJ","Chuchu","Lach","Arcana","Morass","Esfera"];
   var SAC_SYM=["Cernium","Hotel","Shangri-la","Odium","Arteria","Carcion","Tallahart","Geardock"];
-  var ARC={cap:2679,maxLv:20,daily:40,weekly:240,force:ARC_FORCE,syms:ARC_SYM,base:20,guildBonus:30,
+  var ARC={cap:2679,maxLv:20,daily:40,weekly:240,cum:ARC_CUM,syms:ARC_SYM,base:20,guildBonus:30,
     names:{VJ:"Vanishing Journey",Chuchu:"Chu Chu Island",Lach:"Lachelein",Arcana:"Arcana",Morass:"Morass",Esfera:"Esfera"}};
-  var SAC={cap:4565,maxLv:11,daily:30,weekly:0,force:SAC_FORCE,syms:SAC_SYM,base:0,guildBonus:0,
+  var SAC={cap:4565,maxLv:11,daily:30,weekly:0,cum:SAC_CUM,syms:SAC_SYM,base:0,guildBonus:0,
     names:{Cernium:"Cernium",Hotel:"Hotel Arcus","Shangri-la":"Shangri-La",Odium:"Odium",Arteria:"Arteria",Carcion:"Carcion",Tallahart:"Tallahart",Geardock:"Geardock"}};
   // inner-ability lines (values from brendonmay.github.io/innerAbilityCalculator: legendary max
   // per line position; l1 = first line, l23 = 2nd/3rd line). Attack merges W/M ATT.
@@ -438,9 +439,9 @@
   function legionBonusValue(c){var s=SCALE_BY_BONUS[legionBonusType(c)];return s?tierValue(c.level,s):"";}
 
   function num(v){var n=parseFloat(v);return isNaN(n)?0:n;}
-  function effLevel(force,table){if(force<=0)return 0;var L=0;for(var i=1;i<table.length;i++){if(force>=table[i])L=i;}return L;}
-  function symForce(spec,level,extra){return (spec.force[Math.min(Math.max(level|0,0),spec.maxLv)]||0)+num(extra);}
-  function symValue(spec,level,extra){var f=symForce(spec,level,extra);if(f<=0)return 0;return effLevel(f,spec.force)*10+spec.base;}
+  function effLevel(count,table){if(count<=0)return 0;var L=0;for(var i=1;i<table.length;i++){if(count>=table[i])L=i;}return L;}
+  function symCount(spec,level,extra){return (spec.cum[Math.min(Math.max(level|0,0),spec.maxLv)]||0)+num(extra);}
+  function symValue(spec,level,extra){var f=symCount(spec,level,extra);if(f<=0)return 0;return effLevel(f,spec.cum)*10+spec.base;}
   function daysTo(remaining,daily,weekly,dRate,wRate){
     if(remaining<=0)return 0;
     if(daily&&weekly&&(wRate>0||dRate>0))return Math.floor(remaining/(wRate/7+dRate));
@@ -457,11 +458,16 @@
   function sacTotal(c){return sectionTotal(SAC,c.sacred);}
   function symDays(spec,sec,i){
     var lv=num(sec.levels[i]),ex=num(sec.extras&&sec.extras[i]);
-    var f=symForce(spec,lv,ex);
+    var f=symCount(spec,lv,ex),maxed=lv>=spec.maxLv;   // f is the symbol count owned (table = cumulative symbols)
+    var symMax=Math.max(0,spec.cap-f), symNext=maxed?0:Math.max(0,spec.cum[lv+1]-f);
     var toMax=daysTo(spec.cap-f,sec.daily,sec.weekly,spec.daily,spec.weekly);
-    var nextForce=lv>=spec.maxLv?f:spec.force[lv+1];
-    var toNext=lv>=spec.maxLv?"-":daysTo(nextForce-f,sec.daily,sec.weekly,spec.daily,spec.weekly);
-    return {toNext:toNext,toMax:toMax};
+    var toNext=maxed?"-":daysTo(spec.cum[lv+1]-f,sec.daily,sec.weekly,spec.daily,spec.weekly);
+    return {toNext:toNext,toMax:toMax,symNext:symNext,symMax:symMax,maxed:maxed};
+  }
+  // "next 27 sym · 4d" — symbols to the target, with days appended when a rate is set
+  function symMeta(label,syms,days,maxed){
+    if(maxed)return label+' maxed';
+    return label+' '+syms+' sym'+((days==="-"||days==null)?"":' · '+days+'d');
   }
 
   // ---------- state ----------
@@ -878,28 +884,28 @@
   }
 
   // ---------- editor ----------
-  function barPct(spec,lv,force){
+  function barPct(spec,lv,count){
     if(lv>=spec.maxLv)return 100;
-    var floor=spec.force[lv]||0, ceil=spec.force[lv+1]||floor;
+    var floor=spec.cum[lv]||0, ceil=spec.cum[lv+1]||floor;
     if(ceil<=floor)return 0;
-    return Math.max(0,Math.min(100,Math.round((force-floor)/(ceil-floor)*100)));
+    return Math.max(0,Math.min(100,Math.round((count-floor)/(ceil-floor)*100)));
   }
   function symCard(spec,sec,i){
     var lv=num(sec.levels[i]),ex=num(sec.extras[i]);
-    var force=symForce(spec,lv,ex),val=symValue(spec,lv,ex),d=symDays(spec,sec,i);
+    var count=symCount(spec,lv,ex),val=symValue(spec,lv,ex),d=symDays(spec,sec,i);
     var name=(spec.names&&spec.names[spec.syms[i]])||spec.syms[i];
     return '<div class="symcard'+(lv>=spec.maxLv?" maxed":"")+'" data-sym="'+i+'">'+
       '<div class="sc-head"><span class="sc-name">'+name+'</span>'+
         '<span class="sc-lvl"><b>'+lv+'</b> / '+spec.maxLv+'</span></div>'+
-      '<div class="sc-bar"><i style="width:'+barPct(spec,lv,force)+'%"></i></div>'+
-      '<div class="sc-meta"><span>force <span class="sc-force">'+force+'</span></span>'+
+      '<div class="sc-bar"><i style="width:'+barPct(spec,lv,count)+'%"></i></div>'+
+      '<div class="sc-meta"><span>owned <span class="sc-count">'+count+'</span></span>'+
         '<span class="sc-val">+'+val+'</span></div>'+
       '<div class="sc-inputs">'+
         '<label>Level<input type="number" min="0" max="'+spec.maxLv+'" data-f="lv" value="'+lv+'"></label>'+
         '<label>Symbols<input type="number" min="0" data-f="ex" value="'+ex+'"></label>'+
       '</div>'+
-      '<div class="sc-meta"><span class="sc-next">next '+d.toNext+'d</span>'+
-        '<span class="sc-max">max '+d.toMax+'d</span></div>'+
+      '<div class="sc-meta"><span class="sc-next">'+symMeta("next",d.symNext,d.toNext,d.maxed)+'</span>'+
+        '<span class="sc-max">'+symMeta("max",d.symMax,d.toMax,d.maxed&&d.symMax<=0)+'</span></div>'+
     '</div>';
   }
   function symSection(c,spec,sec,secName){
@@ -1174,15 +1180,15 @@
       root.querySelectorAll('.symcard').forEach(function(card){
         var i=+card.getAttribute('data-sym');
         var lv=num(sec.levels[i]),ex=num(sec.extras[i]);
-        var force=symForce(spec,lv,ex),val=symValue(spec,lv,ex),d=symDays(spec,sec,i);
+        var count=symCount(spec,lv,ex),val=symValue(spec,lv,ex),d=symDays(spec,sec,i);
         card.classList.toggle('maxed',lv>=spec.maxLv);
         var q=function(s){return card.querySelector(s);},e;
         if((e=q('.sc-lvl')))e.innerHTML='<b>'+lv+'</b> / '+spec.maxLv;
-        if((e=q('.sc-bar i')))e.style.width=barPct(spec,lv,force)+'%';
-        if((e=q('.sc-force')))e.textContent=force;
+        if((e=q('.sc-bar i')))e.style.width=barPct(spec,lv,count)+'%';
+        if((e=q('.sc-count')))e.textContent=count;
         if((e=q('.sc-val')))e.textContent='+'+val;
-        if((e=q('.sc-next')))e.textContent='next '+d.toNext+'d';
-        if((e=q('.sc-max')))e.textContent='max '+d.toMax+'d';
+        if((e=q('.sc-next')))e.textContent=symMeta("next",d.symNext,d.toNext,d.maxed);
+        if((e=q('.sc-max')))e.textContent=symMeta("max",d.symMax,d.toMax,d.maxed&&d.symMax<=0);
       });
     });
   }
