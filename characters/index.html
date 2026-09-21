@@ -220,6 +220,8 @@
   .bcard-ft{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:6px;}
   .bc-tot{color:var(--acc);font-weight:600;font-size:12px;}
   .bc-all{font-size:11px;padding:3px 8px;}
+  .subgrp{display:inline-flex;align-items:center;gap:8px;}
+  .subgrp .sep{width:1px;height:18px;background:var(--line);}
   [hidden]{display:none!important;}
 </style>
 </head>
@@ -246,6 +248,7 @@
       <button id="setBadges">Badges</button>
       <button id="setDrop">Drop</button>
       <button id="setIA">IA</button>
+      <span id="symSubWrap" class="subgrp"><span class="sep"></span><button id="symAF" class="on">AF</button><button id="symSAC">SAC</button></span>
       <label class="muted ia-hl-wrap" id="iaHlWrap" hidden><input type="checkbox" id="iaHl"> highlight vs goal</label>
     </div>
     <div class="legion-summary" id="legionSummary"></div>
@@ -683,12 +686,12 @@
     {k:"name1",t:"IGN",cls:"l",et:"ign",get:function(c){return fullIgn(c);}},
     {k:"level",t:"Lv",et:"num",mn:1,mx:300,get:function(c){return num(c.level);},set:function(c,v){c.level=v;}},
   ];
-  var SYM_COLS=[   // Legion Bonus / LB live in the Detail view, not this table
-    {k:"af",t:"AF",cls:"grp-arc",get:function(c){return afTotal(c);}},
-  ];
-  ARC_SYM.forEach(function(s,i){SYM_COLS.push({k:"a"+i,t:s,cls:"sym-arc",et:"num",mn:0,mx:20,get:function(c){return num(c.arcane.levels[i]);},set:function(c,v){c.arcane.levels[i]=v;}});});
-  SYM_COLS.push({k:"sac",t:"SAC",cls:"grp-sac",get:function(c){return sacTotal(c);}});
-  SAC_SYM.forEach(function(s,i){SYM_COLS.push({k:"s"+i,t:s,cls:"sym-sac",et:"num",mn:0,mx:11,get:function(c){return num(c.sacred.levels[i]);},set:function(c,v){c.sacred.levels[i]=v;}});});
+  // Symbols split into two groups (chosen by the AF/SAC buttons) — 14 columns at once is too many
+  var SYM_AF_COLS=[{k:"af",t:"AF",cls:"grp-arc",get:function(c){return afTotal(c);}}];
+  ARC_SYM.forEach(function(s,i){SYM_AF_COLS.push({k:"a"+i,t:s,cls:"sym-arc",et:"num",mn:0,mx:20,get:function(c){return num(c.arcane.levels[i]);},set:function(c,v){c.arcane.levels[i]=v;}});});
+  var SYM_SAC_COLS=[{k:"sac",t:"SAC",cls:"grp-sac",get:function(c){return sacTotal(c);}}];
+  SAC_SYM.forEach(function(s,i){SYM_SAC_COLS.push({k:"s"+i,t:s,cls:"sym-sac",et:"num",mn:0,mx:11,get:function(c){return num(c.sacred.levels[i]);},set:function(c,v){c.sacred.levels[i]=v;}});});
+  var symSet="af";   // which symbol group the table shows
 
   function bnumCol(key,label,max){return {k:key,t:label,et:"num",mn:0,mx:max,get:function(c){return bnum(c,key);},set:function(c,v){ensureBoss(c)[key]=v;}};}
   var BOSS_COLS=[
@@ -715,7 +718,8 @@
 
   var tableSet="symbols", COLS, COL_BY_K;
   function setCols(){
-    var extra=tableSet==="bossing"?BOSS_COLS:(tableSet==="badges"?BADGE_COLS:(tableSet==="drop"?DROP_COLS:(tableSet==="ia"?IA_COLS:SYM_COLS)));
+    var syms=symSet==="sac"?SYM_SAC_COLS:SYM_AF_COLS;
+    var extra=tableSet==="bossing"?BOSS_COLS:(tableSet==="badges"?BADGE_COLS:(tableSet==="drop"?DROP_COLS:(tableSet==="ia"?IA_COLS:syms)));
     COLS=IDENT_COLS.concat(extra);
     COL_BY_K={};COLS.forEach(function(col){COL_BY_K[col.k]=col;});
   }
@@ -1302,6 +1306,9 @@
     document.getElementById("setDrop").classList.toggle("on",tableSet==="drop");
     document.getElementById("setIA").classList.toggle("on",tableSet==="ia");
     document.getElementById("iaHlWrap").hidden=tableSet!=="ia";
+    document.getElementById("symSubWrap").hidden=tableSet!=="symbols";
+    document.getElementById("symAF").classList.toggle("on",symSet==="af");
+    document.getElementById("symSAC").classList.toggle("on",symSet==="sac");
   }
   function pickSet(s){tableSet=s;setCols();syncSetBtns();withLoading(renderTable);}
   document.getElementById("setSymbols").onclick=function(){pickSet("symbols");};
@@ -1309,6 +1316,8 @@
   document.getElementById("setBadges").onclick=function(){pickSet("badges");};
   document.getElementById("setDrop").onclick=function(){pickSet("drop");};
   document.getElementById("setIA").onclick=function(){pickSet("ia");};
+  document.getElementById("symAF").onclick=function(){symSet="af";setCols();syncSetBtns();withLoading(renderTable);};
+  document.getElementById("symSAC").onclick=function(){symSet="sac";setCols();syncSetBtns();withLoading(renderTable);};
   document.getElementById("iaHl").onchange=function(){iaHighlight=this.checked;renderTable();};
   document.querySelector("#tbl thead").addEventListener("click",function(e){
     var th=e.target.closest("th");if(!th)return;var k=th.getAttribute("data-k");if(!k)return;   // ignore the # column
