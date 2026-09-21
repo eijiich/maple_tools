@@ -33,12 +33,30 @@
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px;}
 
   /* table view */
+  .legion-summary{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 10px;padding:9px 12px;
+    background:var(--panel);border:1px solid var(--line);border-radius:6px;font-size:12px;}
+  .legion-summary .lg-h{color:var(--dim);text-transform:uppercase;letter-spacing:.5px;font-size:11px;}
+  .legion-summary b{color:var(--fg);}
+  .legion-summary .lg-big{color:var(--acc);font-size:15px;font-weight:700;}
+  .legion-summary .lg-sep{width:1px;align-self:stretch;background:var(--line);margin:0 2px;}
+  .legion-summary .lg-chip{color:var(--dim);}
+  .legion-summary .lg-chip b{color:var(--fg);}
   .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;}
-  table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap;}
+  table{border-collapse:collapse;width:auto;font-size:12px;white-space:nowrap;}   /* auto = column widths stay stable across Show sets */
+  td.rownum,th.rownum{text-align:right;color:var(--dimmer);width:1%;padding-right:9px;cursor:default;user-select:none;}
+  .iacell{display:inline-block;padding:1px 6px;border-radius:3px;white-space:nowrap;}
+  .iacell.iagoal{color:var(--dim);}
+  td .iacell.ia-green{background:rgba(84,201,138,.18);color:var(--good);}
+  td .iacell.ia-yellow{background:rgba(226,179,68,.20);color:var(--warn);}
+  td .iacell.ia-red{background:rgba(228,107,107,.16);color:var(--bad);}
+  th.ia-goalcol{color:var(--dimmer);}
+  .ia-hl-wrap{display:inline-flex;align-items:center;gap:4px;cursor:pointer;}
+  .ia-hl-wrap input{width:14px;height:14px;padding:0;margin:0;accent-color:var(--acc);}
   th,td{padding:4px 7px;border-bottom:1px solid var(--line);text-align:right;}
   th{position:sticky;top:0;background:var(--panel2);color:var(--dim);cursor:pointer;
      font-weight:600;text-align:right;user-select:none;}
   th.l,td.l{text-align:left;}
+  th.ctr,td.ctr{text-align:center;}   /* toggle / check columns */
   tbody tr:hover{background:#1e2330;}
   td.class{color:var(--acc);}
   .grp-arc{color:var(--arc);} .grp-sac{color:var(--sac);}
@@ -98,8 +116,11 @@
     padding:6px 9px;color:var(--fg);font-size:14px;}
   .readfld .rf-sub{color:var(--dim);font-size:11px;font-weight:400;}
   h3.sub2{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin:12px 0 4px;font-weight:600;}
-  .ia-row{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0;}
-  .ia-row input{flex:1;min-width:130px;}
+  .ia-row{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0;}
+  .ia-line{display:flex;align-items:center;gap:5px;}
+  .ia-line select{min-width:150px;}
+  .ia-line .ia-val{width:52px;text-align:right;}
+  .ia-line .ia-unit{color:var(--dim);font-size:11px;min-width:8px;}
   .warn{color:var(--warn);}
   .badgegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;margin:6px 0;}
   .badgecell{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;}
@@ -185,7 +206,7 @@
   <div class="bar">
     <h1>CHARACTERS</h1>
     <button id="tabTable" class="on">Table</button>
-    <button id="tabEdit">Edit</button>
+    <button id="tabEdit">Detail</button>
     <button id="tabBosses">Bosses</button>
     <span class="spacer"></span>
     <span class="muted" id="count"></span>
@@ -198,14 +219,17 @@
   <!-- TABLE VIEW -->
   <div id="viewTable">
     <div class="bar" style="margin:0 0 8px">
-      <span class="muted">Columns:</span>
+      <span class="muted">Show:</span>
       <button id="setSymbols" class="on">Symbols</button>
-      <button id="setBossing">Bossing</button>
+      <button id="setBossing">Combat</button>
       <button id="setBadges">Badges</button>
       <button id="setDrop">Drop</button>
+      <button id="setIA">IA</button>
+      <label class="muted ia-hl-wrap" id="iaHlWrap" hidden><input type="checkbox" id="iaHl"> highlight vs goal</label>
     </div>
+    <div class="legion-summary" id="legionSummary"></div>
     <div class="tblwrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
-    <p class="muted" style="margin-top:8px">Edit cells inline. Click a character's <b>IGN</b> to open its full editor. Click a header to sort.</p>
+    <p class="muted" style="margin-top:8px">Edit cells inline. Click a character's <b>IGN</b> to open its full <b>Detail</b> view. Click a header to sort.</p>
   </div>
 
   <!-- EDIT VIEW -->
@@ -250,11 +274,55 @@
   var ARC_FORCE=[0,0,12,27,47,74,110,157,217,292,384,495,627,782,962,1169,1405,1672,1972,2307,2679];
   var SAC_FORCE=[0,0,29,105,246,470,795,1239,1820,2556,3465,4565];
   var ARC_SYM=["VJ","Chuchu","Lach","Arcana","Morass","Esfera"];
-  var SAC_SYM=["Cernium","Hotel","Shangri-la","Odium","Arteria","Carcion","Tallahart"];
+  var SAC_SYM=["Cernium","Hotel","Shangri-la","Odium","Arteria","Carcion","Tallahart","Geardock"];
   var ARC={cap:2679,maxLv:20,daily:40,weekly:240,force:ARC_FORCE,syms:ARC_SYM,base:20,guildBonus:30,
     names:{VJ:"Vanishing Journey",Chuchu:"Chu Chu Island",Lach:"Lachelein",Arcana:"Arcana",Morass:"Morass",Esfera:"Esfera"}};
   var SAC={cap:4565,maxLv:11,daily:30,weekly:0,force:SAC_FORCE,syms:SAC_SYM,base:0,guildBonus:0,
-    names:{Cernium:"Cernium",Hotel:"Hotel Arcus","Shangri-la":"Shangri-La",Odium:"Odium",Arteria:"Arteria",Carcion:"Carcion",Tallahart:"Tallahart"}};
+    names:{Cernium:"Cernium",Hotel:"Hotel Arcus","Shangri-la":"Shangri-La",Odium:"Odium",Arteria:"Arteria",Carcion:"Carcion",Tallahart:"Tallahart",Geardock:"Geardock"}};
+  // inner-ability lines (values from brendonmay.github.io/innerAbilityCalculator: legendary max
+  // per line position; l1 = first line, l23 = 2nd/3rd line). Attack merges W/M ATT.
+  var IA_STATS=[
+    {k:"att",n:"Attack / M.Att",sh:"ATT",pct:false,l1:30,l23:21},
+    {k:"boss",n:"Boss Damage",sh:"Boss",pct:true,l1:20,l23:10},
+    {k:"crit",n:"Critical Rate",sh:"Crit",pct:true,l1:30,l23:20},
+    {k:"buff",n:"Buff Duration",sh:"Buff",pct:true,l1:50,l23:38},
+    {k:"cdr",n:"Cooldown Reduction",sh:"CDR",pct:true,l1:20,l23:10},
+    {k:"drop",n:"Item Drop Rate",sh:"Drop",pct:true,l1:20,l23:15},
+    {k:"meso",n:"Meso Obtained",sh:"Meso",pct:true,l1:20,l23:15},
+    {k:"normal",n:"Normal Monster Dmg",sh:"Normal",pct:true,l1:10,l23:8},
+    {k:"abnormal",n:"Abnormal Status Dmg",sh:"Abnormal",pct:true,l1:10,l23:8},
+    {k:"aspd",n:"Attack Speed +1",sh:"Atk Spd",pct:false,l1:1,l23:0,first:true},
+    {k:"passive",n:"+1 Passive Skill",sh:"Passive",pct:false,l1:1,l23:0,first:true}
+  ];
+  function iaCellLabel(v){if(!v||!v.s)return "—";var s=IA_BY_K[v.s];if(!s)return "—";
+    return s.sh+" "+((v.val===0||v.val)?v.val:"")+(s.pct?"%":"");}
+  function iaCmpClass(cur,goal){   // vs same-position goal: green met, yellow short, red wrong/missing
+    if(!goal||!goal.s)return "";
+    if(!cur||!cur.s||cur.s!==goal.s)return "ia-red";
+    return num(cur.val)>=num(goal.val)?"ia-green":"ia-yellow";}
+  var IA_BY_K={};IA_STATS.forEach(function(s){IA_BY_K[s.k]=s;});
+  function iaMax(k,i){var s=IA_BY_K[k];return s?(i===0?s.l1:s.l23):"";}
+  function parseIaStr(str){   // migrate old free-text IA lines ("10% Boss", "AS +1", "21 Atk")
+    var t=String(str).toLowerCase(),m=String(str).match(/(-?\d+(?:\.\d+)?)/),val=m?parseFloat(m[1]):"",s="";
+    if(/\bas\b|attack speed|atk speed/.test(t))s="aspd";
+    else if(/\bp\b|passive/.test(t))s="passive";
+    else if(/boss/.test(t))s="boss";
+    else if(/buff/.test(t))s="buff";
+    else if(/\bcd\b|cooldown/.test(t))s="cdr";
+    else if(/drop/.test(t))s="drop";
+    else if(/meso/.test(t))s="meso";
+    else if(/debuff|abnormal/.test(t))s="abnormal";
+    else if(/normal/.test(t))s="normal";
+    else if(/crit/.test(t))s="crit";
+    else if(/att|atk/.test(t))s="att";
+    return {s:s,val:val};
+  }
+  function iaOk(a){if(!a||a.length!==3)return false;for(var i=0;i<3;i++){if(!a[i]||typeof a[i]!=="object")return false;}return true;}
+  function iaNorm(a){a=a||[];var out=[];for(var i=0;i<3;i++){var v=a[i];
+    if(v&&typeof v==="object")out.push({s:v.s||"",val:(v.val===0||v.val)?v.val:""});
+    else if(typeof v==="string"&&v.replace(/\s|-/g,""))out.push(parseIaStr(v));
+    else out.push({s:"",val:""});}return out;}
+
   var KEY="ayamushy_characters_v1";
 
   // ---------- Legion bonus (from the sheet: class -> bonus type, level -> value) ----------
@@ -387,10 +455,12 @@
       c.id=c.id||uid();
       c.class=baseClass(c.class);
       c.arcane=c.arcane||{};c.sacred=c.sacred||{};
-      c.arcane.levels=c.arcane.levels||[0,0,0,0,0,0];
-      c.arcane.extras=c.arcane.extras||[0,0,0,0,0,0];
-      c.sacred.levels=c.sacred.levels||[0,0,0,0,0,0,0];
-      c.sacred.extras=c.sacred.extras||[0,0,0,0,0,0,0];
+      c.arcane.levels=c.arcane.levels||[];c.arcane.extras=c.arcane.extras||[];
+      c.sacred.levels=c.sacred.levels||[];c.sacred.extras=c.sacred.extras||[];
+      while(c.arcane.levels.length<ARC_SYM.length)c.arcane.levels.push(0);   // pad to current symbol counts
+      while(c.arcane.extras.length<ARC_SYM.length)c.arcane.extras.push(0);
+      while(c.sacred.levels.length<SAC_SYM.length)c.sacred.levels.push(0);    // e.g. adds Geardock slot
+      while(c.sacred.extras.length<SAC_SYM.length)c.sacred.extras.push(0);
       var nk=(c.name1||"")+"|"+(c.name2||"");
       if(!c.boss){var sb=SEED_BOSS[nk];if(sb)c.boss=JSON.parse(JSON.stringify(sb));}
       if(!c.badges){var sbd=SEED_BADGES[nk];if(sbd)c.badges=JSON.parse(JSON.stringify(sbd));}
@@ -429,7 +499,9 @@
   var BOSS_FLAGS=["Boost","Sup","TW","Slime","Pap","Heart","Pet","Purse","Soul"];
   var FLAG_LABEL={ArcWeapon:"Arc Wpn"};
   function flagLabel(f){return FLAG_LABEL[f]||f;}
-  function ensureBoss(c){c.boss=c.boss||{};c.boss.flags=c.boss.flags||{};c.boss.ia=c.boss.ia||["","",""];c.boss.dia=c.boss.dia||["","",""];return c.boss;}
+  function ensureBoss(c){c.boss=c.boss||{};c.boss.flags=c.boss.flags||{};
+    if(!iaOk(c.boss.ia))c.boss.ia=iaNorm(c.boss.ia);
+    if(!iaOk(c.boss.dia))c.boss.dia=iaNorm(c.boss.dia);return c.boss;}
   function fullIgn(c){return (c.name1||"")+(c.name2||"");}  // IGN is split across two cells; the real name is the concatenation
   function bnum(c,k){return num(c.boss&&c.boss[k]);}
   function bflag(c,k){return !!(c.boss&&c.boss.flags&&c.boss.flags[k]);}
@@ -602,9 +674,14 @@
   var DROP_COLS=[{k:"droptotal",t:"Drop%",cls:"grp-arc",get:function(c){return dropTotal(c);}}];
   DROP_SLOTS.forEach(function(sl){DROP_COLS.push({k:"d_"+sl[0],t:sl[1],et:"num",mn:0,mx:9999,get:function(c){return dnum(c,sl[0]);},set:function(c,v){ensureDrop(c)[sl[0]]=v;}});});
 
+  var iaHighlight=false;
+  var IA_COLS=[];
+  [0,1,2].forEach(function(i){IA_COLS.push({k:"iac"+i,t:"Cur "+(i+1),cls:"l ia-col",et:"iacur",line:i,get:function(c){return ensureBoss(c).ia[i];}});});
+  [0,1,2].forEach(function(i){IA_COLS.push({k:"iag"+i,t:"Goal "+(i+1),cls:"l ia-col ia-goalcol",et:"iagoal",line:i,get:function(c){return ensureBoss(c).dia[i];}});});
+
   var tableSet="symbols", COLS, COL_BY_K;
   function setCols(){
-    var extra=tableSet==="bossing"?BOSS_COLS:(tableSet==="badges"?BADGE_COLS:(tableSet==="drop"?DROP_COLS:SYM_COLS));
+    var extra=tableSet==="bossing"?BOSS_COLS:(tableSet==="badges"?BADGE_COLS:(tableSet==="drop"?DROP_COLS:(tableSet==="ia"?IA_COLS:SYM_COLS)));
     COLS=IDENT_COLS.concat(extra);
     COL_BY_K={};COLS.forEach(function(col){COL_BY_K[col.k]=col;});
   }
@@ -619,7 +696,15 @@
     if(col.et==="num")return '<input class="cin" type="number" min="'+(col.mn||0)+'" max="'+(col.mx||999)+'" value="'+num(v)+'">';
     if(col.et==="job")return '<select class="csel">'+jobOptions(c.class)+'</select>';
     if(col.et==="bonus")return '<select class="csel">'+bonusOptions(legionBonusType(c))+'</select>';
+    if(col.et==="iacur"){var bb=ensureBoss(c),cls=iaHighlight?iaCmpClass(bb.ia[col.line],bb.dia[col.line]):"";
+      return '<span class="iacell'+(cls?" "+cls:"")+'">'+esc(iaCellLabel(bb.ia[col.line]))+'</span>';}
+    if(col.et==="iagoal")return '<span class="iacell iagoal">'+esc(iaCellLabel(ensureBoss(c).dia[col.line]))+'</span>';
     return col.fmt?col.fmt(v):(v===""||v==null?'<span class="no">-</span>':v);
+  }
+  function colCls(col){   // center toggle/check columns (drop any left-align on them)
+    var base=col.cls||"";
+    if(col.et==="toggle"||col.et==="tri"||col.et==="badge")base=base.replace(/\bl\b/,"").trim()+" ctr";
+    return base.trim();
   }
   function clamp(v,lo,hi){v=num(v);return v<lo?lo:(v>hi?hi:v);}
   function tdKey(td){var m=/(?:^|\s)k-(\S+)/.exec(td.className);return m?m[1]:null;}
@@ -631,11 +716,58 @@
     });
   }
 
+  // ---------- legion summary (top-42 legion level + board-piece inventory) ----------
+  // board pieces match the solver's categories: shape by class + level, cells 1/2/3/4/5 by bracket.
+  var PIECE_CATS=[
+    {k:"l60",   label:"Lv 60–99",               cells:1},
+    {k:"l100",  label:"Lv 100–139",             cells:2},
+    {k:"l140wp",label:"Lv 140 Warrior/Pirate",  cells:3},
+    {k:"l140mta",label:"Lv 140 Mage/Thief/Archer",cells:3},
+    {k:"l200w", label:"Lv 200 Warrior",cells:4},
+    {k:"l200a", label:"Lv 200 Archer", cells:4},
+    {k:"l200t", label:"Lv 200 Thief",  cells:4},
+    {k:"l200m", label:"Lv 200 Mage",   cells:4},
+    {k:"l200p", label:"Lv 200 Pirate", cells:4},
+    {k:"l250w", label:"Lv 250 Warrior",cells:5},
+    {k:"l250a", label:"Lv 250 Archer", cells:5},
+    {k:"l250t", label:"Lv 250 Thief",  cells:5},
+    {k:"l250m", label:"Lv 250 Mage",   cells:5},
+    {k:"l250p", label:"Lv 250 Pirate", cells:5},
+    {k:"l250x", label:"Lv 250 Xenon",  cells:5}
+  ];
+  var PIECE_CELLS={};PIECE_CATS.forEach(function(p){PIECE_CELLS[p.k]=p.cells;});
+  function pieceCat(arch,lv){   // level + class -> solver piece category (no Lv200 Xenon -> Thief)
+    if(lv<60)return null;
+    if(lv<100)return "l60";
+    if(lv<140)return "l100";
+    if(lv<200)return (arch==="Warrior"||arch==="Pirate"||arch==="Xenon")?"l140wp":"l140mta";
+    if(lv<250)return arch==="Warrior"?"l200w":arch==="Archer"?"l200a":arch==="Mage"?"l200m":arch==="Pirate"?"l200p":"l200t";
+    return arch==="Warrior"?"l250w":arch==="Archer"?"l250a":arch==="Mage"?"l250m":arch==="Pirate"?"l250p":arch==="Xenon"?"l250x":"l250t";
+  }
+  function computeLegion(){
+    var levels=[],cat={},i;
+    chars.forEach(function(c){var lv=num(c.level);if(lv<60)return;levels.push(lv);
+      var k=pieceCat(classOf(c),lv);if(k)cat[k]=(cat[k]||0)+1;});
+    levels.sort(function(a,b){return b-a;});
+    var legion=0,members=Math.min(42,levels.length);for(i=0;i<members;i++)legion+=levels[i];
+    var pieces=0,cells=0;for(var k in cat){if(cat.hasOwnProperty(k)){pieces+=cat[k];cells+=cat[k]*(PIECE_CELLS[k]||0);}}
+    return {legion:legion,members:members,cat:cat,pieces:pieces,cells:cells};
+  }
+  function renderLegionSummary(){
+    var el=document.getElementById("legionSummary");if(!el)return;var g=computeLegion();
+    var chips=PIECE_CATS.filter(function(p){return g.cat[p.k];}).map(function(p){   // ascending by level, only present
+      return '<span class="lg-chip" title="'+p.cells+' cells each">'+p.label+' <b>'+g.cat[p.k]+'</b></span>';}).join("");
+    el.innerHTML='<span class="lg-h">Legion level</span> <span class="lg-big">'+g.legion.toLocaleString()+'</span>'+
+      '<span class="lg-chip">top '+g.members+' of '+chars.length+'</span>'+
+      '<span class="lg-sep"></span>'+
+      '<span class="lg-h">Board pieces</span>'+chips+
+      '<span class="lg-chip">= <b>'+g.pieces+'</b> pieces · <b>'+g.cells+'</b> cells</span>';
+  }
   function renderTable(){
     var thead=document.querySelector("#tbl thead"), tb=document.querySelector("#tbl tbody");
-    thead.innerHTML="<tr>"+COLS.map(function(col){
+    thead.innerHTML='<tr><th class="rownum">#</th>'+COLS.map(function(col){
       var arrow=sortKey===col.k?(sortDir<0?" ▾":" ▴"):"";
-      return '<th class="'+(col.cls||"")+'" data-k="'+col.k+'">'+col.t+arrow+"</th>";
+      return '<th class="'+colCls(col)+'" data-k="'+col.k+'">'+col.t+arrow+"</th>";
     }).join("")+"</tr>";
     var sorted=chars.slice().sort(function(a,b){
       var col=COL_BY_K[sortKey]||COLS[1];
@@ -644,12 +776,13 @@
       if(typeof va==="number"&&typeof vb==="number")return (va-vb)*sortDir;
       return String(va).localeCompare(String(vb))*sortDir;
     });
-    tb.innerHTML=sorted.map(function(c){
-      return '<tr data-id="'+c.id+'">'+COLS.map(function(col){
-        return '<td class="'+(col.cls||"")+' k-'+col.k+'">'+cellInner(col,c)+"</td>";
+    tb.innerHTML=sorted.map(function(c,idx){
+      return '<tr data-id="'+c.id+'"><td class="rownum">'+(idx+1)+'</td>'+COLS.map(function(col){
+        return '<td class="'+colCls(col)+' k-'+col.k+'">'+cellInner(col,c)+"</td>";
       }).join("")+"</tr>";
     }).join("");
     document.getElementById("count").textContent=chars.length+" characters";
+    renderLegionSummary();
   }
 
   // ---------- bosses view (MapleHub-style weekly tracker) ----------
@@ -696,7 +829,7 @@
     document.getElementById("bmSetup").classList.toggle("on",setup);
     document.getElementById("btnBossReset").style.display=setup?"none":"";
     if(setup){renderBossSetup();
-      document.getElementById("bossHint").innerHTML="pick <b>difficulty</b> + <b>party</b> per character · click a name to open its editor";}
+      document.getElementById("bossHint").innerHTML="pick <b>difficulty</b> + <b>party</b> per character · click a name to open its <b>Detail</b> view";}
     else renderBosses();
   }
 
@@ -739,6 +872,16 @@
   }
   function tgl(on,name){return '<button class="tglbtn'+(on?" on":"")+'" data-tgl="'+name+'">'+name+(on?" ✓":"")+'</button>';}
 
+  function iaLineHTML(kind,i,v){
+    v=v||{s:"",val:""};var first=(i===0),st=IA_BY_K[v.s];
+    var opts='<option value="">— line '+(i+1)+'</option>'+IA_STATS.filter(function(s){return first||!s.first;}).map(function(s){
+      return '<option value="'+s.k+'"'+(v.s===s.k?" selected":"")+'>'+s.n+'</option>';}).join("");
+    return '<div class="ia-line">'+
+      '<select data-ia="'+kind+'" data-i="'+i+'">'+opts+'</select>'+
+      '<input type="number" class="ia-val" data-iav="'+kind+'" data-i="'+i+'" value="'+(v.val===0||v.val?v.val:"")+
+        '" placeholder="'+(st?String(first?st.l1:st.l23):"")+'"'+(st?"":" disabled")+'>'+
+      '<span class="ia-unit">'+(st&&st.pct?"%":"")+'</span></div>';
+  }
   function bossPanel(c){
     var b=ensureBoss(c);
     var nums=[["cp","CP"],["hexa","Hexa"],["erda","Erda",20],["frag","Frag"],["hellux","Hellux"],["arcArmor","Arcane",4]];
@@ -750,9 +893,9 @@
       '<option value="1"'+(sk===1?" selected":"")+'>1st</option>'+
       '<option value="2"'+(sk===2?" selected":"")+'>Both</option></select></div>';
     var flagHTML=BOSS_FLAGS.map(function(f){var on=b.flags[f];return '<button class="tglbtn'+(on?" on":"")+'" data-bflag="'+f+'">'+flagLabel(f)+(on?" ✓":"")+'</button>';}).join("");
-    var iaHTML=[0,1,2].map(function(i){return '<input type="text" data-bia="'+i+'" placeholder="line '+(i+1)+'" value="'+esc(b.ia[i]||"")+'">';}).join("");
-    var diaHTML=[0,1,2].map(function(i){return '<input type="text" data-bdia="'+i+'" placeholder="line '+(i+1)+'" value="'+esc(b.dia[i]||"")+'">';}).join("");
-    return '<div class="panel"><h2>Bossing prep</h2>'+
+    var iaHTML=[0,1,2].map(function(i){return iaLineHTML("ia",i,b.ia[i]);}).join("");
+    var diaHTML=[0,1,2].map(function(i){return iaLineHTML("dia",i,b.dia[i]);}).join("");
+    return '<div class="panel"><h2>Combat</h2>'+
       '<div class="edgrid">'+numHTML+weaponHTML+skillHTML+'</div>'+
       '<h3 class="sub2">Gear / prep</h3><div class="toggles">'+flagHTML+'</div>'+
       '<h3 class="sub2">Inner ability — current</h3><div class="ia-row">'+iaHTML+'</div>'+
@@ -959,11 +1102,15 @@
       el.addEventListener("input",function(){ensureDrop(c)[el.getAttribute("data-drop")]=Math.max(0,num(el.value));save();renderTable();
         var tb=document.querySelector('#editor .drop-total');if(tb)tb.textContent=dropTotal(c)+"%";});
     });
-    document.querySelectorAll('#editor [data-bia]').forEach(function(el){
-      el.addEventListener("input",function(){b.ia[+el.getAttribute("data-bia")]=el.value;save();renderTable();});
+    document.querySelectorAll('#editor [data-ia]').forEach(function(el){    // IA effect pick
+      el.addEventListener("change",function(){var arr=el.getAttribute("data-ia")==="ia"?b.ia:b.dia,i=+el.getAttribute("data-i");
+        arr[i]=arr[i]||{s:"",val:""};arr[i].s=el.value;
+        if(el.value&&(arr[i].val===""||arr[i].val==null))arr[i].val=iaMax(el.value,i);   // prefill legendary max
+        if(!el.value)arr[i].val="";save();renderEditor();});
     });
-    document.querySelectorAll('#editor [data-bdia]').forEach(function(el){
-      el.addEventListener("input",function(){b.dia[+el.getAttribute("data-bdia")]=el.value;save();});
+    document.querySelectorAll('#editor [data-iav]').forEach(function(el){    // IA value edit
+      el.addEventListener("input",function(){var arr=el.getAttribute("data-iav")==="ia"?b.ia:b.dia,i=+el.getAttribute("data-i");
+        arr[i]=arr[i]||{s:"",val:""};arr[i].val=el.value===""?"":num(el.value);save();});
     });
     var lp=document.querySelector('#editor .lk-paste');
     if(lp)lp.addEventListener("input",function(){c.linkText=lp.value;save();updateLinkRank(c);});
@@ -1080,13 +1227,17 @@
     document.getElementById("setBossing").classList.toggle("on",tableSet==="bossing");
     document.getElementById("setBadges").classList.toggle("on",tableSet==="badges");
     document.getElementById("setDrop").classList.toggle("on",tableSet==="drop");
+    document.getElementById("setIA").classList.toggle("on",tableSet==="ia");
+    document.getElementById("iaHlWrap").hidden=tableSet!=="ia";
   }
   document.getElementById("setSymbols").onclick=function(){tableSet="symbols";setCols();renderTable();syncSetBtns();};
   document.getElementById("setBossing").onclick=function(){tableSet="bossing";setCols();renderTable();syncSetBtns();};
   document.getElementById("setBadges").onclick=function(){tableSet="badges";setCols();renderTable();syncSetBtns();};
   document.getElementById("setDrop").onclick=function(){tableSet="drop";setCols();renderTable();syncSetBtns();};
+  document.getElementById("setIA").onclick=function(){tableSet="ia";setCols();renderTable();syncSetBtns();};
+  document.getElementById("iaHl").onchange=function(){iaHighlight=this.checked;renderTable();};
   document.querySelector("#tbl thead").addEventListener("click",function(e){
-    var th=e.target.closest("th");if(!th)return;var k=th.getAttribute("data-k");
+    var th=e.target.closest("th");if(!th)return;var k=th.getAttribute("data-k");if(!k)return;   // ignore the # column
     if(sortKey===k)sortDir=-sortDir; else {sortKey=k;sortDir=-1;}
     renderTable();
   });
