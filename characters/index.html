@@ -466,8 +466,8 @@
   }
   // "next 27 sym · 4d" — symbols to the target, with days appended when a rate is set
   function symMeta(label,syms,days,maxed){
-    if(maxed)return label+' maxed';
-    return label+' '+syms+' sym'+((days==="-"||days==null)?"":' · '+days+'d');
+    if(maxed)return label+': maxed';
+    return label+': '+syms+' sym'+((days==="-"||days==null)?"":' · '+days+'d');
   }
 
   // ---------- state ----------
