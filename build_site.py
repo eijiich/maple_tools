@@ -43,6 +43,10 @@ APPS = [
       'solve-impl.mjs', 'worker.mjs', 'legion.js', 'legion.wasm'],
      'Solver',
      'Legion board solver — place your pieces and let the WASM search fill the board.'),
+    ('characters', 'characters',
+     ['index.html', 'seed.js'],
+     'Characters',
+     'Your account roster — table view to compare, per-character view to edit. Symbols first.'),
 ]
 
 NAV = [(slug, label) for slug, _s, _i, label, _b in APPS]

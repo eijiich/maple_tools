@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Characters</title>
+<style>
+  :root{
+    color-scheme:dark;   /* render native spinners / select arrows in dark theme */
+    --bg:#12141a; --panel:#1a1d26; --panel2:#20242f; --line:#2c313d;
+    --fg:#e6e8ee; --dim:#8b93a7; --dimmer:#5b6376;
+    --acc:#6ea8fe; --good:#54c98a; --warn:#e2b344; --bad:#e46b6b;
+    --arc:#8ab6ff; --sac:#5686e0;   /* AF / SAC — two calm shades of the site's blue */
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font:13px/1.45 ui-monospace,"SF Mono",Menlo,Consolas,monospace;}
+  .wrap{max-width:1600px;margin:0 auto;padding:14px;}
+  h1{font-size:15px;margin:0;letter-spacing:.5px;}
+  h2{font-size:12px;margin:14px 0 8px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;}
+  .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;}
+  .bar .spacer{flex:1;}
+  button,select,input{background:var(--panel2);color:var(--fg);border:1px solid var(--line);
+    border-radius:4px;padding:5px 9px;font:inherit;}
+  button{cursor:pointer;}
+  button:hover{border-color:var(--acc);color:var(--acc);}
+  button.on{border-color:var(--acc);color:var(--acc);background:#1a2333;}
+  button.danger:hover{border-color:var(--bad);color:var(--bad);}
+  input:focus,select:focus{outline:none;border-color:var(--acc);}
+  input[type=number]{width:60px;-moz-appearance:textfield;appearance:textfield;}
+  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  .muted{color:var(--dim);}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px;}
+
+  /* table view */
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;}
+  table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap;}
+  th,td{padding:4px 7px;border-bottom:1px solid var(--line);text-align:right;}
+  th{position:sticky;top:0;background:var(--panel2);color:var(--dim);cursor:pointer;
+     font-weight:600;text-align:right;user-select:none;}
+  th.l,td.l{text-align:left;}
+  tbody tr:hover{background:#1e2330;}
+  td.class{color:var(--acc);}
+  .grp-arc{color:var(--arc);} .grp-sac{color:var(--sac);}
+  th.sym-arc{color:var(--arc);} th.sym-sac{color:var(--sac);}  /* tint only the group headers, keep cell values neutral */
+  .chip{display:inline-block;min-width:16px;text-align:center;}
+  .yes{color:var(--good);} .no{color:var(--dimmer);}
+  /* editable cells */
+  td .cin{width:50px;padding:2px 4px;text-align:right;background:transparent;border:1px solid transparent;border-radius:3px;}
+  td .cin:hover{border-color:var(--line);}
+  td .cin:focus{border-color:var(--acc);background:var(--panel2);}
+  td .csel{max-width:150px;padding:2px 6px;background:transparent;border:1px solid transparent;border-radius:3px;}
+  td .csel:hover{border-color:var(--line);}
+  td .csel:focus{border-color:var(--acc);background:var(--panel2);}
+  td .ignlink{color:var(--acc);text-decoration:none;font-weight:600;}
+  td .ignlink:hover{text-decoration:none;color:#9cc2ff;}
+  td .tog{cursor:pointer;user-select:none;}
+  td .tricell{cursor:pointer;user-select:none;}
+
+  /* editor */
+  .edgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;}
+  .field{display:flex;flex-direction:column;gap:3px;}
+  .field label{color:var(--dim);font-size:11px;}
+  .symrow{display:grid;grid-template-columns:96px 58px 58px 1fr;gap:8px;align-items:center;
+    padding:4px 0;border-bottom:1px solid var(--line);}
+  .symrow .nm{color:var(--fg);}
+  .symrow .hint{color:var(--dim);font-size:11px;text-align:right;}
+  .toggles{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0;}
+  .total{font-size:14px;}
+  .total b{color:var(--acc);}
+  .sec-arc h2{color:var(--arc);} .sec-sac h2{color:var(--sac);}
+
+  /* symbol cards (whackybeanz-style) */
+  .symgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin:10px 0;}
+  .symcard{background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    padding:10px 12px;display:flex;flex-direction:column;gap:7px;}
+  .symcard .sc-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+  .symcard .sc-name{font-weight:600;}
+  .symcard .sc-lvl{font-size:12px;color:var(--dim);white-space:nowrap;}
+  .symcard .sc-lvl b{color:var(--fg);font-size:15px;}
+  .symcard .sc-bar{height:7px;border-radius:4px;background:#11131a;border:1px solid var(--line);overflow:hidden;}
+  .symcard .sc-bar i{display:block;height:100%;width:0;transition:width .12s;}
+  .symcard .sc-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);}
+  .symcard .sc-meta .sc-val{color:var(--fg);font-weight:600;}
+  .symcard .sc-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .symcard .sc-inputs label{display:flex;flex-direction:column;gap:2px;font-size:10px;
+    color:var(--dim);text-transform:uppercase;letter-spacing:.5px;}
+  .symcard .sc-inputs input{width:100%;}
+  .sec-arc .symcard .sc-bar i{background:var(--arc);}
+  .sec-sac .symcard .sc-bar i{background:var(--sac);}
+  .sec-arc .symcard.maxed{border-color:var(--arc);}
+  .sec-sac .symcard.maxed{border-color:var(--sac);}
+  .symcard.maxed .sc-lvl b{color:var(--good);}
+  .sec-arc .symcard.maxed .sc-lvl b{color:var(--arc);}
+  .sec-sac .symcard.maxed .sc-lvl b{color:var(--sac);}
+  /* read-only derived field (legion bonus value) */
+  .readfld{background:#171a22;border:1px dashed var(--line);border-radius:4px;
+    padding:6px 9px;color:var(--fg);font-size:14px;}
+  .readfld .rf-sub{color:var(--dim);font-size:11px;font-weight:400;}
+  h3.sub2{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin:12px 0 4px;font-weight:600;}
+  .ia-row{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0;}
+  .ia-row input{flex:1;min-width:130px;}
+  .warn{color:var(--warn);}
+  .badgegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;margin:6px 0;}
+  .badgecell{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;}
+  .badgecell .bc-name{color:var(--fg);}
+  .dropgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;}
+  /* link skills */
+  .lk-paste{width:100%;min-height:96px;resize:vertical;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:6px 8px;font:inherit;line-height:1.5;}
+  .lk-paste:focus{outline:none;border-color:var(--acc);}
+  .lk-chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+  .lk-chip{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:2px 10px;font-size:11px;color:var(--dim);}
+  .lk-chip.on{border-color:var(--acc);color:var(--fg);}
+  .lk-chip b{color:var(--acc);font-weight:600;}
+  .lk-rank-list{border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-top:6px;max-width:560px;}
+  .lk-row{display:grid;grid-template-columns:32px 1.2fr 1.4fr 92px;gap:8px;align-items:center;padding:4px 10px;border-bottom:1px solid var(--line);font-size:12px;}
+  .lk-row:last-child{border-bottom:none;}
+  .lk-row.lk-head{background:var(--panel2);color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.5px;}
+  .lk-row .lk-rank{color:var(--dim);text-align:right;}
+  .lk-row .lk-cls{color:var(--fg);font-weight:600;}
+  .lk-row .lk-eff{color:var(--dim);}
+  .lk-row .lk-val{text-align:right;color:var(--acc);font-weight:600;}
+  .lk-row.lk-zero{opacity:.4;}
+  .lk-row.lk-zero .lk-val{color:var(--dim);}
+  /* boss setup sheet (rows = characters, 2 cols per boss) */
+  .bset-wrap{max-height:calc(100vh - 210px);overflow:auto;}
+  #bsetTbl{border-collapse:separate;border-spacing:0;width:auto;font-size:11px;white-space:nowrap;}
+  #bsetTbl th,#bsetTbl td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:3px 5px;text-align:center;}
+  #bsetTbl thead th{position:sticky;top:0;z-index:3;background:var(--panel2);color:var(--dim);font-weight:600;}
+  #bsetTbl .bs-boss{white-space:normal;min-width:118px;max-width:132px;line-height:1.12;color:var(--fg);border-left:2px solid var(--line);}
+  #bsetTbl .bs-boss .bs-sub{color:var(--dimmer);font-size:9px;font-weight:400;letter-spacing:.5px;text-transform:uppercase;}
+  #bsetTbl .bs-corner{left:0;z-index:5;text-align:left;background:var(--panel2);}
+  #bsetTbl .bs-name{position:sticky;left:0;z-index:2;background:var(--panel);text-align:left;min-width:150px;}
+  #bsetTbl tbody tr:hover .bs-name{background:#1e2330;}
+  #bsetTbl .bs-ntop{display:flex;align-items:center;gap:6px;}
+  #bsetTbl .bset-trk{padding:0;margin:0;width:14px;height:14px;flex:none;background:transparent;accent-color:var(--acc);cursor:pointer;}
+  #bsetTbl .bs-name a{font-weight:600;font-size:12px;color:var(--acc);text-decoration:none;}
+  #bsetTbl .bs-name a:visited{color:var(--acc);}
+  #bsetTbl .bs-name a:hover{color:#9cc2ff;}
+  #bsetTbl .bs-nsub{color:var(--dim);font-size:10px;}
+  #bsetTbl td.bs-c{padding:2px 3px;}
+  #bsetTbl td.bs-c:first-of-type,#bsetTbl .bs-boss{border-left:2px solid var(--line);}
+  #bsetTbl .bset-d{width:78px;padding:2px 4px;font-size:11px;background:transparent;border-color:transparent;}
+  #bsetTbl .bset-d:hover{border-color:var(--line);} #bsetTbl .bset-d:focus{border-color:var(--acc);background:var(--panel2);}
+  #bsetTbl .bset-p{width:36px;padding:2px;text-align:center;font-size:11px;background:transparent;border-color:transparent;}
+  #bsetTbl .bset-p:hover:not(:disabled){border-color:var(--line);} #bsetTbl .bset-p:focus{border-color:var(--acc);background:var(--panel2);}
+  #bsetTbl .bset-p:disabled{opacity:.25;}
+  #bsetTbl .bs-mw{text-align:right;color:var(--acc);font-weight:600;border-left:2px solid var(--line);}
+  #bsetTbl .bs-cy{text-align:right;color:var(--dim);}
+  #bsetTbl tbody .bs-off{opacity:.45;}
+  /* bosses (weekly tracker) view */
+  .boss-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;}
+  .bs-card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;}
+  .bs-card .bs-l,.bs-card .bs-l2{color:var(--dim);font-size:12px;}
+  .bs-card .bs-v{font-size:20px;font-weight:700;color:var(--fg);margin:2px 0 10px;}
+  .bs-card .bs-v2{font-size:16px;font-weight:600;color:var(--acc);}
+  .boss-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px;}
+  .bcard{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;}
+  .bcard-off{opacity:.45;}
+  .bcard-hd{display:flex;align-items:flex-start;gap:8px;}
+  .bcard-id{flex:1;min-width:0;}
+  .bcard-name{font-weight:700;font-size:14px;color:var(--acc);text-decoration:none;}
+  .bcard-name:hover{color:#9cc2ff;}
+  .bcard-sub{color:var(--dim);font-size:11px;}
+  .bcard-badge{background:#1a2333;color:var(--acc);border:1px solid var(--acc);border-radius:10px;
+    padding:1px 8px;font-size:11px;font-weight:700;white-space:nowrap;}
+  .bcard-trk{color:var(--dim);font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer;white-space:nowrap;}
+  .bcard-rows{display:flex;flex-direction:column;font-size:12px;}
+  .bc-row{display:grid;grid-template-columns:18px 1fr auto 92px;gap:6px;align-items:center;padding:2px 0;cursor:pointer;border-radius:4px;}
+  .bc-row:hover:not(.bc-head){background:#1e2330;}
+  .bc-head{color:var(--dim);cursor:default;font-size:11px;border-bottom:1px solid var(--line);padding-bottom:3px;margin-bottom:2px;}
+  .bc-row .bc-v{text-align:right;color:var(--dim);}
+  .bc-row .bc-p{text-align:right;color:var(--dim);min-width:16px;}
+  .bc-chk{color:var(--dim);}
+  .bc-done .bc-chk,.bc-done .bc-bn{color:var(--good);}
+  .bc-done .bc-v{color:var(--fg);}
+  .bcard-ft{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:6px;}
+  .bc-tot{color:var(--acc);font-weight:600;font-size:12px;}
+  .bc-all{font-size:11px;padding:3px 8px;}
+  [hidden]{display:none!important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <h1>CHARACTERS</h1>
+    <button id="tabTable" class="on">Table</button>
+    <button id="tabEdit">Edit</button>
+    <button id="tabBosses">Bosses</button>
+    <span class="spacer"></span>
+    <span class="muted" id="count"></span>
+    <button id="btnExport">export</button>
+    <button id="btnImport">import</button>
+    <button id="btnReset" class="danger">reset to seed</button>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+  </div>
+
+  <!-- TABLE VIEW -->
+  <div id="viewTable">
+    <div class="bar" style="margin:0 0 8px">
+      <span class="muted">Columns:</span>
+      <button id="setSymbols" class="on">Symbols</button>
+      <button id="setBossing">Bossing</button>
+      <button id="setBadges">Badges</button>
+      <button id="setDrop">Drop</button>
+    </div>
+    <div class="tblwrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+    <p class="muted" style="margin-top:8px">Edit cells inline. Click a character's <b>IGN</b> to open its full editor. Click a header to sort.</p>
+  </div>
+
+  <!-- EDIT VIEW -->
+  <div id="viewEdit" hidden>
+    <div class="bar">
+      <label class="muted">Character</label>
+      <select id="charSel"></select>
+      <button id="btnAdd">+ add</button>
+      <button id="btnDup">duplicate</button>
+      <button id="btnDel" class="danger">delete</button>
+    </div>
+    <div id="editor"></div>
+  </div>
+
+  <!-- BOSSES VIEW (weekly crystal tracker + setup sheet) -->
+  <div id="viewBosses" hidden>
+    <div class="bar" style="margin:0 0 10px">
+      <span class="muted">Mode:</span>
+      <button id="bmTrack" class="on">Track</button>
+      <button id="bmSetup">Setup</button>
+      <span class="spacer"></span>
+      <span class="muted" id="bossHint"></span>
+      <button id="btnBossReset" class="danger">reset week</button>
+    </div>
+    <div id="bossTrackWrap">
+      <div id="bossSummary" class="boss-summary"></div>
+      <div id="bossCards" class="boss-cards" style="margin-top:12px"></div>
+    </div>
+    <div id="bossSetupWrap" hidden>
+      <div id="bossSetupSummary" class="boss-summary" style="margin-bottom:12px"></div>
+      <div class="tblwrap bset-wrap"><div id="bossSetup"></div></div>
+      <p class="muted" style="margin-top:8px">Each row is a character. For every boss pick a <b>difficulty</b> and a <b>party size</b> (1&ndash;6); set difficulty to <b>&mdash;</b> or party to <b>0</b> to drop it. Meso is per character (Heroic &times;5, split by party). Scroll sideways for more bosses.</p>
+    </div>
+  </div>
+</div>
+
+<script src="seed.js"></script>
+<script>
+(function(){
+  "use strict";
+  // ---------- game constants (validated against the sheet) ----------
+  var ARC_FORCE=[0,0,12,27,47,74,110,157,217,292,384,495,627,782,962,1169,1405,1672,1972,2307,2679];
+  var SAC_FORCE=[0,0,29,105,246,470,795,1239,1820,2556,3465,4565];
+  var ARC_SYM=["VJ","Chuchu","Lach","Arcana","Morass","Esfera"];
+  var SAC_SYM=["Cernium","Hotel","Shangri-la","Odium","Arteria","Carcion","Tallahart"];
+  var ARC={cap:2679,maxLv:20,daily:40,weekly:240,force:ARC_FORCE,syms:ARC_SYM,base:20,guildBonus:30,
+    names:{VJ:"Vanishing Journey",Chuchu:"Chu Chu Island",Lach:"Lachelein",Arcana:"Arcana",Morass:"Morass",Esfera:"Esfera"}};
+  var SAC={cap:4565,maxLv:11,daily:30,weekly:0,force:SAC_FORCE,syms:SAC_SYM,base:0,guildBonus:0,
+    names:{Cernium:"Cernium",Hotel:"Hotel Arcus","Shangri-la":"Shangri-La",Odium:"Odium",Arteria:"Arteria",Carcion:"Carcion",Tallahart:"Tallahart"}};
+  var KEY="ayamushy_characters_v1";
+
+  // ---------- Legion bonus (from the sheet: class -> bonus type, level -> value) ----------
+  var TIER_MIN=[60,100,140,200,250];  // level thresholds; below 60 => 0
+  // bonus type -> [v@60, v@100, v@140, v@200, v@250]
+  var SCALE_BY_BONUS={
+    "20% chance to deal X% + dmg":[4,8,12,16,20],
+    "70% chance to heal X HP%":[2,4,6,8,10],
+    "70% chance to restore X MP%":[2,4,6,8,10],
+    "Bonus EXP %":[4,6,8,10,12],
+    "Boss Damage %":[1,2,3,5,6],
+    "Buff Duration %":[5,10,15,20,25],
+    "Cooldown Reduction %":[2,3,4,5,6],
+    "Crit Chance":[1,2,3,4,5],
+    "Critical Damage %":[1,2,3,5,6],
+    "DEX":[10,20,40,80,100],
+    "Dmg":[1,2,3,5,6],
+    "HP":[10,20,40,80,100],
+    "HP %":[2,3,4,5,6],
+    "IED %":[1,2,3,5,6],
+    "INT":[10,20,40,80,100],
+    "Jump":[10,20,40,80,100],
+    "LUK":[10,20,40,80,100],
+    "MP %":[2,3,4,5,6],
+    "Mesos obtained %":[1,2,3,4,5],
+    "STR":[10,20,40,80,100],
+    "STR, DEX, LUK":[5,10,20,40,50],
+    "Status Resistance":[10,20,40,80,100],
+    "Summon Duration %":[4,6,8,10,12]
+  };
+  // full job roster: n=Job, g=Faction (sheet "Type" col), c=Class/archetype, b=default legion bonus.
+  // Faction, Class and default bonus all derive from the Job; data comes from the sheet itself.
+  var FACTIONS=["Explorer","Cygnus","Heroes","Resistance","Nova","Sengoku","Flora","Anima","Jianghu","Shine","Kinesis","Zero"];
+  var CLASSES=[
+    {n:"Arch Mage (F/P)",g:"Explorer",c:"Mage",b:"MP %"},{n:"Arch Mage (I/L)",g:"Explorer",c:"Mage",b:"INT"},
+    {n:"Beast Tamer",g:"Explorer",c:"Mage",b:"IED %"},{n:"Bishop",g:"Explorer",c:"Mage",b:"INT"},
+    {n:"Bowmaster",g:"Explorer",c:"Archer",b:"DEX"},{n:"Buccaneer",g:"Explorer",c:"Pirate",b:"STR"},
+    {n:"Cannonneer",g:"Explorer",c:"Pirate",b:"STR"},{n:"Corsair",g:"Explorer",c:"Pirate",b:"Summon Duration %"},
+    {n:"Dark Knight",g:"Explorer",c:"Warrior",b:"HP %"},{n:"Dual Blade",g:"Explorer",c:"Thief",b:"LUK"},
+    {n:"Hero",g:"Explorer",c:"Warrior",b:"STR"},{n:"Jett",g:"Explorer",c:"Pirate",b:"Critical Damage %"},
+    {n:"Marksman",g:"Explorer",c:"Archer",b:"Crit Chance"},{n:"Night Lord",g:"Explorer",c:"Thief",b:"Crit Chance"},
+    {n:"Paladin",g:"Explorer",c:"Warrior",b:"STR"},{n:"Pathfinder",g:"Explorer",c:"Archer",b:"DEX"},
+    {n:"Shadower",g:"Explorer",c:"Thief",b:"LUK"},
+    {n:"Blaze Wizard",g:"Cygnus",c:"Mage",b:"INT"},{n:"Dawn Warrior",g:"Cygnus",c:"Warrior",b:"HP"},
+    {n:"Mihile",g:"Cygnus",c:"Warrior",b:"HP"},{n:"Night Walker",g:"Cygnus",c:"Thief",b:"LUK"},
+    {n:"Thunder Breaker",g:"Cygnus",c:"Pirate",b:"STR"},{n:"Wind Archer",g:"Cygnus",c:"Archer",b:"DEX"},
+    {n:"Aran",g:"Heroes",c:"Warrior",b:"70% chance to heal X HP%"},{n:"Evan",g:"Heroes",c:"Mage",b:"70% chance to restore X MP%"},
+    {n:"Luminous",g:"Heroes",c:"Mage",b:"INT"},{n:"Mercedes",g:"Heroes",c:"Archer",b:"Cooldown Reduction %"},
+    {n:"Phantom",g:"Heroes",c:"Thief",b:"Mesos obtained %"},{n:"Shade",g:"Heroes",c:"Pirate",b:"Critical Damage %"},
+    {n:"Battle Mage",g:"Resistance",c:"Mage",b:"INT"},{n:"Blaster",g:"Resistance",c:"Warrior",b:"IED %"},
+    {n:"Demon Avenger",g:"Resistance",c:"Warrior",b:"Boss Damage %"},{n:"Demon Slayer",g:"Resistance",c:"Warrior",b:"Status Resistance"},
+    {n:"Mechanic",g:"Resistance",c:"Pirate",b:"Buff Duration %"},{n:"Wild Hunter",g:"Resistance",c:"Archer",b:"20% chance to deal X% + dmg"},
+    {n:"Xenon",g:"Resistance",c:"Xenon",b:"STR, DEX, LUK"},  // Xenon is its own class (Pirate+Thief)
+    {n:"Angelic Buster",g:"Nova",c:"Pirate",b:"DEX"},{n:"Cadena",g:"Nova",c:"Thief",b:"LUK"},
+    {n:"Kain",g:"Nova",c:"Archer",b:"DEX"},{n:"Kaiser",g:"Nova",c:"Warrior",b:"STR"},
+    {n:"Hayato",g:"Sengoku",c:"Warrior",b:"Critical Damage %"},{n:"Kanna",g:"Sengoku",c:"Mage",b:"Boss Damage %"},
+    {n:"Adele",g:"Flora",c:"Warrior",b:"STR"},{n:"Ark",g:"Flora",c:"Pirate",b:"STR"},
+    {n:"Illium",g:"Flora",c:"Mage",b:"INT"},{n:"Khali",g:"Flora",c:"Thief",b:"LUK"},
+    {n:"Hoyoung",g:"Anima",c:"Thief",b:"LUK"},{n:"Lara",g:"Anima",c:"Mage",b:"INT"},{n:"Ren",g:"Anima",c:"Warrior",b:"Jump"},
+    {n:"Lynn",g:"Jianghu",c:"Mage",b:"IED %"},{n:"Mo Xuan",g:"Jianghu",c:"Pirate",b:"Critical Damage %"},
+    {n:"Erel",g:"Shine",c:"Warrior",b:"Boss Damage %"},{n:"Sia",g:"Shine",c:"Mage",b:"Dmg"},
+    {n:"Kinesis",g:"Kinesis",c:"Mage",b:"INT"},{n:"Zero",g:"Zero",c:"Warrior",b:"Bonus EXP %"}
+  ];
+  var CLASS_BONUS={},CLASS_SET={},CLASS_FACTION={},CLASS_ARCH={};
+  CLASSES.forEach(function(x){CLASS_SET[x.n]=1;CLASS_FACTION[x.n]=x.g;CLASS_ARCH[x.n]=x.c;if(x.b)CLASS_BONUS[x.n]=x.b;});
+  function factionOf(c){return CLASS_FACTION[baseClass(c.class)]||c.faction||"";}
+  function classOf(c){return CLASS_ARCH[baseClass(c.class)]||"";}
+  // sheet used shorthand names; map them to canonical class names
+  var ALIAS={"DA":"Demon Avenger","F/P":"Arch Mage (F/P)","I/L":"Arch Mage (I/L)"};
+  function baseClass(n){
+    n=(n||"").trim();
+    if(ALIAS[n])return ALIAS[n];
+    if(CLASS_SET[n])return n;
+    var m=n.replace(/\s*\d+$/,"").trim();  // "Bishop 2" -> "Bishop", "Hero 2" -> "Hero"
+    return CLASS_SET[m]?m:n;
+  }
+  function tierValue(level,scale){
+    if(!scale)return "";
+    level=num(level);
+    for(var i=TIER_MIN.length-1;i>=0;i--){if(level>=TIER_MIN[i])return scale[i];}
+    return 0;
+  }
+  function legionBonusType(c){return CLASS_BONUS[baseClass(c.class)]||"";}  // bound to the Job
+  function legionBonusValue(c){var s=SCALE_BY_BONUS[legionBonusType(c)];return s?tierValue(c.level,s):"";}
+
+  function num(v){var n=parseFloat(v);return isNaN(n)?0:n;}
+  function effLevel(force,table){if(force<=0)return 0;var L=0;for(var i=1;i<table.length;i++){if(force>=table[i])L=i;}return L;}
+  function symForce(spec,level,extra){return (spec.force[Math.min(Math.max(level|0,0),spec.maxLv)]||0)+num(extra);}
+  function symValue(spec,level,extra){var f=symForce(spec,level,extra);if(f<=0)return 0;return effLevel(f,spec.force)*10+spec.base;}
+  function daysTo(remaining,daily,weekly,dRate,wRate){
+    if(remaining<=0)return 0;
+    if(daily&&weekly&&(wRate>0||dRate>0))return Math.floor(remaining/(wRate/7+dRate));
+    if(daily&&dRate>0)return Math.ceil(remaining/dRate);
+    if(weekly&&wRate>0)return Math.floor(remaining/wRate)*7;
+    return "-";
+  }
+  function sectionTotal(spec,sec){
+    if(!sec||!sec.levels)return 0;
+    var t=0;for(var i=0;i<spec.syms.length;i++)t+=symValue(spec,num(sec.levels[i]),num(sec.extras&&sec.extras[i]));
+    return t+(sec.guild?spec.guildBonus:0)+num(sec.hyper)+num(sec.event);
+  }
+  function afTotal(c){return sectionTotal(ARC,c.arcane);}
+  function sacTotal(c){return sectionTotal(SAC,c.sacred);}
+  function symDays(spec,sec,i){
+    var lv=num(sec.levels[i]),ex=num(sec.extras&&sec.extras[i]);
+    var f=symForce(spec,lv,ex);
+    var toMax=daysTo(spec.cap-f,sec.daily,sec.weekly,spec.daily,spec.weekly);
+    var nextForce=lv>=spec.maxLv?f:spec.force[lv+1];
+    var toNext=lv>=spec.maxLv?"-":daysTo(nextForce-f,sec.daily,sec.weekly,spec.daily,spec.weekly);
+    return {toNext:toNext,toMax:toMax};
+  }
+
+  // ---------- state ----------
+  // migration: earlier saves have no `boss`; backfill it from the seed by name.
+  var SEED_BOSS={}, SEED_BADGES={}, SEED_DROP={}, SEED_BOSSES={};
+  (window.CHAR_SEED||[]).forEach(function(s){
+    var k=(s.name1||"")+"|"+(s.name2||"");
+    if(s.boss)SEED_BOSS[k]=s.boss;
+    if(s.badges)SEED_BADGES[k]=s.badges;
+    if(s.drop)SEED_DROP[k]=s.drop;
+    if(s.bosses)SEED_BOSSES[k]=s.bosses;
+  });
+  var chars=load();
+  var curId=chars.length?chars[0].id:null;
+  var sortKey="level", sortDir=-1;
+
+  function uid(){return "c"+Math.random().toString(36).slice(2,9);}
+  function normalize(list){
+    return list.map(function(c){
+      c.id=c.id||uid();
+      c.class=baseClass(c.class);
+      c.arcane=c.arcane||{};c.sacred=c.sacred||{};
+      c.arcane.levels=c.arcane.levels||[0,0,0,0,0,0];
+      c.arcane.extras=c.arcane.extras||[0,0,0,0,0,0];
+      c.sacred.levels=c.sacred.levels||[0,0,0,0,0,0,0];
+      c.sacred.extras=c.sacred.extras||[0,0,0,0,0,0,0];
+      var nk=(c.name1||"")+"|"+(c.name2||"");
+      if(!c.boss){var sb=SEED_BOSS[nk];if(sb)c.boss=JSON.parse(JSON.stringify(sb));}
+      if(!c.badges){var sbd=SEED_BADGES[nk];if(sbd)c.badges=JSON.parse(JSON.stringify(sbd));}
+      if(!c.drop){var sdr=SEED_DROP[nk];if(sdr)c.drop=JSON.parse(JSON.stringify(sdr));}
+      if(!c.bosses){var sbo=SEED_BOSSES[nk];if(sbo)c.bosses=JSON.parse(JSON.stringify(sbo));}
+      ensureBoss(c);ensureBadges(c);ensureDrop(c);ensureBosses(c);
+      var bo=c.bosses;                          // weekly-boss migrations (BOSS_BY_K not ready yet — key-only)
+      if(bo.cra){var cp=Math.max(1,Math.min(6,num(bo.cra.p)||1));  // old combined CRA -> its 3 doors
+        ["pierre","vonbon","crimson"].forEach(function(kk){if(!bo[kk])bo[kk]={d:"Chaos",p:cp};});delete bo.cra;}
+      if(bo.akechi&&bo.akechi.d==="Clear")bo.akechi.d="Normal";    // difficulty labels that were renamed
+      if(bo.pno&&bo.pno.d==="Clear")bo.pno.d="Normal";
+      for(var bok in bo){if(bo.hasOwnProperty(bok))bo[bok].p=Math.max(1,Math.min(6,num(bo[bok].p)||1));}
+      if(typeof c.linkText!=="string")c.linkText="";   // pasted MapleScouter stat equivalence for link ranking
+      if(typeof c.buffDur!=="number")c.buffDur=100;     // buff duration % (base 100); scales the AB link
+      var bg=c.badges;for(var bk in bg){if(bg.hasOwnProperty(bk))bg[bk]=(bg[bk]===2||bg[bk]===true);}  // drop old 'o' planning state
+      var b0=c.boss, fl=b0.flags;               // flag cleanup / rename / restructure
+      delete fl.Abso; delete fl.Rein; delete fl.Pocket; delete fl.CRA;
+      if(fl.Coin!==undefined){if(fl.Purse===undefined)fl.Purse=fl.Coin;delete fl.Coin;}
+      if(b0.skill===undefined)b0.skill=fl.Skill?1:0;   // Skill -> 3-state (crossed-X not recoverable)
+      delete fl.Skill;
+      if(b0.arcArmor===undefined)b0.arcArmor=fl.Arcane?4:0;   // Arcane -> armor count (0-4)
+      if(fl.ArcWeapon===undefined)fl.ArcWeapon=!!fl.Arcane;   //          + weapon toggle
+      delete fl.Arcane;
+      return c;
+    });
+  }
+  function load(){
+    try{var s=localStorage.getItem(KEY);if(s)return normalize(JSON.parse(s));}catch(e){}
+    return normalize(JSON.parse(JSON.stringify(window.CHAR_SEED||[])));
+  }
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(chars));}catch(e){}}
+
+
+  // ---------- table view ----------
+  // et = inline edit type: toggle | ign | num | job | bonus | (none => read-only/derived)
+  var BOSS_FLAGS=["Boost","Sup","TW","Slime","Pap","Heart","Pet","Purse","Soul"];
+  var FLAG_LABEL={ArcWeapon:"Arc Wpn"};
+  function flagLabel(f){return FLAG_LABEL[f]||f;}
+  function ensureBoss(c){c.boss=c.boss||{};c.boss.flags=c.boss.flags||{};c.boss.ia=c.boss.ia||["","",""];c.boss.dia=c.boss.dia||["","",""];return c.boss;}
+  function fullIgn(c){return (c.name1||"")+(c.name2||"");}  // IGN is split across two cells; the real name is the concatenation
+  function bnum(c,k){return num(c.boss&&c.boss[k]);}
+  function bflag(c,k){return !!(c.boss&&c.boss.flags&&c.boss.flags[k]);}
+
+  var BADGES=["Starter","Snowflake","Oppressor","Rebel","Mineral","Lion","Clockwork","Commerci","Hatching","Wave","Beach","Future","Ocean","Swamp","Void","Lab","Apocalypse","Holy","Waste","Researcher","Flora Army","Crucible"];
+  function ensureBadges(c){c.badges=c.badges||{};return c.badges;}
+  function bdhas(c,name){return !!(c.badges&&c.badges[name]);}
+  function badgeTotal(c){var t=0;for(var i=0;i<BADGES.length;i++){if(bdhas(c,BADGES[i]))t++;}return t;}
+
+  var DROP_SLOTS=[["face","Face"],["eye","Eye"],["earrings","Earrings"],["pen1","Pen 1"],["pen2","Pen 2"],
+    ["ring1","Ring 1"],["ring2","Ring 2"],["ring3","Ring 3"],["ring4","Ring 4"],["hs","HS"],
+    ["ia","IA"],["artifact","Artifact"],["fams","Fams"],["coupon","Coupon"]];
+  function ensureDrop(c){c.drop=c.drop||{};return c.drop;}
+  function dnum(c,k){return num(c.drop&&c.drop[k]);}
+  function dropTotal(c){var t=0;for(var i=0;i<DROP_SLOTS.length;i++)t+=dnum(c,DROP_SLOTS[i][0]);return t;}
+
+  // ---------- link skills (from the Links tab) ----------
+  // Each class's link skill: effect(s) + %. Value for a character = %*weight(effect),
+  // where the weight comes from that character's pasted MapleScouter stat equivalence.
+  // Effect -> scouter weight key (matches the sheet: DMG->Boss Dmg, IED->Ignore Def 380).
+  var LINK_EFF={"DMG":"boss","Crit DMG":"critDmg","IED":"ied380","All stats":"allStatPct"};
+  var LINK_SKILLS=[
+    {cls:"Angelic Buster",arch:"Pirate",e1:"DMG",p1:26.9,bd:true},  // DMG% = 10 + buffDuration/10
+    {cls:"Mo Xuan",arch:"Pirate",e1:"DMG",p1:24},
+    {cls:"Hayato",arch:"Warrior",e1:"Crit DMG",p1:7},
+    {cls:"Sia",arch:"Mage",e1:"Crit DMG",p1:6,e2:"DMG",p2:2},
+    {cls:"Kinesis",arch:"Mage",e1:"Crit DMG",p1:6},
+    {cls:"Demon Slayer",arch:"Warrior",e1:"DMG",p1:20},
+    {cls:"Kanna",arch:"Mage",e1:"DMG",p1:20},
+    {cls:"Cadena",arch:"Thief",e1:"DMG",p1:9,e2:"DMG",p2:9},
+    {cls:"Mage",arch:"Mage",e1:"DMG",p1:15,e2:"IED",p2:15},
+    {cls:"Xenon",arch:"Xenon",e1:"All stats",p1:15},
+    {cls:"Ark",arch:"Pirate",e1:"DMG",p1:16},
+    {cls:"Demon Avenger",arch:"Warrior",e1:"DMG",p1:15},
+    {cls:"Adele (party 3)",arch:"Warrior",e1:"DMG",p1:9,e2:"DMG",p2:6},
+    {cls:"Thief",arch:"Thief",e1:"DMG",p1:13.5},
+    {cls:"Kain",arch:"Archer",e1:"DMG",p1:12.5},
+    {cls:"Lynn",arch:"Mage",e1:"DMG",p1:10},
+    {cls:"Adele (solo)",arch:"Warrior",e1:"DMG",p1:9,e2:"DMG",p2:0},
+    {cls:"Luminous",arch:"Mage",e1:"IED",p1:20}
+  ];
+  var SC_LABELS={
+    "boss damage":"boss","boss dmg":"boss","boss":"boss","dmg":"boss","damage":"boss",
+    "critical dmg":"critDmg","critical damage":"critDmg","crit dmg":"critDmg","crit damage":"critDmg",
+    "ignore dff(380)":"ied380","ignore def(380)":"ied380","ied(380)":"ied380",
+    "ignore dff(300)":"ied300","ignore def(300)":"ied300","ied(300)":"ied300",
+    "all stat%":"allStatPct","all stats%":"allStatPct",
+    "m.attack":"mattFlat","matt":"mattFlat","magic attack":"mattFlat",
+    "attack":"attFlat","att":"attFlat",
+    "m.attack%":"mattPct","matt%":"mattPct","attack%":"attPct","att%":"attPct",
+    "int":"int","int%":"intPct","luk":"luk","luk%":"lukPct","str":"str","dex":"dex"
+  };
+  function scNorm(s){return String(s).toLowerCase().replace(/\s+/g," ").replace(/\s*%\s*$/,"%").replace(/\s*\(\s*/g,"(").replace(/\s*\)\s*/g,")").trim();}
+  function parseLinkStats(text){
+    var w={},rows=[],lines=String(text||"").split(/\r?\n/);
+    for(var i=0;i<lines.length;i++){var ln=lines[i];if(!ln.replace(/\s+/g,""))continue;
+      var m=ln.match(/^(.*?)[\t ]+(-?[\d.,]+)\s*%?\s*$/);
+      if(!m){rows.push({label:ln.trim(),key:null});continue;}
+      var label=m[1].trim(),val=parseFloat(m[2].replace(/,/g,""));
+      var key=SC_LABELS[scNorm(label)]||null;
+      if(key&&isFinite(val))w[key]=val;
+      rows.push({label:label,key:key,value:isFinite(val)?val:null});
+    }
+    return {w:w,rows:rows};
+  }
+  function linkP1(l,buffDur){return l.bd?(10+num(buffDur)/10):(l.p1||0);}   // AB scales with buff duration
+  function linkVal(l,w,buffDur){var v=linkP1(l,buffDur)*(num(w[LINK_EFF[l.e1]]));if(l.e2)v+=(l.p2||0)*(num(w[LINK_EFF[l.e2]]));return v;}
+  function linkRank(w,buffDur){return LINK_SKILLS.map(function(l){return {l:l,v:linkVal(l,w,buffDur)};}).sort(function(a,b){return b.v-a.v;});}
+  function hasLinkStats(c){var w=parseLinkStats(c.linkText||"").w;for(var k in w)if(w.hasOwnProperty(k))return true;return false;}
+
+  // weekly boss crystal values (from the Money tab); cr = crystals a clear yields (CRA = 3)
+  // solo (1-party) meso values, already ×5 for Heroic server; per-char take = value / party size
+  var BOSSES=[
+    {k:"cyg",name:"Cygnus",d:[["Easy",45562500],["Normal",72250000]]},
+    {k:"hilla",name:"Hilla",d:[["Hard",56250000]]},
+    {k:"pb",name:"Pink Bean",d:[["Chaos",64000000]]},
+    {k:"zak",name:"Zakum",d:[["Chaos",81000000]]},
+    {k:"pierre",name:"Pierre",d:[["Chaos",81000000]]},
+    {k:"vonbon",name:"Von Bon",d:[["Chaos",81000000]]},
+    {k:"crimson",name:"Crimson Queen",d:[["Chaos",81000000]]},
+    {k:"pno",name:"Princess No",d:[["Normal",81000000]]},
+    {k:"magnus",name:"Magnus",d:[["Hard",95062500]]},
+    {k:"vellum",name:"Vellum",d:[["Chaos",105062500]]},
+    {k:"pap",name:"Papulatus",d:[["Chaos",132250000]]},
+    {k:"akechi",name:"Akechi",d:[["Normal",144000000]]},
+    {k:"lotus",name:"Lotus",d:[["Normal",162562500],["Hard",444675000],["Extreme",1397500000]]},
+    {k:"damien",name:"Damien",d:[["Normal",169000000],["Hard",421875000]]},
+    {k:"slime",name:"Guardian Angel Slime",d:[["Normal",231673500],["Chaos",600578125]]},
+    {k:"lucid",name:"Lucid",d:[["Easy",237009375],["Normal",253828125],["Hard",504000000]]},
+    {k:"will",name:"Will",d:[["Easy",246744750],["Normal",279075000],["Hard",621810000]]},
+    {k:"gloom",name:"Gloom",d:[["Normal",297675000],["Chaos",563945000]]},
+    {k:"darknell",name:"Darknell",d:[["Normal",316875000],["Hard",667920000]]},
+    {k:"vhilla",name:"Verus Hilla",d:[["Normal",581880000],["Hard",762105000]]},
+    {k:"seren",name:"Chosen Seren",d:[["Normal",889021875],["Hard",1096560000],["Extreme",4235000000]]},
+    {k:"kalos",name:"Kalos the Guardian",d:[["Easy",937500000],["Normal",1300000000],["Chaos",2600000000],["Extreme",5200000000]]},
+    {k:"adversary",name:"First Adversary",d:[["Easy",985000000],["Normal",1365000000],["Hard",2940000000],["Extreme",5880000000]]},
+    {k:"kaling",name:"Kaling",d:[["Easy",1031250000],["Normal",1506500000],["Hard",2990000000],["Extreme",6026000000]]},
+    {k:"malefic",name:"Malefic Star",d:[["Normal",1452000000],["Hard",3990000000]]},
+    {k:"limbo",name:"Limbo",d:[["Normal",2100000000],["Hard",3745000000]]},
+    {k:"baldrix",name:"Baldrix",d:[["Normal",2800000000],["Hard",4200000000]]},
+    {k:"jupiter",name:"Jupiter",d:[["Normal",2965000000],["Hard",5953000000]]},
+    {k:"bm",name:"Black Mage",d:[["Hard",4500000000],["Extreme",18000000000]]}
+  ];
+  var BOSS_BY_K={};BOSSES.forEach(function(b){BOSS_BY_K[b.k]=b;});
+  var WEEKLY_CRYSTAL_CAP=180;
+  function ensureBosses(c){c.bosses=c.bosses||{};c.bossDone=c.bossDone||{};if(c.bossTrack===undefined)c.bossTrack=true;return c.bosses;}
+  function bossDiffValue(bk,diff){var b=BOSS_BY_K[bk];if(!b)return 0;for(var i=0;i<b.d.length;i++)if(b.d[i][0]===diff)return b.d[i][1];return 0;}
+  function bossMesos(c){var t=0,bs=c.bosses||{};for(var bk in bs){if(bs.hasOwnProperty(bk))t+=bossDiffValue(bk,bs[bk].d)/(num(bs[bk].p)||1);}return t;}
+  function bossCrystals(c){var t=0,bs=c.bosses||{};for(var bk in bs){if(bs.hasOwnProperty(bk)){var b=BOSS_BY_K[bk];t+=(b&&b.cr)||1;}}return t;}
+  function formatMeso(n){n=num(n);if(n>=1e9)return (n/1e9).toFixed(2)+"B";if(n>=1e6)return (n/1e6).toFixed(1)+"M";if(n>=1e3)return Math.round(n/1e3)+"K";return String(Math.round(n));}
+  // selected bosses for a char, each at its picked difficulty/party, sorted by value desc
+  function bossSelList(c){
+    var bs=c.bosses||{},arr=[];
+    for(var bk in bs){if(!bs.hasOwnProperty(bk))continue;var b=BOSS_BY_K[bk];if(!b)continue;
+      var p=num(bs[bk].p)||1;
+      arr.push({k:bk,name:b.name,diff:bs[bk].d,party:p,value:bossDiffValue(bk,bs[bk].d)/p,cr:(b.cr||1),done:!!(c.bossDone&&c.bossDone[bk])});}
+    arr.sort(function(a,b){return b.value-a.value;});
+    return arr;
+  }
+  function bossLabel(diff,name){return diff==="Clear"?name:diff+" "+name;}
+  function doneMesos(c){var t=0;bossSelList(c).forEach(function(x){if(x.done)t+=x.value;});return t;}
+  function doneCrystalCount(c){var t=0;bossSelList(c).forEach(function(x){if(x.done)t+=x.cr;});return t;}
+  function totalMesos(c){var t=0;bossSelList(c).forEach(function(x){t+=x.value;});return t;}
+  function allDone(c){var l=bossSelList(c);if(!l.length)return false;for(var i=0;i<l.length;i++)if(!l[i].done)return false;return true;}
+  function isTracked(c){return c.bossTrack!==false;}
+  function trackedChars(){return chars.filter(function(c){return isTracked(c)&&bossSelList(c).length>0;});}
+  function maxPossible(){  // best 180 crystals across tracked chars
+    var arr=[];trackedChars().forEach(function(c){bossSelList(c).forEach(function(x){var per=x.value/x.cr;for(var i=0;i<x.cr;i++)arr.push(per);});});
+    arr.sort(function(a,b){return b-a;});var t=0;for(var i=0;i<arr.length&&i<WEEKLY_CRYSTAL_CAP;i++)t+=arr[i];return t;}
+  // weekly reset: MapleStory resets Thursday 00:00 UTC
+  var RESET_KEY="ayamushy_boss_week";
+  function weekBoundary(ts){var d=new Date(ts),day=d.getUTCDay(),diff=(day-4+7)%7;return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()-diff,0,0,0);}
+  function checkWeeklyReset(){var cur=weekBoundary(Date.now()),last=0;try{last=+localStorage.getItem(RESET_KEY)||0;}catch(e){}
+    if(last<cur){chars.forEach(function(c){c.bossDone={};});try{localStorage.setItem(RESET_KEY,String(cur));}catch(e){}save();}}
+  function nextResetMs(){return weekBoundary(Date.now())+7*24*3600*1000-Date.now();}
+  function fmtCountdown(ms){if(ms<0)ms=0;var d=Math.floor(ms/86400000);ms-=d*86400000;var h=Math.floor(ms/3600000);ms-=h*3600000;var m=Math.floor(ms/60000);return d+"d "+h+"h "+m+"m";}
+
+  var IDENT_COLS=[
+    {k:"onBoard",t:"On",cls:"l",et:"toggle",get:function(c){return c.onBoard;},set:function(c,v){c.onBoard=v;}},
+    {k:"faction",t:"Faction",cls:"l",get:function(c){return factionOf(c);}},
+    {k:"arch",t:"Class",cls:"l",get:function(c){return classOf(c);}},
+    {k:"class",t:"Job",cls:"l class",et:"job",get:function(c){return c.class;}},
+    {k:"name1",t:"IGN",cls:"l",et:"ign",get:function(c){return fullIgn(c);}},
+    {k:"level",t:"Lv",et:"num",mn:1,mx:300,get:function(c){return num(c.level);},set:function(c,v){c.level=v;}},
+  ];
+  var SYM_COLS=[
+    {k:"legionBonus",t:"Legion Bonus",cls:"l",get:function(c){return legionBonusType(c);}},
+    {k:"lb",t:"LB",get:function(c){var v=legionBonusValue(c);return v===""?"":v;}},
+    {k:"af",t:"AF",cls:"grp-arc",get:function(c){return afTotal(c);}},
+  ];
+  ARC_SYM.forEach(function(s,i){SYM_COLS.push({k:"a"+i,t:s,cls:"sym-arc",et:"num",mn:0,mx:20,get:function(c){return num(c.arcane.levels[i]);},set:function(c,v){c.arcane.levels[i]=v;}});});
+  SYM_COLS.push({k:"sac",t:"SAC",cls:"grp-sac",get:function(c){return sacTotal(c);}});
+  SAC_SYM.forEach(function(s,i){SYM_COLS.push({k:"s"+i,t:s,cls:"sym-sac",et:"num",mn:0,mx:11,get:function(c){return num(c.sacred.levels[i]);},set:function(c,v){c.sacred.levels[i]=v;}});});
+
+  var BOSS_COLS=[
+    {k:"cp",t:"CP",et:"num",mn:0,mx:9999999,get:function(c){return bnum(c,"cp");},set:function(c,v){ensureBoss(c).cp=v;}},
+    {k:"hexa",t:"Hexa",et:"num",mn:0,mx:9999,get:function(c){return bnum(c,"hexa");},set:function(c,v){ensureBoss(c).hexa=v;}},
+    {k:"erda",t:"Erda",et:"num",mn:0,mx:20,get:function(c){return bnum(c,"erda");},set:function(c,v){ensureBoss(c).erda=v;}},
+    {k:"frag",t:"Frag",et:"num",mn:0,mx:99999,get:function(c){return bnum(c,"frag");},set:function(c,v){ensureBoss(c).frag=v;}},
+    {k:"hellux",t:"Hellux",et:"num",mn:0,mx:9999999,get:function(c){return bnum(c,"hellux");},set:function(c,v){ensureBoss(c).hellux=v;}},
+    {k:"arcArmor",t:"Arcane",et:"num",mn:0,mx:4,get:function(c){return bnum(c,"arcArmor");},set:function(c,v){ensureBoss(c).arcArmor=v;}},
+    {k:"f_ArcWeapon",t:"Weapon",et:"toggle",get:function(c){return bflag(c,"ArcWeapon");},set:function(c,v){ensureBoss(c).flags.ArcWeapon=v;}},
+    {k:"skill",t:"Skill",et:"tri",get:function(c){return num(c.boss&&c.boss.skill);},set:function(c,v){ensureBoss(c).skill=v;}},
+  ];
+  BOSS_FLAGS.forEach(function(f){BOSS_COLS.push({k:"f_"+f,t:flagLabel(f),et:"toggle",get:function(c){return bflag(c,f);},set:function(c,v){ensureBoss(c).flags[f]=v;}});});
+
+  var BADGE_COLS=[{k:"btotal",t:"Total",get:function(c){return badgeTotal(c);}}];
+  BADGES.forEach(function(nm){BADGE_COLS.push({k:"b_"+nm.replace(/\s+/g,"_"),t:nm,et:"badge",get:function(c){return bdhas(c,nm);},set:function(c,v){ensureBadges(c)[nm]=v;}});});
+
+  var DROP_COLS=[{k:"droptotal",t:"Drop%",cls:"grp-arc",get:function(c){return dropTotal(c);}}];
+  DROP_SLOTS.forEach(function(sl){DROP_COLS.push({k:"d_"+sl[0],t:sl[1],et:"num",mn:0,mx:9999,get:function(c){return dnum(c,sl[0]);},set:function(c,v){ensureDrop(c)[sl[0]]=v;}});});
+
+  var tableSet="symbols", COLS, COL_BY_K;
+  function setCols(){
+    var extra=tableSet==="bossing"?BOSS_COLS:(tableSet==="badges"?BADGE_COLS:(tableSet==="drop"?DROP_COLS:SYM_COLS));
+    COLS=IDENT_COLS.concat(extra);
+    COL_BY_K={};COLS.forEach(function(col){COL_BY_K[col.k]=col;});
+  }
+  setCols();
+
+  function cellInner(col,c){
+    var v=col.get(c);
+    if(col.et==="toggle")return v?'<span class="yes tog">●</span>':'<span class="no tog">○</span>';
+    if(col.et==="tri"){var t=num(v);return t>=2?'<span class="yes tricell">✓✓</span>':(t===1?'<span class="yes tricell">✓</span>':'<span class="no tricell">○</span>');}
+    if(col.et==="badge")return v?'<span class="yes tog">✓</span>':'<span class="no tog">·</span>';
+    if(col.et==="ign")return '<a class="ignlink" href="#">'+(v?esc(v):'edit')+'</a>';
+    if(col.et==="num")return '<input class="cin" type="number" min="'+(col.mn||0)+'" max="'+(col.mx||999)+'" value="'+num(v)+'">';
+    if(col.et==="job")return '<select class="csel">'+jobOptions(c.class)+'</select>';
+    if(col.et==="bonus")return '<select class="csel">'+bonusOptions(legionBonusType(c))+'</select>';
+    return col.fmt?col.fmt(v):(v===""||v==null?'<span class="no">-</span>':v);
+  }
+  function clamp(v,lo,hi){v=num(v);return v<lo?lo:(v>hi?hi:v);}
+  function tdKey(td){var m=/(?:^|\s)k-(\S+)/.exec(td.className);return m?m[1]:null;}
+  function refreshTotals(tr,c){  // update read-only derived cells in place (keeps input focus)
+    ["lb","af","sac","btotal","droptotal"].forEach(function(k){
+      var td=tr.querySelector(".k-"+k);if(!td)return;
+      var v=COL_BY_K[k].get(c);
+      td.innerHTML=(v===""||v==null)?'<span class="no">-</span>':v;
+    });
+  }
+
+  function renderTable(){
+    var thead=document.querySelector("#tbl thead"), tb=document.querySelector("#tbl tbody");
+    thead.innerHTML="<tr>"+COLS.map(function(col){
+      var arrow=sortKey===col.k?(sortDir<0?" ▾":" ▴"):"";
+      return '<th class="'+(col.cls||"")+'" data-k="'+col.k+'">'+col.t+arrow+"</th>";
+    }).join("")+"</tr>";
+    var sorted=chars.slice().sort(function(a,b){
+      var col=COL_BY_K[sortKey]||COLS[1];
+      var va=col.get(a),vb=col.get(b);
+      if(typeof va==="boolean"){va=va?1:0;vb=vb?1:0;}
+      if(typeof va==="number"&&typeof vb==="number")return (va-vb)*sortDir;
+      return String(va).localeCompare(String(vb))*sortDir;
+    });
+    tb.innerHTML=sorted.map(function(c){
+      return '<tr data-id="'+c.id+'">'+COLS.map(function(col){
+        return '<td class="'+(col.cls||"")+' k-'+col.k+'">'+cellInner(col,c)+"</td>";
+      }).join("")+"</tr>";
+    }).join("");
+    document.getElementById("count").textContent=chars.length+" characters";
+  }
+
+  // ---------- bosses view (MapleHub-style weekly tracker) ----------
+  function card3(l1,v1,l2,v2){return '<div class="bs-card"><div class="bs-l">'+l1+'</div><div class="bs-v">'+v1+'</div><div class="bs-l2">'+l2+'</div><div class="bs-v2">'+v2+'</div></div>';}
+  function bossCard(c){
+    var list=bossSelList(c),done=0,i;for(i=0;i<list.length;i++)if(list[i].done)done++;
+    var rows=list.map(function(x){
+      return '<div class="bc-row'+(x.done?" bc-done":"")+'" data-bk="'+x.k+'" data-cid="'+c.id+'">'+
+        '<span class="bc-chk">'+(x.done?"☑":"☐")+'</span>'+
+        '<span class="bc-bn">'+bossLabel(x.diff,x.name)+'</span>'+
+        '<span class="bc-p">'+x.party+'</span>'+
+        '<span class="bc-v">'+Math.round(x.value).toLocaleString()+'</span></div>';
+    }).join("");
+    return '<div class="bcard'+(isTracked(c)?"":" bcard-off")+'">'+
+      '<div class="bcard-hd"><div class="bcard-id">'+
+        '<a class="ignlink bcard-name" data-cid="'+c.id+'" href="#">'+esc(fullIgn(c))+'</a>'+
+        '<div class="bcard-sub">Lv. '+num(c.level)+' · '+esc(c.class)+' · '+esc(factionOf(c))+'</div></div>'+
+        '<span class="bcard-badge">'+done+'/'+list.length+'</span>'+
+        '<label class="bcard-trk"><input type="checkbox" class="trk" data-cid="'+c.id+'"'+(isTracked(c)?" checked":"")+'>track</label>'+
+      '</div>'+
+      '<div class="bcard-rows"><div class="bc-row bc-head"><span></span><span>Boss</span><span>Party</span><span>Value</span></div>'+rows+'</div>'+
+      '<div class="bcard-ft"><button class="bc-all" data-cid="'+c.id+'">'+(allDone(c)?"Uncheck all":"Check all")+'</button>'+
+        '<span class="bc-tot">'+formatMeso(doneMesos(c))+' / '+formatMeso(totalMesos(c))+'</span></div></div>';
+  }
+  function renderBosses(){
+    var tracked=trackedChars(),collected=0,doneCry=0,tCry=0,charsDone=0;
+    tracked.forEach(function(c){collected+=doneMesos(c);doneCry+=doneCrystalCount(c);
+      bossSelList(c).forEach(function(x){tCry+=x.cr;});if(allDone(c))charsDone++;});
+    document.getElementById("bossSummary").innerHTML=
+      card3("Total meso collected",formatMeso(collected),"Max possible",formatMeso(maxPossible()))+
+      card3("Weekly crystals remaining",String(WEEKLY_CRYSTAL_CAP-doneCry),"Weekly bosses used",Math.min(tCry,WEEKLY_CRYSTAL_CAP)+" / "+WEEKLY_CRYSTAL_CAP)+
+      card3("Characters done",charsDone+" / "+tracked.length,"Weekly reset",fmtCountdown(nextResetMs()));
+    var withBosses=chars.filter(function(c){return bossSelList(c).length>0;});
+    withBosses.sort(function(a,b){var ta=isTracked(a)?0:1,tb=isTracked(b)?0:1;if(ta!==tb)return ta-tb;return totalMesos(b)-totalMesos(a);});
+    document.getElementById("bossCards").innerHTML=withBosses.length?withBosses.map(bossCard).join(""):'<p class="muted">No characters have bosses yet — add them in <b>Setup</b> mode.</p>';
+    document.getElementById("bossHint").innerHTML=tracked.length+" tracked · untick <b>track</b> to exclude a character";
+  }
+  var bossMode="track";
+  function renderBossesView(){
+    var setup=bossMode==="setup";
+    document.getElementById("bossTrackWrap").hidden=setup;
+    document.getElementById("bossSetupWrap").hidden=!setup;
+    document.getElementById("bmTrack").classList.toggle("on",!setup);
+    document.getElementById("bmSetup").classList.toggle("on",setup);
+    document.getElementById("btnBossReset").style.display=setup?"none":"";
+    if(setup){renderBossSetup();
+      document.getElementById("bossHint").innerHTML="pick <b>difficulty</b> + <b>party</b> per character · click a name to open its editor";}
+    else renderBosses();
+  }
+
+  // ---------- editor ----------
+  function barPct(spec,lv,force){
+    if(lv>=spec.maxLv)return 100;
+    var floor=spec.force[lv]||0, ceil=spec.force[lv+1]||floor;
+    if(ceil<=floor)return 0;
+    return Math.max(0,Math.min(100,Math.round((force-floor)/(ceil-floor)*100)));
+  }
+  function symCard(spec,sec,i){
+    var lv=num(sec.levels[i]),ex=num(sec.extras[i]);
+    var force=symForce(spec,lv,ex),val=symValue(spec,lv,ex),d=symDays(spec,sec,i);
+    var name=(spec.names&&spec.names[spec.syms[i]])||spec.syms[i];
+    return '<div class="symcard'+(lv>=spec.maxLv?" maxed":"")+'" data-sym="'+i+'">'+
+      '<div class="sc-head"><span class="sc-name">'+name+'</span>'+
+        '<span class="sc-lvl"><b>'+lv+'</b> / '+spec.maxLv+'</span></div>'+
+      '<div class="sc-bar"><i style="width:'+barPct(spec,lv,force)+'%"></i></div>'+
+      '<div class="sc-meta"><span>force <span class="sc-force">'+force+'</span></span>'+
+        '<span class="sc-val">+'+val+'</span></div>'+
+      '<div class="sc-inputs">'+
+        '<label>Level<input type="number" min="0" max="'+spec.maxLv+'" data-f="lv" value="'+lv+'"></label>'+
+        '<label>Symbols<input type="number" min="0" data-f="ex" value="'+ex+'"></label>'+
+      '</div>'+
+      '<div class="sc-meta"><span class="sc-next">next '+d.toNext+'d</span>'+
+        '<span class="sc-max">max '+d.toMax+'d</span></div>'+
+    '</div>';
+  }
+  function symSection(c,spec,sec,secName){
+    var cards=spec.syms.map(function(_n,i){return symCard(spec,sec,i);}).join("");
+    var tog='<div class="toggles">'+
+      tgl(sec.daily,"daily")+tgl(sec.weekly,"weekly")+
+      (spec.guildBonus?tgl(sec.guild,"guild"):"")+
+      '<label class="muted">hyper <input type="number" data-t="hyper" value="'+num(sec.hyper)+'"></label>'+
+      '<label class="muted">event <input type="number" data-t="event" value="'+num(sec.event)+'"></label>'+
+      '</div>';
+    var total=sectionTotal(spec,sec);
+    return '<div class="panel sec-'+secName+'"><h2>'+(secName==="arc"?"Arcane symbols":"Sacred symbols")+
+      ' — total <b class="sectotal">'+total+'</b></h2><div class="symgrid">'+cards+'</div>'+tog+'</div>';
+  }
+  function tgl(on,name){return '<button class="tglbtn'+(on?" on":"")+'" data-tgl="'+name+'">'+name+(on?" ✓":"")+'</button>';}
+
+  function bossPanel(c){
+    var b=ensureBoss(c);
+    var nums=[["cp","CP"],["hexa","Hexa"],["erda","Erda",20],["frag","Frag"],["hellux","Hellux"],["arcArmor","Arcane",4]];
+    var numHTML=nums.map(function(p){return '<div class="field"><label>'+p[1]+'</label><input type="number" min="0"'+(p[2]?' max="'+p[2]+'"':'')+' data-boss="'+p[0]+'" value="'+num(b[p[0]])+'"></div>';}).join("");
+    var weaponHTML='<div class="field"><label>Weapon</label><button class="tglbtn'+(b.flags.ArcWeapon?" on":"")+'" data-bflag="ArcWeapon">Weapon'+(b.flags.ArcWeapon?" ✓":"")+'</button></div>';
+    var sk=num(b.skill);
+    var skillHTML='<div class="field"><label>Skill (2 thresholds)</label><select data-skill>'+
+      '<option value="0"'+(sk===0?" selected":"")+'>None</option>'+
+      '<option value="1"'+(sk===1?" selected":"")+'>1st</option>'+
+      '<option value="2"'+(sk===2?" selected":"")+'>Both</option></select></div>';
+    var flagHTML=BOSS_FLAGS.map(function(f){var on=b.flags[f];return '<button class="tglbtn'+(on?" on":"")+'" data-bflag="'+f+'">'+flagLabel(f)+(on?" ✓":"")+'</button>';}).join("");
+    var iaHTML=[0,1,2].map(function(i){return '<input type="text" data-bia="'+i+'" placeholder="line '+(i+1)+'" value="'+esc(b.ia[i]||"")+'">';}).join("");
+    var diaHTML=[0,1,2].map(function(i){return '<input type="text" data-bdia="'+i+'" placeholder="line '+(i+1)+'" value="'+esc(b.dia[i]||"")+'">';}).join("");
+    return '<div class="panel"><h2>Bossing prep</h2>'+
+      '<div class="edgrid">'+numHTML+weaponHTML+skillHTML+'</div>'+
+      '<h3 class="sub2">Gear / prep</h3><div class="toggles">'+flagHTML+'</div>'+
+      '<h3 class="sub2">Inner ability — current</h3><div class="ia-row">'+iaHTML+'</div>'+
+      '<h3 class="sub2">Inner ability — goal</h3><div class="ia-row">'+diaHTML+'</div>'+
+      '</div>';
+  }
+
+  function badgesPanel(c){
+    var bd=ensureBadges(c);
+    var cells=BADGES.map(function(nm){
+      var sym=bd[nm]?'<span class="yes">✓</span>':'<span class="no">·</span>';
+      return '<button class="badgecell'+(bd[nm]?" on":"")+'" data-badge="'+nm+'"><span class="bc-name">'+nm+'</span>'+sym+'</button>';
+    }).join("");
+    return '<div class="panel"><h2>Badges — total <b>'+badgeTotal(c)+'</b> / '+BADGES.length+'</h2>'+
+      '<div class="badgegrid">'+cells+'</div>'+
+      '</div>';
+  }
+
+  function dropPanel(c){
+    var d=ensureDrop(c);
+    var numHTML=DROP_SLOTS.map(function(sl){return '<div class="field"><label>'+sl[1]+'</label><input type="number" min="0" data-drop="'+sl[0]+'" value="'+num(d[sl[0]])+'"></div>';}).join("");
+    return '<div class="panel"><h2>Drop % — total <b class="drop-total">'+dropTotal(c)+'%</b></h2><div class="dropgrid">'+numHTML+'</div></div>';
+  }
+
+  function linkOutHTML(c){
+    var w=parseLinkStats(c.linkText||"").w,bd=num(c.buffDur);
+    var known=[["boss","DMG / Boss"],["critDmg","Crit DMG"],["ied380","IED (380)"],["allStatPct","All Stat%"]];
+    var chips=known.map(function(k){var has=w[k[0]]!=null;
+      return '<span class="lk-chip'+(has?" on":"")+'">'+k[1]+' <b>'+(has?w[k[0]]:"—")+'</b></span>';}).join("");
+    var ranked=linkRank(w,bd),any=ranked.length&&ranked[0].v>0;
+    var rows=ranked.map(function(x,i){var l=x.l;
+      var p1=linkP1(l,bd);var p1s=(Math.round(p1*10)/10);
+      var eff=l.e1+" "+p1s+"%"+(l.e2&&l.p2?" + "+l.e2+" "+l.p2+"%":"");
+      return '<div class="lk-row'+(x.v<=0?" lk-zero":"")+'"><span class="lk-rank">'+(i+1)+'</span>'+
+        '<span class="lk-cls">'+esc(l.cls)+'</span>'+
+        '<span class="lk-eff">'+esc(eff)+'</span>'+
+        '<span class="lk-val">'+(x.v>0?Math.round(x.v).toLocaleString():"—")+'</span></div>';
+    }).join("");
+    return '<div class="lk-chips">'+chips+'</div>'+
+      (any?'<div class="lk-rank-list"><div class="lk-row lk-head"><span>#</span><span>Class</span><span>Link skill</span><span>Value</span></div>'+rows+'</div>'
+          :'<p class="muted">Paste this character&rsquo;s stat equivalence above to rank its best link skills for it.</p>');
+  }
+  function linksPanel(c){
+    return '<div class="panel"><h2>Link skills</h2>'+
+      '<div class="field lk-bd-field"><label>Buff duration % <span class="rf-sub">(base 100; scales Angelic Buster)</span></label>'+
+      '<input type="number" class="lk-bd" min="0" max="500" value="'+num(c.buffDur)+'"></div>'+
+      '<div class="field"><label>Paste MapleScouter stat equivalence — one &ldquo;Stat&nbsp;&nbsp;value&rdquo; per line (same as the gear tool)</label>'+
+      '<textarea class="lk-paste" spellcheck="false" placeholder="Boss Damage&#9;12.53&#10;Critical Dmg&#9;41.26&#10;Ignore Dff(380)&#9;2.37&#10;All Stat%&#9;13.84">'+String(c.linkText||"").replace(/&/g,"&amp;").replace(/</g,"&lt;")+'</textarea></div>'+
+      '<div class="lk-out">'+linkOutHTML(c)+'</div></div>';
+  }
+  function updateLinkRank(c){var o=document.querySelector('#editor .lk-out');if(o)o.innerHTML=linkOutHTML(c);}
+
+  // ---------- bosses SETUP sheet (rows = characters, 2 cols per boss) ----------
+  function setupChars(){  // stable order: strongest first, independent of boss edits
+    return chars.slice().sort(function(a,b){
+      var lv=num(b.level)-num(a.level);if(lv)return lv;
+      return String(fullIgn(a)).localeCompare(String(fullIgn(b)));
+    });
+  }
+  function renderBossSetup(){
+    var head='<tr><th class="bs-corner">Character</th>';
+    BOSSES.forEach(function(b){
+      head+='<th class="bs-boss" colspan="2" title="'+esc(b.name)+'">'+b.name+'<div class="bs-sub">diff · party</div></th>';
+    });
+    head+='<th class="bs-tot">Meso/wk</th><th class="bs-tot">Cry</th></tr>';
+    var body=setupChars().map(function(c){
+      var bs=ensureBosses(c),cells="";
+      BOSSES.forEach(function(b){
+        var cur=bs[b.k];
+        var opts='<option value="">—</option>'+b.d.map(function(dd){
+          return '<option value="'+dd[0]+'"'+(cur&&cur.d===dd[0]?" selected":"")+'>'+dd[0]+'</option>';}).join("");
+        var p=cur?num(cur.p)||1:1;
+        cells+='<td class="bs-c"><select class="bset-d" data-cid="'+c.id+'" data-bk="'+b.k+'">'+opts+'</select></td>'+
+               '<td class="bs-c"><input class="bset-p" type="number" min="0" max="6" data-cid="'+c.id+'" data-bk="'+b.k+'" value="'+p+'"'+(cur?"":" disabled")+'></td>';
+      });
+      cells+='<td class="bs-mw">'+formatMeso(bossMesos(c))+'</td><td class="bs-cy">'+bossCrystals(c)+'</td>';
+      return '<tr data-cid="'+c.id+'"'+(isTracked(c)?"":' class="bs-off"')+'>'+
+        '<th class="bs-name" scope="row">'+
+          '<div class="bs-ntop"><input type="checkbox" class="bset-trk" data-cid="'+c.id+'"'+(isTracked(c)?" checked":"")+' title="track this character">'+
+            '<a class="ignlink bset-name" data-cid="'+c.id+'" href="#">'+esc(fullIgn(c)||c.class)+'</a></div>'+
+          '<div class="bs-nsub">Lv '+num(c.level)+' · '+esc(c.class)+'</div></th>'+cells+'</tr>';
+    }).join("");
+    document.getElementById("bossSetup").innerHTML='<table id="bsetTbl"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>';
+    bsetSummary();
+  }
+  function bsetRowUpdate(c){
+    var tr=document.querySelector('#bsetTbl tr[data-cid="'+c.id+'"]');
+    if(tr){var mw=tr.querySelector('.bs-mw');if(mw)mw.textContent=formatMeso(bossMesos(c));
+           var cy=tr.querySelector('.bs-cy');if(cy)cy.textContent=bossCrystals(c);}
+    bsetSummary();
+  }
+  function bsetSummary(){
+    var el=document.getElementById("bossSetupSummary");if(!el)return;
+    var totMeso=0,totCry=0;
+    chars.forEach(function(c){if(isTracked(c)){totMeso+=bossMesos(c);totCry+=bossCrystals(c);}});
+    var withB=chars.filter(function(c){return bossSelList(c).length>0;}).length;
+    el.innerHTML=
+      card3("Weekly meso (tracked)",formatMeso(totMeso),"Best 180 crystals",formatMeso(maxPossible()))+
+      card3("Crystals used",totCry+" / "+WEEKLY_CRYSTAL_CAP,"Over cap",totCry>WEEKLY_CRYSTAL_CAP?("+"+(totCry-WEEKLY_CRYSTAL_CAP)):"none")+
+      card3("Characters with bosses",String(withB),"Tracked",String(trackedChars().length));
+  }
+
+  function renderEditor(){
+    var sel=document.getElementById("charSel");
+    sel.innerHTML=chars.map(function(c){var g=fullIgn(c);return '<option value="'+c.id+'">'+c.class+(g?" ("+g+")":"")+'</option>';}).join("");
+    sel.value=curId;
+    var c=byId(curId);
+    if(!c){document.getElementById("editor").innerHTML='<p class="muted">No character.</p>';return;}
+    var idHTML='<div class="panel"><h2>Identity</h2><div class="edgrid">'+
+      selFld("Job","class",jobOptions(c.class))+
+      '<div class="field"><label>Faction</label><div class="readfld">'+(factionOf(c)||'<span class="rf-sub">—</span>')+'</div></div>'+
+      '<div class="field"><label>Class</label><div class="readfld">'+(classOf(c)||'<span class="rf-sub">—</span>')+'</div></div>'+
+      '<div class="field"><label>Legion Bonus</label><div class="readfld">'+(legionBonusType(c)||'<span class="rf-sub">—</span>')+'</div></div>'+
+      '<div class="field"><label>Legion Bonus value</label><div class="readfld lb-val">'+lbValDisplay(c)+'</div></div>'+
+      fld("IGN (1st)","name1","text",c.name1||"")+
+      fld("IGN (2nd)","name2","text",c.name2||"")+
+      fld("Level","level","number",num(c.level))+
+      '<div class="field"><label>On Board</label>'+tgl(c.onBoard,"onBoard")+'</div>'+
+      '</div></div>';
+    document.getElementById("editor").innerHTML=
+      idHTML+
+      '<div class="sec-arc">'+symSection(c,ARC,c.arcane,"arc")+'</div>'+
+      '<div class="sec-sac">'+symSection(c,SAC,c.sacred,"sac")+'</div>'+
+      bossPanel(c)+
+      badgesPanel(c)+
+      dropPanel(c)+
+      linksPanel(c);
+    wireEditor(c);
+  }
+  function fld(label,key,type,val){return '<div class="field"><label>'+label+'</label><input data-id="'+key+'" type="'+type+'" value="'+String(val).replace(/"/g,"&quot;")+'"></div>';}
+  function selFld(label,key,opts){return '<div class="field"><label>'+label+'</label><select data-id="'+key+'">'+opts+'</select></div>';}
+  function esc(s){return String(s).replace(/"/g,"&quot;");}
+  function jobOptions(cur){
+    var html="",have=false;
+    FACTIONS.forEach(function(g){
+      var items=CLASSES.filter(function(x){return x.g===g;});
+      if(!items.length)return;
+      html+='<optgroup label="'+g+'">';
+      items.forEach(function(x){var sel=x.n===cur?" selected":"";if(sel)have=true;html+='<option'+sel+'>'+x.n+'</option>';});
+      html+='</optgroup>';
+    });
+    if(!have&&cur)html='<option selected>'+esc(cur)+'</option>'+html;
+    return html;
+  }
+  function bonusOptions(cur){
+    var html='<option value=""'+(cur?"":" selected")+'>—</option>',have=false;
+    Object.keys(SCALE_BY_BONUS).forEach(function(k){var sel=k===cur?" selected":"";if(sel)have=true;html+='<option'+sel+' value="'+esc(k)+'">'+k+'</option>';});
+    if(!have&&cur)html+='<option selected value="'+esc(cur)+'">'+cur+'</option>';
+    return html;
+  }
+  function lbValDisplay(c){
+    var t=legionBonusType(c),v=legionBonusValue(c);
+    if(!t)return '<span class="rf-sub">— pick a bonus</span>';
+    return (v===""?"—":("+"+v))+' <span class="rf-sub">'+t+' · lv '+num(c.level)+'</span>';
+  }
+
+  function wireEditor(c){
+    document.querySelectorAll('#editor [data-id]').forEach(function(el){
+      el.addEventListener("input",function(){
+        var k=el.getAttribute("data-id");
+        c[k]=el.type==="number"?num(el.value):el.value;
+        if(k==="class"){save();renderTable();renderEditor();return;} // job re-derives faction/class/legion bonus
+        save();renderTable();
+        if(k==="level")refreshComputed(c);  // level changes LB value + symbol day counts
+      });
+    });
+    var ob=document.querySelector('#editor [data-tgl="onBoard"]');
+    if(ob)ob.addEventListener("click",function(){c.onBoard=!c.onBoard;save();renderTable();renderEditor();});
+    // symbol sections
+    ["arc","sac"].forEach(function(secName){
+      var spec=secName==="arc"?ARC:SAC, sec=secName==="arc"?c.arcane:c.sacred;
+      var root=document.querySelector('#editor .sec-'+secName);if(!root)return;
+      root.querySelectorAll('.symcard').forEach(function(card){
+        var i=+card.getAttribute("data-sym");
+        card.querySelectorAll('input[data-f]').forEach(function(inp){
+          inp.addEventListener("input",function(){
+            var f=inp.getAttribute("data-f");
+            if(f==="lv")sec.levels[i]=num(inp.value); else sec.extras[i]=num(inp.value);
+            save();renderTable();refreshComputed(c);
+          });
+        });
+      });
+      root.querySelectorAll('[data-tgl]').forEach(function(el){
+        el.addEventListener("click",function(){sec[el.getAttribute("data-tgl")]=!sec[el.getAttribute("data-tgl")];save();renderTable();renderEditor();});
+      });
+      root.querySelectorAll('[data-t]').forEach(function(el){
+        el.addEventListener("input",function(){sec[el.getAttribute("data-t")]=num(el.value);save();renderTable();refreshComputed(c);});
+      });
+    });
+    // bossing prep
+    var b=ensureBoss(c);
+    document.querySelectorAll('#editor [data-boss]').forEach(function(el){
+      el.addEventListener("input",function(){var v=Math.max(0,num(el.value));var mx=el.getAttribute("max");if(mx)v=Math.min(v,+mx);b[el.getAttribute("data-boss")]=v;save();renderTable();});
+    });
+    document.querySelectorAll('#editor [data-bflag]').forEach(function(el){
+      el.addEventListener("click",function(){var k=el.getAttribute("data-bflag");b.flags[k]=!b.flags[k];save();renderTable();renderEditor();});
+    });
+    var skEl=document.querySelector('#editor [data-skill]');
+    if(skEl)skEl.addEventListener("change",function(){b.skill=+skEl.value;save();renderTable();});
+    document.querySelectorAll('#editor [data-badge]').forEach(function(el){
+      el.addEventListener("click",function(){var nm=el.getAttribute("data-badge");var bd=ensureBadges(c);bd[nm]=!bd[nm];save();renderTable();renderEditor();});
+    });
+    document.querySelectorAll('#editor [data-drop]').forEach(function(el){
+      el.addEventListener("input",function(){ensureDrop(c)[el.getAttribute("data-drop")]=Math.max(0,num(el.value));save();renderTable();
+        var tb=document.querySelector('#editor .drop-total');if(tb)tb.textContent=dropTotal(c)+"%";});
+    });
+    document.querySelectorAll('#editor [data-bia]').forEach(function(el){
+      el.addEventListener("input",function(){b.ia[+el.getAttribute("data-bia")]=el.value;save();renderTable();});
+    });
+    document.querySelectorAll('#editor [data-bdia]').forEach(function(el){
+      el.addEventListener("input",function(){b.dia[+el.getAttribute("data-bdia")]=el.value;save();});
+    });
+    var lp=document.querySelector('#editor .lk-paste');
+    if(lp)lp.addEventListener("input",function(){c.linkText=lp.value;save();updateLinkRank(c);});
+    var lbd=document.querySelector('#editor .lk-bd');
+    if(lbd)lbd.addEventListener("input",function(){c.buffDur=Math.max(0,num(lbd.value));save();updateLinkRank(c);});
+  }
+  function byId(id){return chars.filter(function(c){return c.id===id;})[0];}
+  function refreshComputed(c){
+    var lb=document.querySelector('#editor .lb-val');if(lb)lb.innerHTML=lbValDisplay(c);
+    [["arc",ARC,c.arcane],["sac",SAC,c.sacred]].forEach(function(t){
+      var secName=t[0],spec=t[1],sec=t[2];
+      var root=document.querySelector('#editor .sec-'+secName);if(!root)return;
+      var tot=root.querySelector('.sectotal');if(tot)tot.textContent=sectionTotal(spec,sec);
+      root.querySelectorAll('.symcard').forEach(function(card){
+        var i=+card.getAttribute('data-sym');
+        var lv=num(sec.levels[i]),ex=num(sec.extras[i]);
+        var force=symForce(spec,lv,ex),val=symValue(spec,lv,ex),d=symDays(spec,sec,i);
+        card.classList.toggle('maxed',lv>=spec.maxLv);
+        var q=function(s){return card.querySelector(s);},e;
+        if((e=q('.sc-lvl')))e.innerHTML='<b>'+lv+'</b> / '+spec.maxLv;
+        if((e=q('.sc-bar i')))e.style.width=barPct(spec,lv,force)+'%';
+        if((e=q('.sc-force')))e.textContent=force;
+        if((e=q('.sc-val')))e.textContent='+'+val;
+        if((e=q('.sc-next')))e.textContent='next '+d.toNext+'d';
+        if((e=q('.sc-max')))e.textContent='max '+d.toMax+'d';
+      });
+    });
+  }
+
+  // ---------- actions ----------
+  function newChar(base){
+    var c=base?JSON.parse(JSON.stringify(base)):{class:"Hero",world:"",name1:"",name2:"",level:0,legionBonus:"",arcane:{},sacred:{}};
+    c=normalize([c])[0];c.id=uid();
+    if(base&&c.name1)c.name1=c.name1+" copy";  // classes may repeat; disambiguate by IGN
+    chars.push(c);curId=c.id;save();
+  }
+
+  // ---------- view switch + top bar ----------
+  function show(view){
+    document.getElementById("viewTable").hidden=view!=="table";
+    document.getElementById("viewEdit").hidden=view!=="edit";
+    document.getElementById("viewBosses").hidden=view!=="bosses";
+    document.getElementById("tabTable").classList.toggle("on",view==="table");
+    document.getElementById("tabEdit").classList.toggle("on",view==="edit");
+    document.getElementById("tabBosses").classList.toggle("on",view==="bosses");
+    if(view==="table")renderTable(); else if(view==="bosses")renderBossesView(); else renderEditor();
+  }
+  document.getElementById("tabTable").onclick=function(){show("table");};
+  document.getElementById("tabEdit").onclick=function(){show("edit");};
+  document.getElementById("tabBosses").onclick=function(){show("bosses");};
+  document.getElementById("bmTrack").onclick=function(){bossMode="track";renderBossesView();};
+  document.getElementById("bmSetup").onclick=function(){bossMode="setup";renderBossesView();};
+  document.getElementById("btnBossReset").onclick=function(){
+    if(!confirm("Reset this week's boss checkmarks for all characters?"))return;
+    chars.forEach(function(c){c.bossDone={};});save();renderBosses();
+  };
+  (function(){                                   // boss SETUP sheet: diff/party edits + name link
+    var cont=document.getElementById("bossSetup");
+    function pin(cid,bk){return cont.querySelector('.bset-p[data-cid="'+cid+'"][data-bk="'+bk+'"]');}
+    function din(cid,bk){return cont.querySelector('.bset-d[data-cid="'+cid+'"][data-bk="'+bk+'"]');}
+    cont.addEventListener("change",function(e){
+      var t=e.target;if(!t.classList)return;
+      if(t.classList.contains("bset-trk")){          // track toggle
+        var ct=byId(t.getAttribute("data-cid"));if(ct){ct.bossTrack=t.checked;save();
+          var trr=t.closest("tr");if(trr)trr.classList.toggle("bs-off",!t.checked);
+          bsetSummary();}
+        return;
+      }
+      if(t.classList.contains("bset-d")){
+        var c=byId(t.getAttribute("data-cid")),bk=t.getAttribute("data-bk"),bs=ensureBosses(c),p=pin(c.id,bk);
+        if(t.value){bs[bk]=bs[bk]||{p:1};bs[bk].d=t.value;if(!(num(bs[bk].p)>=1))bs[bk].p=1;
+          if(p){p.disabled=false;p.value=bs[bk].p;}}
+        else{delete bs[bk];if(p){p.disabled=true;p.value=1;}}
+        save();bsetRowUpdate(c);return;
+      }
+      if(t.classList.contains("bset-p")){        // commit: 0 (or blank) drops the boss
+        var c2=byId(t.getAttribute("data-cid")),bk2=t.getAttribute("data-bk"),bs2=ensureBosses(c2);
+        var v=Math.max(0,Math.min(6,num(t.value))),d=din(c2.id,bk2);
+        if(v<1){delete bs2[bk2];if(d)d.value="";t.value=1;t.disabled=true;}
+        else if(bs2[bk2]){bs2[bk2].p=v;t.value=v;}
+        save();bsetRowUpdate(c2);
+      }
+    });
+    cont.addEventListener("input",function(e){   // live meso while typing a valid party
+      var t=e.target;if(!t.classList||!t.classList.contains("bset-p")||t.value==="")return;
+      var v=Math.max(0,Math.min(6,num(t.value)));if(v<1)return;
+      var c=byId(t.getAttribute("data-cid")),bk=t.getAttribute("data-bk"),bs=ensureBosses(c);
+      if(bs[bk]){bs[bk].p=v;save();bsetRowUpdate(c);}
+    });
+    cont.addEventListener("click",function(e){
+      var link=e.target.closest&&e.target.closest(".bset-name");
+      if(link){e.preventDefault();curId=link.getAttribute("data-cid");show("edit");}
+    });
+  })();
+  (function(){
+    var cont=document.getElementById("bossCards");
+    cont.addEventListener("change",function(e){
+      var t=e.target;if(!t.classList||!t.classList.contains("trk"))return;
+      var c=byId(t.getAttribute("data-cid"));if(c){c.bossTrack=t.checked;save();renderBosses();}
+    });
+    cont.addEventListener("click",function(e){
+      var t=e.target;if(t.classList&&t.classList.contains("trk"))return;
+      var link=t.closest&&t.closest(".bcard-name");
+      if(link){e.preventDefault();curId=link.getAttribute("data-cid");show("edit");return;}
+      var all=t.closest&&t.closest(".bc-all");
+      if(all){var c=byId(all.getAttribute("data-cid"));if(c){var tg=!allDone(c);ensureBosses(c);bossSelList(c).forEach(function(x){c.bossDone[x.k]=tg;});save();renderBosses();}return;}
+      var row=t.closest&&t.closest(".bc-row");
+      if(row&&!row.classList.contains("bc-head")){var c2=byId(row.getAttribute("data-cid")),bk=row.getAttribute("data-bk");
+        if(c2&&bk){ensureBosses(c2);c2.bossDone[bk]=!c2.bossDone[bk];save();renderBosses();}}
+    });
+  })();
+  function syncSetBtns(){
+    document.getElementById("setSymbols").classList.toggle("on",tableSet==="symbols");
+    document.getElementById("setBossing").classList.toggle("on",tableSet==="bossing");
+    document.getElementById("setBadges").classList.toggle("on",tableSet==="badges");
+    document.getElementById("setDrop").classList.toggle("on",tableSet==="drop");
+  }
+  document.getElementById("setSymbols").onclick=function(){tableSet="symbols";setCols();renderTable();syncSetBtns();};
+  document.getElementById("setBossing").onclick=function(){tableSet="bossing";setCols();renderTable();syncSetBtns();};
+  document.getElementById("setBadges").onclick=function(){tableSet="badges";setCols();renderTable();syncSetBtns();};
+  document.getElementById("setDrop").onclick=function(){tableSet="drop";setCols();renderTable();syncSetBtns();};
+  document.querySelector("#tbl thead").addEventListener("click",function(e){
+    var th=e.target.closest("th");if(!th)return;var k=th.getAttribute("data-k");
+    if(sortKey===k)sortDir=-sortDir; else {sortKey=k;sortDir=-1;}
+    renderTable();
+  });
+  (function(){
+    var tbody=document.querySelector("#tbl tbody");
+    tbody.addEventListener("input",function(e){         // number cells: live totals, keep focus
+      var inp=e.target;if(!inp.classList||!inp.classList.contains("cin"))return;
+      var tr=inp.closest("tr"),td=inp.closest("td");if(!tr||!td)return;
+      var c=byId(tr.getAttribute("data-id"));if(!c)return;
+      var col=COL_BY_K[tdKey(td)];if(col&&col.set)col.set(c,clamp(inp.value,col.mn||0,col.mx||999));
+      save();refreshTotals(tr,c);
+    });
+    tbody.addEventListener("change",function(e){         // commit: clamp number cells, handle dropdowns
+      var el=e.target;if(!el.classList)return;
+      var tr=el.closest("tr"),td=el.closest("td");if(!tr||!td)return;
+      var c=byId(tr.getAttribute("data-id"));if(!c)return;
+      var k=tdKey(td);
+      if(el.classList.contains("cin")){                 // snap displayed value back into range
+        var col=COL_BY_K[k];el.value=clamp(el.value,col.mn||0,col.mx||999);
+        if(col.set)col.set(c,num(el.value));save();refreshTotals(tr,c);return;
+      }
+      if(!el.classList.contains("csel"))return;
+      if(k==="class"){c.class=el.value;save();renderTable();return;} // job re-derives faction/class/legion bonus
+    });
+    tbody.addEventListener("click",function(e){          // IGN opens editor; On toggles
+      var t=e.target;
+      if(t.classList&&t.classList.contains("ignlink")){
+        e.preventDefault();var tr=t.closest("tr");if(tr){curId=tr.getAttribute("data-id");show("edit");}return;
+      }
+      if(t.classList&&t.classList.contains("tog")){
+        var tr=t.closest("tr"),td=t.closest("td");var c=byId(tr.getAttribute("data-id"));if(!c)return;
+        var col=COL_BY_K[tdKey(td)];if(!col||!col.set)return;
+        col.set(c,!col.get(c));save();td.innerHTML=cellInner(col,c);refreshTotals(tr,c);return;
+      }
+      if(t.classList&&t.classList.contains("tricell")){
+        var tr2=t.closest("tr"),td2=t.closest("td");var c2=byId(tr2.getAttribute("data-id"));if(!c2)return;
+        var col2=COL_BY_K[tdKey(td2)];if(!col2||!col2.set)return;
+        col2.set(c2,(num(col2.get(c2))+1)%3);save();td2.innerHTML=cellInner(col2,c2);
+      }
+    });
+  })();
+  document.getElementById("charSel").onchange=function(){curId=this.value;renderEditor();};
+  document.getElementById("btnAdd").onclick=function(){newChar(null);renderEditor();};
+  document.getElementById("btnDup").onclick=function(){var c=byId(curId);if(c){newChar(c);renderEditor();}};
+  document.getElementById("btnDel").onclick=function(){
+    if(!confirm("Delete this character?"))return;
+    chars=chars.filter(function(c){return c.id!==curId;});curId=chars.length?chars[0].id:null;save();renderEditor();renderTable();
+  };
+  document.getElementById("btnExport").onclick=function(){
+    var blob=new Blob([JSON.stringify(chars,null,1)],{type:"application/json"});
+    var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ayamushy-characters.json";a.click();
+  };
+  document.getElementById("btnImport").onclick=function(){document.getElementById("importFile").click();};
+  document.getElementById("importFile").onchange=function(e){
+    var f=e.target.files[0];if(!f)return;var rd=new FileReader();
+    rd.onload=function(){try{chars=normalize(JSON.parse(rd.result));curId=chars.length?chars[0].id:null;save();show("table");}catch(err){alert("Bad JSON: "+err);}};
+    rd.readAsText(f);
+  };
+  document.getElementById("btnReset").onclick=function(){
+    if(!confirm("Reset to the spreadsheet seed? This discards your local edits."))return;
+    localStorage.removeItem(KEY);chars=load();curId=chars.length?chars[0].id:null;show("table");
+  };
+
+  checkWeeklyReset();
+  show("table");
+})();
+</script>
+</body>
+</html>

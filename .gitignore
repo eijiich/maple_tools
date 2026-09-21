@@ -73,6 +73,8 @@ data/dedel3.png
 # large local binary datasets — kept on disk, not committed
 /data/img/dataset/
 /maplescouter/samples/
+# personal source spreadsheet (characters app is seeded from it into characters/seed.js)
+/Maple.xlsx
 
 # claude local overrides
 .claude
