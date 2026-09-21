@@ -531,7 +531,7 @@
 
   // ---------- table view ----------
   // et = inline edit type: toggle | ign | num | job | bonus | (none => read-only/derived)
-  var BOSS_FLAGS=["Boost","Sup","TW","Slime","Pap","Heart","Pet","Purse","Soul"];
+  var BOSS_FLAGS=["Sup","TW","Slime","Pap","Heart","Pet","Purse","Soul"];   // Boost is now a V-matrix level
   var FLAG_LABEL={ArcWeapon:"Arc Wpn"};
   function flagLabel(f){return FLAG_LABEL[f]||f;}
   function ensureBoss(c){c.boss=c.boss||{};c.boss.flags=c.boss.flags||{};
@@ -692,15 +692,15 @@
   SYM_COLS.push({k:"sac",t:"SAC",cls:"grp-sac",get:function(c){return sacTotal(c);}});
   SAC_SYM.forEach(function(s,i){SYM_COLS.push({k:"s"+i,t:s,cls:"sym-sac",et:"num",mn:0,mx:11,get:function(c){return num(c.sacred.levels[i]);},set:function(c,v){c.sacred.levels[i]=v;}});});
 
+  function bnumCol(key,label,max){return {k:key,t:label,et:"num",mn:0,mx:max,get:function(c){return bnum(c,key);},set:function(c,v){ensureBoss(c)[key]=v;}};}
   var BOSS_COLS=[
-    {k:"cp",t:"CP",et:"num",mn:0,mx:9999999,get:function(c){return bnum(c,"cp");},set:function(c,v){ensureBoss(c).cp=v;}},
-    {k:"hexa",t:"Hexa",et:"num",mn:0,mx:9999,get:function(c){return bnum(c,"hexa");},set:function(c,v){ensureBoss(c).hexa=v;}},
-    {k:"erda",t:"Erda",et:"num",mn:0,mx:20,get:function(c){return bnum(c,"erda");},set:function(c,v){ensureBoss(c).erda=v;}},
-    {k:"frag",t:"Frag",et:"num",mn:0,mx:99999,get:function(c){return bnum(c,"frag");},set:function(c,v){ensureBoss(c).frag=v;}},
-    {k:"hellux",t:"Hellux",et:"num",mn:0,mx:9999999,get:function(c){return bnum(c,"hellux");},set:function(c,v){ensureBoss(c).hellux=v;}},
-    {k:"arcArmor",t:"Arcane",et:"num",mn:0,mx:4,get:function(c){return bnum(c,"arcArmor");},set:function(c,v){ensureBoss(c).arcArmor=v;}},
+    bnumCol("cp","CP",9999999), bnumCol("hexa","Hexa",9999),          // Power
+    bnumCol("erda","Erda",20), bnumCol("frag","Frag",99999),          // Hexa Matrix
+    bnumCol("arcArmor","Arcane",4),                                   // Arcane
     {k:"f_ArcWeapon",t:"Weapon",et:"toggle",get:function(c){return bflag(c,"ArcWeapon");},set:function(c,v){ensureBoss(c).flags.ArcWeapon=v;}},
-    {k:"skill",t:"Skill",et:"tri",get:function(c){return num(c.boss&&c.boss.skill);},set:function(c,v){ensureBoss(c).skill=v;}},
+    bnumCol("vBoost","Boost",60), bnumCol("vJob","Job Skill",30),      // V Matrix (lowest node levels)
+    bnumCol("vClass","Class Skill",30), bnumCol("vDecent","Decents",30),
+    bnumCol("hellux","Hellux",9999999),                               // Hellux coins
   ];
   BOSS_FLAGS.forEach(function(f){BOSS_COLS.push({k:"f_"+f,t:flagLabel(f),et:"toggle",get:function(c){return bflag(c,f);},set:function(c,v){ensureBoss(c).flags[f]=v;}});});
 
@@ -934,20 +934,18 @@
   }
   function bossPanel(c){
     var b=ensureBoss(c);
-    var nums=[["cp","CP"],["hexa","Hexa"],["erda","Erda",20],["frag","Frag"],["hellux","Hellux"],["arcArmor","Arcane",4]];
-    var numHTML=nums.map(function(p){return '<div class="field"><label>'+p[1]+'</label><input type="number" min="0"'+(p[2]?' max="'+p[2]+'"':'')+' data-boss="'+p[0]+'" value="'+num(b[p[0]])+'"></div>';}).join("");
+    function nf(key,label,max){return '<div class="field"><label>'+label+'</label><input type="number" min="0"'+(max?' max="'+max+'"':'')+' data-boss="'+key+'" value="'+num(b[key])+'"></div>';}
     var weaponHTML='<div class="field"><label>Weapon</label><button class="tglbtn'+(b.flags.ArcWeapon?" on":"")+'" data-bflag="ArcWeapon">Weapon'+(b.flags.ArcWeapon?" ✓":"")+'</button></div>';
-    var sk=num(b.skill);
-    var skillHTML='<div class="field"><label>Skill (2 thresholds)</label><select data-skill>'+
-      '<option value="0"'+(sk===0?" selected":"")+'>None</option>'+
-      '<option value="1"'+(sk===1?" selected":"")+'>1st</option>'+
-      '<option value="2"'+(sk===2?" selected":"")+'>Both</option></select></div>';
     var flagHTML=BOSS_FLAGS.map(function(f){var on=b.flags[f];return '<button class="tglbtn'+(on?" on":"")+'" data-bflag="'+f+'">'+flagLabel(f)+(on?" ✓":"")+'</button>';}).join("");
     var iaHTML=[0,1,2].map(function(i){return iaLineHTML("ia",i,b.ia[i]);}).join("");
     var diaHTML=[0,1,2].map(function(i){return iaLineHTML("dia",i,b.dia[i]);}).join("");
     return '<div class="panel"><h2>Combat</h2>'+
-      '<div class="edgrid">'+numHTML+weaponHTML+skillHTML+'</div>'+
-      '<h3 class="sub2">Gear / prep</h3><div class="toggles">'+flagHTML+'</div>'+
+      '<h3 class="sub2">Power</h3><div class="edgrid">'+nf("cp","CP")+nf("hexa","Hexa")+'</div>'+
+      '<h3 class="sub2">Hexa Matrix</h3><div class="edgrid">'+nf("erda","Erda",20)+nf("frag","Frag")+'</div>'+
+      '<h3 class="sub2">Arcane</h3><div class="edgrid">'+nf("arcArmor","Arcane",4)+weaponHTML+'</div>'+
+      '<h3 class="sub2">V Matrix — lowest node levels</h3><div class="edgrid">'+
+        nf("vBoost","Boost",60)+nf("vJob","Job Skill",30)+nf("vClass","Class Skill",30)+nf("vDecent","Decents",30)+'</div>'+
+      '<h3 class="sub2">Gear / prep</h3><div class="edgrid">'+nf("hellux","Hellux")+'</div><div class="toggles">'+flagHTML+'</div>'+
       '<h3 class="sub2">Inner ability — current</h3><div class="edgrid">'+iaHTML+'</div>'+
       '<h3 class="sub2">Inner ability — goal</h3><div class="edgrid">'+diaHTML+'</div>'+
       '</div>';
@@ -1146,8 +1144,6 @@
     document.querySelectorAll('#editor [data-bflag]').forEach(function(el){
       el.addEventListener("click",function(){var k=el.getAttribute("data-bflag");b.flags[k]=!b.flags[k];save();renderTable();renderEditor();});
     });
-    var skEl=document.querySelector('#editor [data-skill]');
-    if(skEl)skEl.addEventListener("change",function(){b.skill=+skEl.value;save();renderTable();});
     document.querySelectorAll('#editor [data-badge]').forEach(function(el){
       el.addEventListener("click",function(){var nm=el.getAttribute("data-badge");var bd=ensureBadges(c);bd[nm]=!bd[nm];save();renderTable();renderEditor();});
     });
