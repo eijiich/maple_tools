@@ -230,12 +230,31 @@ def build(out: Path):
 def serve(out: Path, port=8000):
     import functools
     import mimetypes
+    import os
     # Browsers reject ES modules served as text/plain; GitHub Pages gets this
     # right, but Python's default map doesn't always -- set it for local testing.
     mimetypes.add_type('text/javascript', '.mjs')
     mimetypes.add_type('text/javascript', '.js')
     mimetypes.add_type('application/wasm', '.wasm')
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(out))
+
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        # Serve the custom 404.html on any missing path, the way GitHub Pages does
+        # (Python's default just prints a bare-text error).
+        def send_error(self, code, message=None, explain=None):
+            if code == 404:
+                page = os.path.join(self.directory, '404.html')
+                if os.path.exists(page):
+                    body = open(page, 'rb').read()
+                    self.send_response(404)
+                    self.send_header('Content-Type', 'text/html; charset=utf-8')
+                    self.send_header('Content-Length', str(len(body)))
+                    self.end_headers()
+                    if self.command != 'HEAD':
+                        self.wfile.write(body)
+                    return
+            return super().send_error(code, message, explain)
+
+    handler = functools.partial(Handler, directory=str(out))
     with socketserver.TCPServer(('', port), handler) as httpd:
         print(f'serving {out} at http://localhost:{port}/  (Ctrl+C to stop)')
         httpd.serve_forever()
