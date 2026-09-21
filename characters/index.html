@@ -683,9 +683,7 @@
     {k:"name1",t:"IGN",cls:"l",et:"ign",get:function(c){return fullIgn(c);}},
     {k:"level",t:"Lv",et:"num",mn:1,mx:300,get:function(c){return num(c.level);},set:function(c,v){c.level=v;}},
   ];
-  var SYM_COLS=[
-    {k:"legionBonus",t:"Legion Bonus",cls:"l",get:function(c){return legionBonusType(c);}},
-    {k:"lb",t:"LB",get:function(c){var v=legionBonusValue(c);return v===""?"":v;}},
+  var SYM_COLS=[   // Legion Bonus / LB live in the Detail view, not this table
     {k:"af",t:"AF",cls:"grp-arc",get:function(c){return afTotal(c);}},
   ];
   ARC_SYM.forEach(function(s,i){SYM_COLS.push({k:"a"+i,t:s,cls:"sym-arc",et:"num",mn:0,mx:20,get:function(c){return num(c.arcane.levels[i]);},set:function(c,v){c.arcane.levels[i]=v;}});});
@@ -745,7 +743,7 @@
   function clamp(v,lo,hi){v=num(v);return v<lo?lo:(v>hi?hi:v);}
   function tdKey(td){var m=/(?:^|\s)k-(\S+)/.exec(td.className);return m?m[1]:null;}
   function refreshTotals(tr,c){  // update read-only derived cells in place (keeps input focus)
-    ["lb","af","sac","btotal","droptotal"].forEach(function(k){
+    ["af","sac","btotal","droptotal"].forEach(function(k){
       var td=tr.querySelector(".k-"+k);if(!td)return;
       var v=COL_BY_K[k].get(c);
       td.innerHTML=(v===""||v==null)?'<span class="no">-</span>':v;
