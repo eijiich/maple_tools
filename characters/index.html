@@ -10,7 +10,7 @@
     --bg:#12141a; --panel:#1a1d26; --panel2:#20242f; --line:#2c313d;
     --fg:#e6e8ee; --dim:#8b93a7; --dimmer:#5b6376;
     --acc:#6ea8fe; --good:#54c98a; --warn:#e2b344; --bad:#e46b6b;
-    --arc:#8ab6ff; --sac:#5686e0;   /* AF / SAC — two calm shades of the site's blue */
+    --arc:#8ab6ff; --sac:#8ab6ff;   /* AF / SAC share one blue (shown one group at a time) */
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--fg);
@@ -220,8 +220,8 @@
   .bcard-ft{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:6px;}
   .bc-tot{color:var(--acc);font-weight:600;font-size:12px;}
   .bc-all{font-size:11px;padding:3px 8px;}
-  .subgrp{display:inline-flex;align-items:center;gap:8px;}
-  .subgrp .sep{width:1px;height:18px;background:var(--line);}
+  .subgrp{display:inline-flex;align-items:center;gap:6px;}
+  #symSubWrap{margin-left:auto;}   /* push AF/SAC to the right of the Show bar */
   [hidden]{display:none!important;}
 </style>
 </head>
@@ -248,7 +248,7 @@
       <button id="setBadges">Badges</button>
       <button id="setDrop">Drop</button>
       <button id="setIA">IA</button>
-      <span id="symSubWrap" class="subgrp"><span class="sep"></span><button id="symAF" class="on">AF</button><button id="symSAC">SAC</button></span>
+      <span id="symSubWrap" class="subgrp"><button id="symAF" class="on">AF</button><button id="symSAC">SAC</button></span>
       <label class="muted ia-hl-wrap" id="iaHlWrap" hidden><input type="checkbox" id="iaHl"> highlight vs goal</label>
     </div>
     <div class="legion-summary" id="legionSummary"></div>
