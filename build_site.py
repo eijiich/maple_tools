@@ -203,6 +203,20 @@ def not_found_html():
 """
 
 
+def bust(html, base_dir):
+    """Append ?v=<content-hash> to each local .js/.css/.mjs the page references, so a
+    browser re-fetches an asset only when its bytes change (no more stale cached JS)."""
+    import hashlib
+    def repl(m):
+        attr, path = m.group(1), m.group(2)
+        f = base_dir / path
+        if not f.exists():
+            return m.group(0)
+        h = hashlib.md5(f.read_bytes()).hexdigest()[:8]
+        return f'{attr}="{path}?v={h}"'
+    return re.sub(r'(src|href)="([^":?]+\.(?:js|mjs|css))"', repl, html)
+
+
 def build(out: Path):
     out.mkdir(parents=True, exist_ok=True)
     # clean generated content but keep .git and .nojekyll
@@ -217,7 +231,7 @@ def build(out: Path):
         for item in items:
             copy_item(src / item, dst / item)
         idx = dst / 'index.html'
-        idx.write_text(inject(idx.read_text(encoding='utf-8'), slug, '../'),
+        idx.write_text(bust(inject(idx.read_text(encoding='utf-8'), slug, '../'), dst),
                        encoding='utf-8', newline='\n')
         print(f'  {slug:16s} <- {src_rel}  ({len(items)} items)')
     (out / 'index.html').write_text(hub_html(), encoding='utf-8', newline='\n')
