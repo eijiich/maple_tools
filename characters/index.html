@@ -607,17 +607,26 @@
     "int":"int","int%":"intPct","luk":"luk","luk%":"lukPct","str":"str","dex":"dex"
   };
   function scNorm(s){return String(s).toLowerCase().replace(/\s+/g," ").replace(/\s*%\s*$/,"%").replace(/\s*\(\s*/g,"(").replace(/\s*\)\s*/g,")").trim();}
-  function parseLinkStats(text){
-    var w={},rows=[],lines=String(text||"").split(/\r?\n/);
-    for(var i=0;i<lines.length;i++){var ln=lines[i];if(!ln.replace(/\s+/g,""))continue;
-      var m=ln.match(/^(.*?)[\t ]+(-?[\d.,]+)\s*%?\s*$/);
-      if(!m){rows.push({label:ln.trim(),key:null});continue;}
-      var label=m[1].trim(),val=parseFloat(m[2].replace(/,/g,""));
-      var key=SC_LABELS[scNorm(label)]||null;
-      if(key&&isFinite(val))w[key]=val;
-      rows.push({label:label,key:key,value:isFinite(val)?val:null});
+  // MapleScouter values are per LINE at a default amount, not per unit (Boss/40%, Att/30,
+  // Crit Dmg/8, IED/40, stat/30, %stat/12, All Stat/9). Divide by these to get per-unit weights.
+  var SC_AMOUNT={boss:40,critDmg:8,ied300:40,ied380:40,attFlat:30,mattFlat:30,attPct:12,mattPct:12,
+    allStatPct:9,str:30,dex:30,int:30,luk:30,strPct:12,dexPct:12,intPct:12,lukPct:12};
+  function parseLinkStats(text){    // raw pasted values (+ amounts if the paste has a 3rd column)
+    var w={},amt={},lines=String(text||"").split(/\r?\n/),i;
+    for(i=0;i<lines.length;i++){var ln=lines[i];if(!ln.replace(/\s+/g,""))continue;
+      var label=null,amount=null,value=null;
+      var three=ln.match(/^(.*?)[\t ]+(-?[\d.,]+)[\t ]+(-?[\d.,]+)\s*%?\s*$/);
+      if(three&&SC_LABELS[scNorm(three[1].trim())]){label=three[1].trim();amount=parseFloat(three[2].replace(/,/g,""));value=parseFloat(three[3].replace(/,/g,""));}
+      else{var m=ln.match(/^(.*?)[\t ]+(-?[\d.,]+)\s*%?\s*$/);if(!m)continue;label=m[1].trim();value=parseFloat(m[2].replace(/,/g,""));}
+      var key=SC_LABELS[scNorm(label)];if(!key||!isFinite(value))continue;
+      w[key]=value;if(isFinite(amount)&&amount>0)amt[key]=amount;
     }
-    return {w:w,rows:rows};
+    return {w:w,amt:amt};
+  }
+  function linkWeights(text){    // per-unit: value / (paste's own amount, else the default, else 1)
+    var p=parseLinkStats(text),out={},k;
+    for(k in p.w){if(p.w.hasOwnProperty(k)){var a=p.amt[k]||SC_AMOUNT[k]||1;out[k]=p.w[k]/a;}}
+    return out;
   }
   function linkP1(l,buffDur){return l.bd?(10+num(buffDur)/10):(l.p1||0);}   // AB scales with buff duration
   function linkVal(l,w,buffDur){var v=linkP1(l,buffDur)*(num(w[LINK_EFF[l.e1]]));if(l.e2)v+=(l.p2||0)*(num(w[LINK_EFF[l.e2]]));return v;}
@@ -985,10 +994,10 @@
   }
 
   function linkOutHTML(c){
-    var w=parseLinkStats(c.linkText||"").w,bd=num(c.buffDur);
+    var w=linkWeights(c.linkText||""),bd=num(c.buffDur);
     var known=[["boss","DMG / Boss"],["critDmg","Crit DMG"],["ied380","IED (380)"],["allStatPct","All Stat%"]];
     var chips=known.map(function(k){var has=w[k[0]]!=null;
-      return '<span class="lk-chip'+(has?" on":"")+'">'+k[1]+' <b>'+(has?w[k[0]]:"—")+'</b></span>';}).join("");
+      return '<span class="lk-chip'+(has?" on":"")+'" title="per 1% / point">'+k[1]+' <b>'+(has?(Math.round(w[k[0]]*100)/100):"—")+'</b></span>';}).join("");
     var ranked=linkRank(w,bd),any=ranked.length&&ranked[0].v>0;
     var rows=ranked.map(function(x,i){var l=x.l;
       var p1=linkP1(l,bd);var p1s=(Math.round(p1*10)/10);
@@ -1023,7 +1032,7 @@
       boss:num(w.boss),critDmg:num(w.critDmg),ied:num(w.ied380)||num(w.ied300)};
   }
   function optimizeHyper(c){
-    var W=hyperWeights(parseLinkStats(c.linkText||"").w);
+    var W=hyperWeights(linkWeights(c.linkText||""));
     var hasW=!!(W.mainFlat||W.boss||W.critDmg||W.att||W.ied);
     var total=hyperPoints(c.level), pool=total-hypCum(num(c.hyperArc)), arc=Math.max(0,Math.min(15,num(c.hyperArc)));
     var gap=Math.max(0,100-num(c.hyperCrit)), critLv=0;
