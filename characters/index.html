@@ -604,13 +604,18 @@
     "m.attack":"mattFlat","matt":"mattFlat","magic attack":"mattFlat",
     "attack":"attFlat","att":"attFlat",
     "m.attack%":"mattPct","matt%":"mattPct","attack%":"attPct","att%":"attPct",
-    "int":"int","int%":"intPct","luk":"luk","luk%":"lukPct","str":"str","dex":"dex"
+    "int":"int","int%":"intPct","luk":"luk","luk%":"lukPct","str":"str","dex":"dex",
+    "not affected by % str":"nopStr","not affected by %str":"nopStr",
+    "not affected by % dex":"nopDex","not affected by %dex":"nopDex",
+    "not affected by % int":"nopInt","not affected by %int":"nopInt",
+    "not affected by % luk":"nopLuk","not affected by %luk":"nopLuk"
   };
   function scNorm(s){return String(s).toLowerCase().replace(/\s+/g," ").replace(/\s*%\s*$/,"%").replace(/\s*\(\s*/g,"(").replace(/\s*\)\s*/g,")").trim();}
   // MapleScouter values are per LINE at a default amount, not per unit (Boss/40%, Att/30,
   // Crit Dmg/8, IED/40, stat/30, %stat/12, All Stat/9). Divide by these to get per-unit weights.
   var SC_AMOUNT={boss:40,critDmg:8,ied300:40,ied380:40,attFlat:30,mattFlat:30,attPct:12,mattPct:12,
-    allStatPct:9,str:30,dex:30,int:30,luk:30,strPct:12,dexPct:12,intPct:12,lukPct:12};
+    allStatPct:9,str:30,dex:30,int:30,luk:30,strPct:12,dexPct:12,intPct:12,lukPct:12,
+    nopStr:200,nopDex:200,nopInt:200,nopLuk:200};   // "Not Affected by % X" flat stat
   function parseLinkStats(text){    // raw pasted values (+ amounts if the paste has a 3rd column)
     var w={},amt={},lines=String(text||"").split(/\r?\n/),i;
     for(i=0;i<lines.length;i++){var ln=lines[i];if(!ln.replace(/\s+/g,""))continue;
@@ -1027,8 +1032,12 @@
   function hyperPoints(level){level=num(level);var pts=0,inc=3,cl;for(cl=140;cl<=level;cl++){if(cl%10===0&&cl>140)inc++;pts+=inc;}return pts;}
   var CRIT_BY_LV=[0,1,2,3,4,5,7,9,11,13,15,17,19,21,23,25];   // total crit-rate % from N hyper levels
   function hyperWeights(w){
-    var flats=[num(w.int),num(w.str),num(w.dex),num(w.luk)].sort(function(a,b){return b-a;});
-    return {mainFlat:flats[0],secFlat:flats[1],att:Math.max(num(w.mattFlat),num(w.attFlat)),
+    // Identify main/secondary by the (normalized) flat stat line, but value the hyper flat
+    // stat with the "Not Affected by % X" line (it doesn't get the %-stat multiplier), 1:1.
+    var stats=[["int","nopInt"],["str","nopStr"],["dex","nopDex"],["luk","nopLuk"]];
+    stats.sort(function(a,b){return num(w[b[0]])-num(w[a[0]]);});
+    return {mainFlat:num(w[stats[0][1]]),secFlat:num(w[stats[1][1]]),
+      att:Math.max(num(w.mattFlat),num(w.attFlat)),
       boss:num(w.boss),critDmg:num(w.critDmg),ied:num(w.ied380)||num(w.ied300)};
   }
   function optimizeHyper(c){
