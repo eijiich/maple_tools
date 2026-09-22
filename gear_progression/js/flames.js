@@ -27,7 +27,7 @@
  * Classes fall out of the weights rather than a dropdown. MathBro needs per-class
  * branches (choose_from = 10 / 8 / 8 junk slots for a standard class / Xenon /
  * DB-Shadower-Cadena) because he asks for hand-typed equivalences; here every
- * single-stat slot is valued at flat[s] and every combo pair at flat[a]+flat[b],
+ * single-stat slot is valued at stat[s] and every combo pair at stat[a]+stat[b],
  * so Xenon's double-counted pairs and a Shadower's DEX/STR secondaries emerge on
  * their own, and the tracked/junk splits land on his constants by construction.
  * Kanna was reworked into a standard mage and needs nothing special.
@@ -152,7 +152,7 @@ function _comb(n, r) {
 function flameTrackedSlots(kind, level, w, opts = {}) {
   const { baseAtt = 0, nonAdvantaged = false } = opts;
   const isWeapon = kind === 'weapon' || kind === 'secondary';
-  const flat = w.flatByStat || {};
+  const stat = w.statByStat || {};
   const statPer = flameBracket(FLAME_STAT_PER_TIER, level);
   const comboPer = flameBracket(FLAME_COMBO_PER_TIER, level);
   const slots = [];
@@ -160,13 +160,13 @@ function flameTrackedSlots(kind, level, w, opts = {}) {
     if (coeff) slots.push({ label, at: (t) => coeff * t });
   };
 
-  for (const s of FLAME_STATS) lin(s, statPer * (flat[s] || 0));
+  for (const s of FLAME_STATS) lin(s, statPer * (stat[s] || 0));
 
   // combo lines grant the combo amount to BOTH stats in the pair
   for (let i = 0; i < FLAME_STATS.length; i++) {
     for (let j = i + 1; j < FLAME_STATS.length; j++) {
       const a = FLAME_STATS[i], b = FLAME_STATS[j];
-      lin(`${a}+${b}`, comboPer * ((flat[a] || 0) + (flat[b] || 0)));
+      lin(`${a}+${b}`, comboPer * ((stat[a] || 0) + (stat[b] || 0)));
     }
   }
 
@@ -174,7 +174,7 @@ function flameTrackedSlots(kind, level, w, opts = {}) {
 
   // flat max HP -- Demon Avenger's whole game, zero weight for everyone else,
   // in which case it stays untracked and the junk count is unaffected
-  lin('HP', flameBracket(FLAME_HP_PER_TIER, level) * (w.hpFlat || 0));
+  lin('HP', flameBracket(FLAME_HP_PER_TIER, level) * (w.hpStat || 0));
 
   if (isWeapon) {
     // weapon attack is a fraction of base attack and the fractions are not
@@ -209,14 +209,14 @@ function flameCacheClear() { _flameCache.clear(); }
 
 function flameDistributionCached(kind, level, w, opts = {}) {
   // Every weight field flameTrackedSlots reads must be in here, or two characters that
-  // differ only in an omitted one share a wrong distribution. hpFlat was missing, which
+  // differ only in an omitted one share a wrong distribution. hpStat was missing, which
   // meant a Demon Avenger and a mage with otherwise identical listed weights collided --
   // latent while only one character was ever computed per session, and reachable the
   // moment the compare panel started switching between them.
   const key = [kind, level, opts.flameType, !!opts.nonAdvantaged, opts.baseAtt || 0,
                w.mainStat, w.allStatPct, w.att, w.matt, w.boss, w.dmgPct || 0,
-               w.hpFlat || 0,
-               JSON.stringify(w.flatByStat || {})].join('|');
+               w.hpStat || 0,
+               JSON.stringify(w.statByStat || {})].join('|');
   let hit = _flameCache.get(key);
   if (!hit) {
     hit = flameDistribution(kind, level, w, opts);
@@ -425,14 +425,14 @@ function flameCurrentValue(f, w) {
  * invariant to how the paste was scaled, which is the property that makes it
  * comparable across characters and between pastes.
  *
- * Demon Avenger's currency is HP, and hpFlat is the one flat weight that
+ * Demon Avenger's currency is HP, and hpStat is the one stat weight that
  * dominates only for that class, so the larger of the two decides. Zero means the
  * paste carries no row to convert with, and there is no honest number to show.
  */
 function flameScoreDivisor(w) {
   if (!w) return 0;
-  const main = (w.flatByStat && w.flatByStat[w.mainStat]) || 0;
-  return Math.max(main, w.hpFlat || 0);
+  const main = (w.statByStat && w.statByStat[w.mainStat]) || 0;
+  return Math.max(main, w.hpStat || 0);
 }
 
 function flameScore(value, w) {
@@ -451,9 +451,9 @@ function flameScore(value, w) {
 function flameInputWeight(key, w) {
   switch (key) {
     case 'fSTR': case 'fDEX': case 'fINT': case 'fLUK':
-      return (w.flatByStat && w.flatByStat[key.slice(1)]) || 0;
+      return (w.statByStat && w.statByStat[key.slice(1)]) || 0;
     case 'fAtt':  return w.attFlat || 0;
-    case 'fHp':   return w.hpFlat || 0;
+    case 'fHp':   return w.hpStat || 0;
     case 'fAll':  return w.allStatPct || 0;
     case 'fDmg':  return w.dmgPct || 0;
     case 'fBoss': return w.boss || 0;
