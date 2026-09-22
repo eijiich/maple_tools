@@ -185,7 +185,7 @@ function migrate(s) {
         let sub = null, best = -1;
         for (const s2 of STAT_NAMES) {
           if (s2 === main) continue;
-          const f2 = (mw.flatByStat && mw.flatByStat[s2]) || 0;
+          const f2 = (mw.statByStat && mw.statByStat[s2]) || 0;
           if (f2 > best) { best = f2; sub = s2; }
         }
         g['f' + main] = (g['f' + main] || 0) + Number(g.fMain || 0);
@@ -678,10 +678,10 @@ function renderWeights() {
     [`1% ied @${weights.iedVariant}`, weights.ied],
     ['1% crit dmg', weights.critDmg],
     ['1% dmg', weights.dmgPct],
-    ['1 flat att', weights.attFlat],
-    ...STAT_NAMES.filter(s => s !== weights.mainStat && (weights.flatByStat[s] || 0) > 0)
-      .map(s => [`1 flat ${s}`, weights.flatByStat[s]]),
-    ...(weights.hpFlat > 0 ? [['1 flat HP', weights.hpFlat]] : []),
+    ['1 att', weights.attFlat],
+    ...STAT_NAMES.filter(s => s !== weights.mainStat && (weights.statByStat[s] || 0) > 0)
+      .map(s => [`1 ${s}`, weights.statByStat[s]]),
+    ...(weights.hpStat > 0 ? [['1 HP', weights.hpStat]] : []),
   ];
 
   const kids = [

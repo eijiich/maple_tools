@@ -53,13 +53,13 @@ const STAT_NAMES = ['STR', 'DEX', 'INT', 'LUK'];
 // normalised label -> weight key. Exact matches only, so "Not Affected by % INT"
 // can't be mistaken for "INT".
 const SCOUTER_LABELS = {
-  'str': 'flat.STR', 'dex': 'flat.DEX', 'int': 'flat.INT', 'luk': 'flat.LUK',
+  'str': 'stat.STR', 'dex': 'stat.DEX', 'int': 'stat.INT', 'luk': 'stat.LUK',
   'str%': 'pct.STR', 'dex%': 'pct.DEX', 'int%': 'pct.INT', 'luk%': 'pct.LUK',
 
-  'not affected by % str': 'nopct.STR',
-  'not affected by % dex': 'nopct.DEX',
-  'not affected by % int': 'nopct.INT',
-  'not affected by % luk': 'nopct.LUK',
+  'not affected by % str': 'flat.STR',
+  'not affected by % dex': 'flat.DEX',
+  'not affected by % int': 'flat.INT',
+  'not affected by % luk': 'flat.LUK',
 
   'all stat%': 'allStatPct',
   'all stats%': 'allStatPct',
@@ -93,9 +93,9 @@ const SCOUTER_LABELS = {
 
   'hp%': 'hpPct',
   'max hp%': 'hpPct',
-  'hp': 'hpFlat',
-  'max hp': 'hpFlat',
-  'not affected by % hp': 'nopct.HP',
+  'hp': 'hpStat',
+  'max hp': 'hpStat',
+  'not affected by % hp': 'flat.HP',
 };
 
 // MapleScouter's own default amounts, so "fill defaults" matches an untouched page.
@@ -103,11 +103,11 @@ const SCOUTER_LABELS = {
 const SCOUTER_DEFAULT_AMOUNTS = {
   boss: 40, critDmg: 8, ied300: 40, ied380: 40,
   attFlat: 30, mattFlat: 30, attPctPhys: 12, attPctMagic: 12,
-  hpFlat: 30, hpPct: 12, 'nopct.HP': 200,
+  hpStat: 30, hpPct: 12, 'flat.HP': 200,
   allStatPct: 9,
-  'flat.STR': 30, 'flat.DEX': 30, 'flat.INT': 30, 'flat.LUK': 30,
+  'stat.STR': 30, 'stat.DEX': 30, 'stat.INT': 30, 'stat.LUK': 30,
   'pct.STR': 12, 'pct.DEX': 12, 'pct.INT': 12, 'pct.LUK': 12,
-  'nopct.STR': 200, 'nopct.DEX': 200, 'nopct.INT': 200, 'nopct.LUK': 200,
+  'flat.STR': 200, 'flat.DEX': 200, 'flat.INT': 200, 'flat.LUK': 200,
 };
 
 function normLabel(s) {
@@ -192,7 +192,7 @@ function normaliserOf(parsed, weightOf) {
 /**
  * Build the weight set the engines consume.
  *
- * mainStat is normally detected as the largest flat stat weight -- MapleScouter
+ * mainStat is normally detected as the largest stat weight -- MapleScouter
  * normalises the main stat to 1, and secondaries come out well below it. Pass an
  * override when a build makes that ambiguous.
  *
@@ -215,13 +215,13 @@ function buildWeights(parsed, opts = {}) {
   let mainStat = opts.mainStat;
   if (!mainStat || !STAT_NAMES.includes(mainStat)) {
     mainStat = STAT_NAMES.reduce(
-      (best, s) => (g('flat.' + s) > g('flat.' + best) ? s : best), 'STR');
+      (best, s) => (g('stat.' + s) > g('stat.' + best) ? s : best), 'STR');
   }
 
   // Star force raises every class-relevant stat by the same amount, so one point
-  // of "Class Stat" is worth the sum of the flat weights -- 1 + 0.1 = 1.1 for a
+  // of "Class Stat" is worth the sum of the stat weights -- 1 + 0.1 = 1.1 for a
   // mage, and correctly larger for a build like Xenon that uses three stats.
-  const statPerPoint = STAT_NAMES.reduce((a, s) => a + g('flat.' + s), 0);
+  const statPerPoint = STAT_NAMES.reduce((a, s) => a + g('stat.' + s), 0);
 
   const iedVariant = opts.iedVariant === 380 ? 380 : 300;
 
@@ -237,8 +237,8 @@ function buildWeights(parsed, opts = {}) {
   // Star force adds the same amount to every class-relevant stat, so it only ever
   // needs the sum. Flames don't: a single-stat line hits one stat while a combo
   // line hits two, so the per-stat split has to survive.
-  const flatByStat = {};
-  for (const s of STAT_NAMES) flatByStat[s] = g('flat.' + s);
+  const statByStat = {};
+  for (const s of STAT_NAMES) statByStat[s] = g('stat.' + s);
 
   // % weight per individual stat, for classes where more than one stat's % lines
   // carry real value (Xenon runs on three). Single-stat classes only ever read
@@ -249,9 +249,9 @@ function buildWeights(parsed, opts = {}) {
   return {
     mainStat,
     statPerPoint,
-    flatByStat,
+    statByStat,
     pctByStat,
-    // Flat attack, whichever of the two the class actually uses -- a flame line
+    // Attack, whichever of the two the class actually uses -- a flame line
     // reads "Attack Power +N" or "Magic ATT +N" depending on the weapon, and only
     // one of the two weights is ever non-zero.
     attFlat: g('attFlat') || g('mattFlat'),
@@ -264,10 +264,10 @@ function buildWeights(parsed, opts = {}) {
     ied:        iedVariant === 380 ? g('ied380') : g('ied300'),
     critDmg:    g('critDmg'),
     hpPct:      g('hpPct'),
-    // flat max HP -- worthless to most classes, but it is Demon Avenger's whole
+    // max HP -- worthless to most classes, but it is Demon Avenger's whole
     // game: MathBro's DA flame branch scores hp_tier * hp_per_tier with no
     // equivalence multiplier at all, because HP IS the currency there.
-    hpFlat:     g('hpFlat'),
+    hpStat:     g('hpStat'),
     // Damage% IS boss damage%. Same weight, the only difference being that boss%
     // applies to bosses only -- which is all this tool is optimising for. MathBro
     // does the same: worker.js:755 multiplies both by one shared
@@ -276,7 +276,7 @@ function buildWeights(parsed, opts = {}) {
     // nothing to parse and no fallback to arrange.
     dmgPct:     g('boss'),
 
-    // flat attack from star force
+    // attack from star force
     att:  g('attFlat'),
     matt: g('mattFlat'),
 
@@ -300,7 +300,7 @@ function buildWeights(parsed, opts = {}) {
     suspectTotals: !parsed.percent && !normaliser && values.length > 0
                    && Math.min.apply(null, values) > 1,
     // a pure-HP Demon Avenger paste has near-zero stat weights but is not empty
-    empty: statPerPoint === 0 && !g('hpFlat'),
+    empty: statPerPoint === 0 && !g('hpStat'),
   };
 }
 
@@ -310,7 +310,7 @@ function buildWeights(parsed, opts = {}) {
  * class, and this line makes the inference visible instead of magic.
  */
 function weightsProfileText(w) {
-  const flats = w.flatByStat || {};
+  const flats = w.statByStat || {};
   // Thresholds are RELATIVE to the biggest weight, never absolute. The percent
   // format normalises nothing, so a Xenon's flats there are ~0.12 rather than ~1
   // and any fixed cutoff would misread every class.
@@ -321,7 +321,7 @@ function weightsProfileText(w) {
   const bits = [];
   // Demon Avenger scales off HP%, so HP% outweighing the stat's own % is the
   // scale-free signature -- true in both formats.
-  if ((w.hpFlat || 0) > 0 && (w.hpPct || 0) >= (w.mainPct || 0)) {
+  if ((w.hpStat || 0) > 0 && (w.hpPct || 0) >= (w.mainPct || 0)) {
     bits.push('HP-based build (Demon Avenger)');
   } else if (primaries.length > 1) {
     bits.push(primaries.join('/') + ' all primary (Xenon-style)');
@@ -333,7 +333,7 @@ function weightsProfileText(w) {
     : 'all-stat% kept at its own, higher weight');
   const subs = cubeSubStats(w);
   if (subs.length) bits.push('counting ' + subs.map(s => s + '%').join(' and ') + ' potential lines');
-  if ((w.hpFlat || 0) > 0) bits.push('flat-HP flame lines valued');
+  if ((w.hpStat || 0) > 0) bits.push('flat-HP flame lines valued');
   const divided = Object.keys(w.amounts || {}).filter(k => w.amounts[k] !== 1);
   if (divided.length) {
     bits.push(`${divided.length} row${divided.length > 1 ? 's' : ''} divided by `
