@@ -150,6 +150,16 @@
   .lk-chip{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:2px 10px;font-size:11px;color:var(--dim);}
   .lk-chip.on{border-color:var(--acc);color:var(--fg);}
   .lk-chip b{color:var(--acc);font-weight:600;}
+  .eq-toggle{float:right;font-size:12px;font-weight:400;color:var(--dim);cursor:pointer;display:inline-flex;align-items:center;gap:5px;}
+  .eq-toggle input{margin:0;cursor:pointer;}
+  .eq-drop{border:1px dashed var(--line);border-radius:6px;padding:8px 10px;font-size:12px;color:var(--dim);
+    cursor:pointer;outline:none;transition:border-color .1s,background .1s;}
+  .eq-drop:hover,.eq-drop:focus,.eq-drop.hover{border-color:var(--acc);background:var(--panel2);color:var(--fg);}
+  .eq-drop b{color:var(--fg);font-weight:600;}
+  .eq-reset{margin-left:6px;font-size:11px;padding:1px 8px;border:1px solid var(--line);border-radius:10px;
+    background:var(--panel2);color:var(--dim);cursor:pointer;}
+  .eq-reset:hover{border-color:var(--acc);color:var(--fg);}
+  .eq-status{font-size:12px;min-height:0;}
   .lk-rank-list{border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-top:6px;max-width:560px;}
   .lk-row{display:grid;grid-template-columns:32px 1.2fr 1.4fr 92px;gap:8px;align-items:center;padding:4px 10px;border-bottom:1px solid var(--line);font-size:12px;}
   .lk-row:last-child{border-bottom:none;}
@@ -523,9 +533,26 @@
       if(bo.pno&&bo.pno.d==="Clear")bo.pno.d="Normal";
       for(var bok in bo){if(bo.hasOwnProperty(bok))bo[bok].p=Math.max(1,Math.min(6,num(bo[bok].p)||1));}
       if(typeof c.linkText!=="string")c.linkText="";   // pasted MapleScouter stat equivalence for link ranking
-      if(typeof c.buffDur!=="number")c.buffDur=100;     // buff duration % (base 100); scales the AB link
+      if(typeof c.buffDur!=="number")c.buffDur=0;       // buff duration % straight from the STAT window (base 0); feeds the AB link (10+bd/10) and archer uptime (30*(1+bd/100))
       if(typeof c.hyperCrit!=="number")c.hyperCrit=0;   // crit rate before hyper (to fill hyper crit to 100)
       if(typeof c.hyperArc!=="number")c.hyperArc=0;     // Arcane Force hyper levels reserved
+      // Stat-equivalence engine inputs (from the in-game STAT window). Compute weights via the
+      // exact damage formula instead of a MapleScouter paste (GMS-friendly). eqOn picks the source.
+      if(typeof c.eqOn!=="boolean")c.eqOn=false;
+      if(typeof c.iedTotal!=="number")c.iedTotal=0;     // total ied %
+      if(typeof c.bossTotal!=="number")c.bossTotal=0;   // total boss dmg %
+      if(typeof c.dmgTotal!=="number")c.dmgTotal=0;     // total damage %
+      if(typeof c.critDmg!=="number")c.critDmg=0;       // total crit damage %
+      // Each stat as the game's Stat Info panel shows it: base (affected by %), %, not-applied (flat).
+      if(typeof c.mainBase!=="number")c.mainBase=0;     // main stat base (Xenon: STR+DEX+LUK; DA: HP-based)
+      if(typeof c.mainPct!=="number")c.mainPct=0;
+      if(typeof c.mainNA!=="number")c.mainNA=0;
+      if(typeof c.secBase!=="number")c.secBase=0;
+      if(typeof c.secPct!=="number")c.secPct=0;
+      if(typeof c.secNA!=="number")c.secNA=0;
+      if(typeof c.attBase!=="number")c.attBase=0;       // ATT / M.ATT
+      if(typeof c.attPct!=="number")c.attPct=0;
+      if(typeof c.attNA!=="number")c.attNA=0;
       if(!c.hyperCur||typeof c.hyperCur!=="object")c.hyperCur={};
       var bg=c.badges;for(var bk in bg){if(bg.hasOwnProperty(bk))bg[bk]=(bg[bk]===2||bg[bk]===true);}  // drop old 'o' planning state
       var b0=c.boss, fl=b0.flags;               // flag cleanup / rename / restructure
@@ -634,8 +661,21 @@
     return out;
   }
   function linkP1(l,buffDur){return l.bd?(10+num(buffDur)/10):(l.p1||0);}   // AB scales with buff duration
-  function linkVal(l,w,buffDur){var v=linkP1(l,buffDur)*(num(w[LINK_EFF[l.e1]]));if(l.e2)v+=(l.p2||0)*(num(w[LINK_EFF[l.e2]]));return v;}
-  function linkRank(w,buffDur){return LINK_SKILLS.map(function(l){return {l:l,v:linkVal(l,w,buffDur)};}).sort(function(a,b){return b.v-a.v;});}
+  // Value one link effect in "% final damage". DMG / Crit DMG / All-stat are additive, so it's just
+  // amount * per-unit weight. IED is multiplicative and saturates near the cap — a 20% IED link at
+  // 94% IED barely moves you — so value it by the true boss-def-multiplier gain of stacking that
+  // amount on your current total IED, independent of the (paste-understated) IED weight.
+  function linkEff(eff,amount,w,c){
+    if(eff==="IED"){
+      var cur=Math.max(0,Math.min(100,num(c&&c.iedTotal)))/100;
+      if(cur>0){var pdr=3.8,bm=function(i){return Math.max(0.05,1-pdr*(1-i));};
+        var nw=cur+amount/100*(1-cur);return 100*(bm(nw)/bm(cur)-1);}
+      return amount*num(w.ied380||w.ied300);   // no current IED known -> linear fallback
+    }
+    return amount*num(w[LINK_EFF[eff]]);
+  }
+  function linkVal(l,w,buffDur,c){var v=linkEff(l.e1,linkP1(l,buffDur),w,c);if(l.e2)v+=linkEff(l.e2,l.p2||0,w,c);return v;}
+  function linkRank(w,buffDur,c){return LINK_SKILLS.map(function(l){return {l:l,v:linkVal(l,w,buffDur,c)};}).sort(function(a,b){return b.v-a.v;});}
   function hasLinkStats(c){var w=parseLinkStats(c.linkText||"").w;for(var k in w)if(w.hasOwnProperty(k))return true;return false;}
 
   // weekly boss crystal values (from the Money tab); cr = crystals a clear yields (CRA = 3)
@@ -999,11 +1039,11 @@
   }
 
   function linkOutHTML(c){
-    var w=linkWeights(c.linkText||""),bd=num(c.buffDur);
+    var w=charWeights(c),bd=num(c.buffDur);
     var known=[["boss","DMG / Boss"],["critDmg","Crit DMG"],["ied380","IED (380)"],["allStatPct","All Stat%"]];
     var chips=known.map(function(k){var has=w[k[0]]!=null;
       return '<span class="lk-chip'+(has?" on":"")+'" title="per 1% / point">'+k[1]+' <b>'+(has?(Math.round(w[k[0]]*100)/100):"—")+'</b></span>';}).join("");
-    var ranked=linkRank(w,bd),any=ranked.length&&ranked[0].v>0;
+    var ranked=linkRank(w,bd,c),any=ranked.length&&ranked[0].v>0;
     var rows=ranked.map(function(x,i){var l=x.l;
       var p1=linkP1(l,bd);var p1s=(Math.round(p1*10)/10);
       var eff=l.e1+" "+p1s+"%"+(l.e2&&l.p2?" + "+l.e2+" "+l.p2+"%":"");
@@ -1018,7 +1058,7 @@
   }
   function linksPanel(c){
     return '<div class="panel"><h2>Link skills</h2>'+
-      '<div class="field lk-bd-field"><label>Buff duration % <span class="rf-sub">(base 100; scales Angelic Buster)</span></label>'+
+      '<div class="field lk-bd-field"><label>Buff duration % <span class="rf-sub">(from your STAT window; scales Angelic Buster &amp; archer uptime)</span></label>'+
       '<input type="number" class="lk-bd" min="0" max="500" value="'+num(c.buffDur)+'"></div>'+
       '<div class="field"><label>Paste MapleScouter stat equivalence — one &ldquo;Stat&nbsp;&nbsp;value&rdquo; per line (same as the gear tool)</label>'+
       '<textarea class="lk-paste" spellcheck="false" placeholder="Boss Damage&#9;12.53&#10;Critical Dmg&#9;41.26&#10;Ignore Dff(380)&#9;2.37&#10;All Stat%&#9;13.84">'+String(c.linkText||"").replace(/&/g,"&amp;").replace(/</g,"&lt;")+'</textarea></div>'+
@@ -1032,65 +1072,255 @@
   function hyperPoints(level){level=num(level);var pts=0,inc=3,cl;for(cl=140;cl<=level;cl++){if(cl%10===0&&cl>140)inc++;pts+=inc;}return pts;}
   var CRIT_BY_LV=[0,1,2,3,4,5,7,9,11,13,15,17,19,21,23,25];   // total crit-rate % from N hyper levels
   function hyperWeights(w){
-    // Identify main/secondary by the STAT line (str/dex/int/luk — affected by %stat), but value
-    // the hyper stat with the FLAT line ("Not Affected by % X" — unmodified by %stat), 1:1,
-    // since the hyper stat doesn't scale with %stat.
+    // Turn a weight object (from the equivalence engine OR a MapleScouter paste) into the handful
+    // the hyper optimizer needs. Engine weights are exact per-unit relative damage and carry the
+    // main/secondary flat weights directly; a paste identifies main/sec by the largest regular
+    // stat line (str/dex/int/luk) and values the hyper stat with that stat's FLAT ("Not Affected
+    // by %") line, 1:1, since the hyper stat doesn't scale with %stat. See [[reference-stat-terminology]].
+    w=w||{};
+    if(w._exact){
+      return {mainFlat:num(w.mainFlat),secFlat:num(w.secFlat),att:Math.max(num(w.attFlat),num(w.mattFlat)),
+        boss:num(w.boss),critDmg:num(w.critDmg),ied:num(w.ied380)||num(w.ied300),
+        iedPDR:num(w.ied380)>0?3.8:3.0,exact:true};
+    }
     var stats=[["int","flatInt"],["str","flatStr"],["dex","flatDex"],["luk","flatLuk"]];
     stats.sort(function(a,b){return num(w[b[0]])-num(w[a[0]]);});
     return {mainFlat:num(w[stats[0][1]]),secFlat:num(w[stats[1][1]]),
       att:Math.max(num(w.mattFlat),num(w.attFlat)),
-      boss:num(w.boss),critDmg:num(w.critDmg),ied:num(w.ied380)||num(w.ied300)};
+      boss:num(w.boss),critDmg:num(w.critDmg),
+      ied:num(w.ied380)||num(w.ied300),iedPDR:num(w.ied380)>0?3.8:3.0,exact:false};
+  }
+  // Full equivalence engine: compute per-unit stat weights from the character's stats with the
+  // exact MapleStory damage formula (MathBro / MapleScouter engine), so GMS users don't need a
+  // MapleScouter paste. Each weight = relative damage from +1 unit of that stat (== "% final dmg").
+  //   D = statTerm * (1.35 + critDmg) * (1 + boss + dmg) * att * max(0, 1 - PDR*(1 - IED))
+  // Stats use MapleStory's three parts, exactly as the game's Stat Info panel shows them:
+  //   total = base*(1 + %/100) + notApplied     ("base" is affected by %stat; "notApplied" is flat)
+  // statTerm uses the TOTAL; a %stat line (all-stat%, stat%) scales only the BASE; a flat/hyper
+  // stat adds to the total 1:1. statTerm: common 4*main+sec · Xenon 4*(STR+DEX+LUK) · DA HP (approx).
+  function statTotal(base,pct,na){return num(base)*(1+num(pct)/100)+num(na);}
+  function engineWeights(c){
+    var cls=baseClass(c.class), arch=classOf(c);
+    var isXenon=arch==="Xenon", isDA=(cls==="Demon Avenger");
+    var primary=statTotal(c.mainBase,c.mainPct,c.mainNA);
+    var secondary=(isXenon||isDA)?0:statTotal(c.secBase,c.secPct,c.secNA);
+    var att=statTotal(c.attBase,c.attPct,c.attNA);
+    if(!(primary>0&&att>0))return null;
+    var cdmg=num(c.critDmg)/100, boss=Math.max(0,num(c.bossTotal))/100, dmg=Math.max(0,num(c.dmgTotal))/100;
+    var ied=Math.max(0,Math.min(100,num(c.iedTotal)))/100;
+    var statTerm=isXenon?4*primary:isDA?primary:(4*primary+secondary);
+    function bm(pdr){return Math.max(0.05,1-pdr*(1-ied));}
+    var w={_exact:true};
+    w.boss=1/(1+boss+dmg);                 // per 1% boss dmg (== damage %; same line)
+    w.critDmg=1/(1.35+cdmg);               // per 1% crit dmg
+    w.ied380=3.8/bm(3.8); w.ied300=3.0/bm(3.0);   // per 1% IED vs 380 / 300 boss def
+    w.attFlat=100/att; w.mattFlat=100/att; // per 1 flat ATT
+    w.attPct=num(c.attBase)/att; w.mattPct=num(c.attBase)/att; // per 1% ATT (scales the base only)
+    if(isDA){ w.mainFlat=100*0.02/30; w.secFlat=0; w.allStatPct=0; }   // DA main hyper ~ x1.02/level (approx)
+    else{
+      w.mainFlat=400/statTerm;             // per 1 flat main stat (hyper main = flat, x4 in statTerm)
+      w.secFlat=secondary>0?100/statTerm:0;
+      // +1% all-stat adds base*0.01 to each stat's total (only the base scales):
+      w.allStatPct=(4*num(c.mainBase)+(secondary>0?num(c.secBase):0))/statTerm;
+    }
+    return w;
+  }
+  function charWeights(c){   // engine weights when enabled & valid, else the MapleScouter paste
+    if(c.eqOn){var e=engineWeights(c);if(e)return e;}
+    return linkWeights(c.linkText||"");
   }
   function optimizeHyper(c){
-    var W=hyperWeights(linkWeights(c.linkText||""));
+    var W=hyperWeights(charWeights(c));
     var hasW=!!(W.mainFlat||W.boss||W.critDmg||W.att||W.ied);
     var total=hyperPoints(c.level), pool=total-hypCum(num(c.hyperArc)), arc=Math.max(0,Math.min(15,num(c.hyperArc)));
     var gap=Math.max(0,100-num(c.hyperCrit)), critLv=0;
     while(critLv<15&&CRIT_BY_LV[critLv]<gap)critLv++;
     if(hypCum(critLv)>pool){critLv=0;while(critLv<15&&hypCum(critLv+1)<=pool)critLv++;}
     pool-=hypCum(critLv);
-    // Archers (Critical Reinforce, 5th job): crit rate over 100% converts to crit damage at
-    // 0.5% per 1% (max skill) — but it's a 30s buff on a 120s cooldown, so only its uptime
-    // counts (buff duration extends the 30s; cd left raw). So value it at 0.5 * uptime.
+    // Archers (Critical Reinforce, 5th job): crit rate over 100% converts to crit damage at 0.5%
+    // per 1% (max skill), but it's a 30s buff on a 120s cooldown, so value it at 0.5 * uptime.
     var isArcher=classOf(c)==="Archer";
-    var critUptime=Math.min(1,(30*(num(c.buffDur)||100)/100)/120);
+    var critUptime=Math.min(1,(30*(1+num(c.buffDur)/100))/120);   // 30s base skill, extended by buff duration % (stat-window value)
     var CRIT_CONV=0.5*critUptime;
+    // IED is multiplicative (new = ied + 3%*(1-ied)) and its effect is the boss-def multiplier
+    // bMult(ied)=1-PDR*(1-ied). Strip the current hyper IED off the total to get the gear base,
+    // then value optimized IED levels stacked on that base. Exact engine weights anchor to the
+    // exact IED weight; a paste (whose IED weight is understated near the cap) anchors to Boss Dmg.
+    var PDR=W.iedPDR||3.8;
+    function bMult(ied){return Math.max(0.05,1-PDR*(1-ied));}
+    var curIED=Math.max(0,Math.min(100,num(c.iedTotal)))/100;
+    var curHypIed=Math.max(0,Math.min(15,num((c.hyperCur||{}).ied)));
+    var bossFrac=Math.max(0,num(c.bossTotal))/100;
+    var baseIED=null,iedScale=0,iedMode="";
+    if(curIED>0){
+      var hypFrac=1-Math.pow(0.97,curHypIed);
+      baseIED=Math.max(0,1-(1-curIED)/(1-hypFrac));
+      if(W.exact&&W.ied>0){iedScale=W.ied*bMult(curIED)/(PDR*0.01);iedMode="exact";}
+      else if(W.boss>0&&bossFrac>0){iedScale=W.boss*(1+bossFrac)*100;iedMode="boss";}
+      else if(W.ied>0){iedScale=W.ied*bMult(curIED)/(PDR*0.01);iedMode="ied";}
+    }
     var lv={main:0,sec:0,att:0,critDmg:0,dmg:0,boss:0,ied:0,crit:critLv}, cats=["main","sec","att","critDmg","dmg","boss","ied"];
-    if(isArcher)cats.push("crit");   // extra crit rate beyond 100 keeps giving value (as crit dmg)
-    function delta(cat,f){return cat==="main"||cat==="sec"?30:cat==="att"?3:cat==="critDmg"?1:cat==="dmg"?3:cat==="boss"?(f<5?3:4):cat==="crit"?(CRIT_BY_LV[f+1]-CRIT_BY_LV[f]):3*Math.pow(0.97,f);}
-    function wt(cat){return cat==="main"?W.mainFlat:cat==="sec"?W.secFlat:cat==="att"?W.att:cat==="critDmg"?W.critDmg:cat==="ied"?W.ied:cat==="crit"?CRIT_CONV*W.critDmg:W.boss;}
+    if(isArcher)cats.push("crit");
+    function lvVal(cat,f){
+      if(cat==="ied"){
+        if(iedScale>0){var ta=1-(1-baseIED)*Math.pow(0.97,f), tb=1-(1-baseIED)*Math.pow(0.97,f+1);return iedScale*(bMult(tb)/bMult(ta)-1);}
+        return 3*Math.pow(0.97,f)*W.ied;
+      }
+      if(cat==="crit")return (CRIT_BY_LV[f+1]-CRIT_BY_LV[f])*CRIT_CONV*W.critDmg;
+      var d=cat==="main"||cat==="sec"?30:cat==="att"?3:cat==="critDmg"?1:cat==="dmg"?3:(f<5?3:4);
+      var wv=cat==="main"?W.mainFlat:cat==="sec"?W.secFlat:cat==="att"?W.att:cat==="critDmg"?W.critDmg:W.boss;
+      return d*wv;
+    }
     while(true){
       var best=null,bpp=0,i;
       for(i=0;i<cats.length;i++){var cat=cats[i],cl=lv[cat];if(cl>=15)continue;
         var cost=HYP_COST[cl];if(cost>pool)continue;
-        var val=delta(cat,cl)*wt(cat);if(val<=0)continue;
+        var val=lvVal(cat,cl);if(val<=0)continue;
         if(val/cost>bpp){bpp=val/cost;best=cat;}}
       if(!best)break;
       lv[best]++;pool-=HYP_COST[lv[best]-1];
     }
-    return {total:total,arc:arc,critLv:lv.crit,critPct:CRIT_BY_LV[lv.crit],lv:lv,used:total-pool,left:pool,hasW:hasW,archer:isArcher,critUptime:critUptime};
+    return {total:total,arc:arc,critLv:lv.crit,critPct:CRIT_BY_LV[lv.crit],lv:lv,used:total-pool,left:pool,hasW:hasW,archer:isArcher,critUptime:critUptime,baseIED:baseIED,curIED:curIED,iedMode:iedMode};
   }
   var HYPER_ROWS=[["main","Main stat"],["sec","Secondary"],["crit","Critical Rate"],["cdmg","Critical Dmg"],
     ["ied","Ignore Def"],["dmg","Damage"],["boss","Boss Dmg"],["att","ATT / M.Att"]];
   function hyperOutHTML(c){
     var r=optimizeHyper(c);
-    if(!r.hasW)return '<p class="muted">Paste this character&rsquo;s stat equivalence in <b>Link skills</b> above to optimize hyper stats.</p>';
+    if(!r.hasW)return '<p class="muted">Fill the <b>Stat equivalence</b> panel above (or paste MapleScouter weights in <b>Link skills</b>) to optimize hyper stats.</p>';
     var opt={main:r.lv.main,sec:r.lv.sec,crit:r.critLv,cdmg:r.lv.critDmg,ied:r.lv.ied,dmg:r.lv.dmg,boss:r.lv.boss,att:r.lv.att};
     var cur=c.hyperCur||{};
     var rows=HYPER_ROWS.map(function(p){var k=p[0],cv=num(cur[k]),ov=opt[k];
       return '<div class="hyp-row"><span class="hyp-lbl">'+p[1]+'</span>'+
         '<input type="number" min="0" max="15" class="hyp-cur" data-hk="'+k+'" value="'+(cur[k]===0||cur[k]?cv:"")+'">'+
         '<span class="hyp-opt'+(cv!==ov?" hyp-diff":"")+'">'+ov+'</span></div>';}).join("");
+    var iedNote=r.baseIED==null
+      ? ' · <span title="Enter Current total IED % (in Stat equivalence) to value IED off its true base">IED: enter total IED %</span>'
+      : ' · IED base <b>'+Math.round(r.baseIED*100)+'%</b> '+(r.iedMode==="exact"?'(exact)':r.iedMode==="boss"?'(anchored to Boss Dmg)':'(anchored to pasted IED weight)');
     return '<div class="hyp-grid"><div class="hyp-row hyp-head"><span>Stat</span><span>Current</span><span>Optimized</span></div>'+rows+'</div>'+
-      '<p class="muted hyp-sum">Uses <b>'+r.used+'</b> / '+r.total+' pts · crit hyper <b>+'+r.critPct+'%</b> '+(r.archer?'(excess &rarr; crit dmg, Crit Reinforce '+Math.round(r.critUptime*100)+'% uptime)':'(fills to 100)')+' · Arcane Force reserved <b>'+r.arc+'</b> lv'+(r.left>0?' · '+r.left+' left':'')+'</p>';
+      '<p class="muted hyp-sum">Uses <b>'+r.used+'</b> / '+r.total+' pts · crit hyper <b>+'+r.critPct+'%</b> '+(r.archer?'(excess &rarr; crit dmg, Crit Reinforce '+Math.round(r.critUptime*100)+'% uptime)':'(fills to 100)')+' · Arcane Force reserved <b>'+r.arc+'</b> lv'+(r.left>0?' · '+r.left+' left':'')+iedNote+'</p>';
+  }
+  var EQ_CHIPS=[["boss","DMG / Boss"],["critDmg","Crit DMG"],["ied380","IED (380)"],["ied300","IED (300)"],["allStatPct","All Stat%"],["attFlat","1 ATT"],["mainFlat","1 flat main"]];
+  function eqOutHTML(c){
+    if(!c.eqOn)return '<p class="muted">Using the <b>MapleScouter paste</b> in Link skills. Toggle on to compute weights from these stat totals instead (works in GMS &mdash; no MapleScouter account needed).</p>';
+    var w=engineWeights(c);
+    if(!w)return '<p class="muted">Enter at least <b>Main stat</b> and <b>Total ATT</b> to compute weights.</p>';
+    var chips=EQ_CHIPS.map(function(k){var v=w[k[0]];return '<span class="lk-chip on" title="per 1% / per unit ('+'% final dmg)">'+k[1]+' <b>'+(v!=null?(Math.round(v*1000)/1000):"—")+'</b></span>';}).join("");
+    return '<p class="muted" style="margin:0 0 6px">Computed weights (% final damage per 1% / per unit) &mdash; these feed link ranking &amp; the hyper optimizer:</p><div class="lk-chips">'+chips+'</div>';
+  }
+  function eqPanel(c){
+    var nf=function(lbl,k,mx){return '<div class="field"><label>'+lbl+'</label><input type="number" min="0"'+(mx?' max="'+mx+'"':'')+' data-hyp="'+k+'" value="'+num(c[k])+'"></div>';};
+    return '<div class="panel"><h2>Stat equivalence '+
+      '<label class="eq-toggle"><input type="checkbox" data-eq="on"'+(c.eqOn?" checked":"")+'> compute from my stats</label></h2>'+
+      '<p class="muted" style="margin:-4px 0 8px">Totals from your in-game <b>STAT window</b> (fully buffed, standing still). Replaces the MapleScouter paste &mdash; GMS-friendly.</p>'+
+      '<div class="eq-drop" tabindex="0"><b>Read from screenshot(s)</b> &mdash; drop, paste, or click. '+
+        'One shot of the <b>STAT window</b> (Boss/Crit/IED/ATT), plus one <b>Stat Info</b> panel per stat (Main/Secondary/ATT) for base &amp; %. Shots accumulate. '+
+        '<button type="button" class="mini ghost eq-reset">Reset</button>'+
+        '<input type="file" class="eq-file" accept="image/*" multiple hidden></div>'+
+      '<div class="eq-status muted" style="margin:4px 0 8px"></div>'+
+      '<p class="muted" style="margin:6px 0 2px;font-size:11px">Per stat, the game’s Stat Info panel shows three numbers &mdash; enter all three: <b>base</b> (affected by %), <b>%</b>, and <b>not-applied</b> (flat).</p>'+
+      '<div class="edgrid">'+
+        nf("Main base","mainBase")+nf("Main %","mainPct")+nf("Main not-applied","mainNA")+
+        nf("Secondary base","secBase")+nf("Secondary %","secPct")+nf("Secondary not-applied","secNA")+
+        nf("ATT/M.ATT base","attBase")+nf("ATT %","attPct")+nf("ATT not-applied","attNA")+
+        nf("Crit Dmg %","critDmg")+nf("Boss Dmg %","bossTotal")+nf("Damage %","dmgTotal")+nf("Total IED %","iedTotal",100)+
+      '</div><div class="eq-out">'+eqOutHTML(c)+'</div></div>';
   }
   function hyperPanel(c){
     return '<div class="panel"><h2>Hyper stats</h2>'+
       '<div class="edgrid">'+
-        '<div class="field"><label>Crit rate before hyper %</label><input type="number" min="0" max="100" data-hyp="crit" value="'+num(c.hyperCrit)+'"></div>'+
-        '<div class="field"><label>Reserve Arcane Force (lv)</label><input type="number" min="0" max="15" data-hyp="arc" value="'+num(c.hyperArc)+'"></div>'+
+        '<div class="field"><label>Crit rate before hyper %</label><input type="number" min="0" max="100" data-hyp="hyperCrit" value="'+num(c.hyperCrit)+'"></div>'+
+        '<div class="field"><label>Reserve Arcane Force (lv)</label><input type="number" min="0" max="15" data-hyp="hyperArc" value="'+num(c.hyperArc)+'"></div>'+
         '<div class="field"><label>Hyper points (Lv '+num(c.level)+')</label><div class="readfld">'+hyperPoints(c.level)+'</div></div>'+
       '</div><div class="hyp-out">'+hyperOutHTML(c)+'</div></div>';
+  }
+  function updateEq(c){var o=document.querySelector('#editor .eq-out');if(o)o.innerHTML=eqOutHTML(c);}
+
+  // ---- read stat totals straight off an in-game screenshot, reusing the Scouter app's OCR ----
+  // The Scouter (/scouter/) reads MapleStory's fixed bitmap font by template lookup. We lazy-load
+  // its modules (same origin) and run the same pipeline, then map the result onto the engine fields
+  // so the user pastes screenshots instead of typing. STAT window -> Boss/Crit/IED/Damage/ATT;
+  // Stat Info panel -> a stat's Base / % / Not-affected (needed for the main-stat total & %).
+  var scouterReady=false, scouterLoading=null;
+  function loadScouter(){
+    if(scouterReady)return Promise.resolve();
+    if(scouterLoading)return scouterLoading;
+    scouterLoading=["glyphs.js","layout.js","fields.js","ocr.js"].reduce(function(chain,f){
+      return chain.then(function(){return new Promise(function(res,rej){
+        var s=document.createElement("script");s.src="../scouter/js/"+f;
+        s.onload=res;s.onerror=function(){rej(new Error("could not load "+f));};
+        document.head.appendChild(s);
+      });});
+    },Promise.resolve()).then(function(){
+      if(!window.OCR||!window.LAYOUT||!window.FIELDS||!window.GLYPHS)throw new Error("Scouter modules missing");
+      window.OCR.loadFonts(window.GLYPHS);scouterReady=true;
+    });
+    return scouterLoading;
+  }
+  function imgDataFrom(bm){var cv=document.createElement("canvas");cv.width=bm.width;cv.height=bm.height;
+    var cx=cv.getContext("2d",{willReadFrequently:true});cx.drawImage(bm,0,0);return cx.getImageData(0,0,cv.width,cv.height);}
+  function ocrReadImage(imgData){   // -> {single, extras, table}
+    var O=window.OCR,L=window.LAYOUT,F=window.FIELDS;
+    var mask=O.fullMask(imgData,"stat"),panels={},readings={},out={single:{},extras:{},table:{}};
+    Object.keys(L).forEach(function(k){var h=O.findAnchor(mask,L[k].anchor);if(h)panels[k]=h;});
+    var sw=panels.statWindow;
+    if(sw){var rois=L.statWindow.rois;Object.keys(rois).forEach(function(field){var r=rois[field];
+      var read=O.readRoi(mask,[sw.x+r[0],sw.y+r[1],r[2],r[3]],"stat",[]);readings[field]=F.parse(field,read.text);});}
+    var si=panels.statInfo;
+    if(si){var p=L.statInfo,abs=function(r){return [si.x+r[0],si.y+r[1],r[2],r[3]];};
+      var info=O.readStatInfo(mask,abs(p.rois["StatInfo:Title"]),abs(p.rois["StatInfo:Values"]),p.titles,[]);
+      if(info.stat){var t=F.parseStatInfo(info.rows,info.stat);if(t.base!=null)out.table[info.stat]={base:t.base,percent:t.percent,not_applied:t.not_applied};}}
+    var mapped=F.toSiteFields(readings);out.single=mapped.single;out.extras=mapped.extras;return out;
+  }
+  // Each character keeps an accumulating read buffer so separate screenshots (STAT window, then a
+  // Stat Info panel per stat) build up instead of overwriting — matching how the Scouter expects
+  // one shot per stat. Cleared with the panel's Reset button or on page reload.
+  var eqBuf={};
+  function applyScouterRead(c,r){   // r = accumulated {single,extras,table} -> fills c.* ; returns labels
+    var s=r.single,ex=r.extras,tb=r.table,got=[];
+    function put(key,v,lbl){if(v!=null&&isFinite(v)){c[key]=Math.round(v*100)/100;if(lbl&&got.indexOf(lbl)<0)got.push(lbl);}}
+    put("bossTotal",s["Boss Damage"],"Boss");
+    put("critDmg",s["Critical Damage"],"Crit Dmg");
+    put("dmgTotal",s["Damage"],"Damage");
+    put("iedTotal",s["Ignore Enemy Defense"],"IED");
+    if(s["Buff Duration"]!=null&&isFinite(s["Buff Duration"]))c.buffDur=s["Buff Duration"];   // stat-window value as-is
+    var arch=classOf(c),mage=arch==="Mage";
+    function setStat(prefix,t,lbl){if(!t||t.base==null)return;
+      put(prefix+"Base",t.base,lbl);put(prefix+"Pct",num(t.percent),null);put(prefix+"NA",num(t.not_applied),null);}
+    function total(t){return t&&t.base!=null?t.base*(1+num(t.percent)/100)+num(t.not_applied):0;}
+    // Attack / M.Att — prefer the Stat Info panel (gives base/%/na); fall back to STAT-window total.
+    var an=mage?"M.Attack":"Attack";
+    if(tb[an]&&tb[an].base!=null)setStat("att",tb[an],"ATT");
+    else if(ex[mage?"Magic ATT":"Attack Power"]!=null){put("attBase",ex[mage?"Magic ATT":"Attack Power"],"ATT");c.attPct=0;c.attNA=0;}
+    if(arch==="Xenon"){   // three equal primaries -> sum the bases, average the %
+      var b=0,na=0,p=[];["STR","DEX","LUK"].forEach(function(x){var t=tb[x];if(t&&t.base!=null){b+=t.base;na+=num(t.not_applied);if(t.percent!=null)p.push(num(t.percent));}});
+      if(b>0){put("mainBase",b,"Main");c.mainPct=p.length?p.reduce(function(a,d){return a+d;},0)/p.length:0;c.mainNA=na;}
+    }else{   // largest total across everything read so far = main, next = secondary
+      var arr=["STR","DEX","INT","LUK"].map(function(x){return {t:tb[x],tot:total(tb[x])};})
+        .filter(function(o){return o.tot>0;}).sort(function(a,b){return b.tot-a.tot;});
+      if(arr[0])setStat("main",arr[0].t,"Main");
+      if(arr[1])setStat("sec",arr[1].t,"Sec");
+    }
+    return got;
+  }
+  function readScouterFiles(c,files){
+    var imgs=[].slice.call(files||[]).filter(function(f){return f.type&&f.type.indexOf("image/")===0;});
+    var st=document.querySelector('#editor .eq-status');
+    if(!imgs.length)return;
+    if(st)st.textContent="Reading "+imgs.length+" screenshot(s)…";
+    loadScouter().then(function(){
+      return Promise.all(imgs.map(function(f){return createImageBitmap(f).then(function(b){return ocrReadImage(imgDataFrom(b));});}));
+    }).then(function(results){
+      var m=eqBuf[c.id]=eqBuf[c.id]||{single:{},extras:{},table:{}};   // accumulate across pastes
+      results.forEach(function(r){
+        Object.keys(r.single).forEach(function(k){if(r.single[k]!=null)m.single[k]=r.single[k];});
+        Object.keys(r.extras).forEach(function(k){if(r.extras[k]!=null)m.extras[k]=r.extras[k];});
+        Object.keys(r.table).forEach(function(k){m.table[k]=r.table[k];});
+      });
+      var got=applyScouterRead(c,m);
+      if(got.length){c.eqOn=true;save();renderEditor();
+        var s2=document.querySelector('#editor .eq-status');if(s2)s2.textContent="Read so far: "+got.join(", ")+". Add a Stat Info shot per stat for base/%; check the values — they feed link ranking & the hyper optimizer.";}
+      else{var s3=document.querySelector('#editor .eq-status');if(s3)s3.textContent="No STAT window or Stat Info panel found in that image. Use an un-scaled screenshot with the whole window visible.";}
+    }).catch(function(e){var s4=document.querySelector('#editor .eq-status');if(s4)s4.textContent="Screenshot reader unavailable ("+e.message+"). It needs the deployed site (loads the Scouter's OCR).";});
   }
   function wireHypCur(c){
     document.querySelectorAll('#editor .hyp-cur').forEach(function(inp){
@@ -1177,6 +1407,7 @@
       bossPanel(c)+
       badgesPanel(c)+
       dropPanel(c)+
+      eqPanel(c)+
       linksPanel(c)+
       hyperPanel(c);
     wireEditor(c);
@@ -1270,10 +1501,34 @@
     if(lp)lp.addEventListener("input",function(){c.linkText=lp.value;save();updateLinkRank(c);});
     var lbd=document.querySelector('#editor .lk-bd');
     if(lbd)lbd.addEventListener("input",function(){c.buffDur=Math.max(0,num(lbd.value));save();updateLinkRank(c);});
-    var hpc=document.querySelector('#editor [data-hyp="crit"]');
-    if(hpc)hpc.addEventListener("input",function(){c.hyperCrit=Math.max(0,Math.min(100,num(hpc.value)));save();updateHyper(c);});
-    var hpa=document.querySelector('#editor [data-hyp="arc"]');
-    if(hpa)hpa.addEventListener("input",function(){c.hyperArc=Math.max(0,Math.min(15,num(hpa.value)));save();updateHyper(c);});
+    var HYP_CAP={iedTotal:100,hyperCrit:100,hyperArc:15};   // clamp maxima; others just clamp >=0
+    document.querySelectorAll('#editor [data-hyp]').forEach(function(inp){
+      var k=inp.getAttribute("data-hyp"),cap=HYP_CAP[k];
+      inp.addEventListener("input",function(){var v=Math.max(0,num(inp.value));if(cap)v=Math.min(cap,v);c[k]=v;save();updateEq(c);updateLinkRank(c);updateHyper(c);});
+    });
+    var eqt=document.querySelector('#editor [data-eq="on"]');
+    if(eqt)eqt.addEventListener("change",function(){c.eqOn=eqt.checked;save();updateEq(c);updateLinkRank(c);updateHyper(c);});
+    var eqd=document.querySelector('#editor .eq-drop');
+    if(eqd){
+      var eqf=eqd.querySelector('.eq-file'),eqr=eqd.querySelector('.eq-reset');
+      eqd.addEventListener("click",function(ev){if(ev.target===eqr)return;eqf.click();});
+      eqf.addEventListener("change",function(){readScouterFiles(c,eqf.files);eqf.value="";});
+      if(eqr)eqr.addEventListener("click",function(ev){ev.stopPropagation();delete eqBuf[c.id];
+        ["mainBase","mainPct","mainNA","secBase","secPct","secNA","attBase","attPct","attNA","critDmg","bossTotal","dmgTotal","iedTotal"].forEach(function(k){c[k]=0;});
+        save();renderEditor();});
+      ["dragenter","dragover"].forEach(function(ev){eqd.addEventListener(ev,function(e){e.preventDefault();eqd.classList.add("hover");});});
+      ["dragleave","drop"].forEach(function(ev){eqd.addEventListener(ev,function(e){e.preventDefault();eqd.classList.remove("hover");});});
+      eqd.addEventListener("drop",function(e){if(e.dataTransfer&&e.dataTransfer.files)readScouterFiles(c,e.dataTransfer.files);});
+    }
+    if(!wireEditor.pasteWired){   // once: paste a screenshot anywhere in the editor (not into a text field)
+      wireEditor.pasteWired=true;
+      document.addEventListener("paste",function(e){
+        if(!document.querySelector('#editor .eq-drop'))return;
+        var ae=document.activeElement;
+        if(ae&&(ae.tagName==="TEXTAREA"||(ae.tagName==="INPUT"&&ae.type!=="file")))return;  // don't steal from the link paste / inputs
+        if(e.clipboardData&&e.clipboardData.files&&e.clipboardData.files.length){var cc=byId(curId);if(cc)readScouterFiles(cc,e.clipboardData.files);}
+      });
+    }
     wireHypCur(c);
   }
   function byId(id){return chars.filter(function(c){return c.id===id;})[0];}
