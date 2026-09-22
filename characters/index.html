@@ -1049,9 +1049,13 @@
     while(critLv<15&&CRIT_BY_LV[critLv]<gap)critLv++;
     if(hypCum(critLv)>pool){critLv=0;while(critLv<15&&hypCum(critLv+1)<=pool)critLv++;}
     pool-=hypCum(critLv);
-    var lv={main:0,sec:0,att:0,critDmg:0,dmg:0,boss:0,ied:0}, cats=["main","sec","att","critDmg","dmg","boss","ied"];
-    function delta(cat,f){return cat==="main"||cat==="sec"?30:cat==="att"?3:cat==="critDmg"?1:cat==="dmg"?3:cat==="boss"?(f<5?3:4):3*Math.pow(0.97,f);}
-    function wt(cat){return cat==="main"?W.mainFlat:cat==="sec"?W.secFlat:cat==="att"?W.att:cat==="critDmg"?W.critDmg:cat==="ied"?W.ied:W.boss;}
+    // Archers (Critical Reinforce, 5th job): crit rate over 100% converts to crit damage,
+    // 1% excess crit -> 0.5% crit dmg at max skill. So crit rate keeps being a value stat.
+    var isArcher=classOf(c)==="Archer", CRIT_CONV=0.5;
+    var lv={main:0,sec:0,att:0,critDmg:0,dmg:0,boss:0,ied:0,crit:critLv}, cats=["main","sec","att","critDmg","dmg","boss","ied"];
+    if(isArcher)cats.push("crit");   // extra crit rate beyond 100 keeps giving value (as crit dmg)
+    function delta(cat,f){return cat==="main"||cat==="sec"?30:cat==="att"?3:cat==="critDmg"?1:cat==="dmg"?3:cat==="boss"?(f<5?3:4):cat==="crit"?(CRIT_BY_LV[f+1]-CRIT_BY_LV[f]):3*Math.pow(0.97,f);}
+    function wt(cat){return cat==="main"?W.mainFlat:cat==="sec"?W.secFlat:cat==="att"?W.att:cat==="critDmg"?W.critDmg:cat==="ied"?W.ied:cat==="crit"?CRIT_CONV*W.critDmg:W.boss;}
     while(true){
       var best=null,bpp=0,i;
       for(i=0;i<cats.length;i++){var cat=cats[i],cl=lv[cat];if(cl>=15)continue;
@@ -1061,7 +1065,7 @@
       if(!best)break;
       lv[best]++;pool-=HYP_COST[lv[best]-1];
     }
-    return {total:total,arc:arc,critLv:critLv,critPct:CRIT_BY_LV[critLv],lv:lv,used:total-pool,left:pool,hasW:hasW};
+    return {total:total,arc:arc,critLv:lv.crit,critPct:CRIT_BY_LV[lv.crit],lv:lv,used:total-pool,left:pool,hasW:hasW,archer:isArcher};
   }
   var HYPER_ROWS=[["main","Main stat"],["sec","Secondary"],["crit","Critical Rate"],["cdmg","Critical Dmg"],
     ["ied","Ignore Def"],["dmg","Damage"],["boss","Boss Dmg"],["att","ATT / M.Att"]];
@@ -1075,7 +1079,7 @@
         '<input type="number" min="0" max="15" class="hyp-cur" data-hk="'+k+'" value="'+(cur[k]===0||cur[k]?cv:"")+'">'+
         '<span class="hyp-opt'+(cv!==ov?" hyp-diff":"")+'">'+ov+'</span></div>';}).join("");
     return '<div class="hyp-grid"><div class="hyp-row hyp-head"><span>Stat</span><span>Current</span><span>Optimized</span></div>'+rows+'</div>'+
-      '<p class="muted hyp-sum">Uses <b>'+r.used+'</b> / '+r.total+' pts · crit hyper <b>+'+r.critPct+'%</b> (fills to 100) · Arcane Force reserved <b>'+r.arc+'</b> lv'+(r.left>0?' · '+r.left+' left':'')+'</p>';
+      '<p class="muted hyp-sum">Uses <b>'+r.used+'</b> / '+r.total+' pts · crit hyper <b>+'+r.critPct+'%</b> '+(r.archer?'(excess &rarr; crit dmg via Critical Reinforce)':'(fills to 100)')+' · Arcane Force reserved <b>'+r.arc+'</b> lv'+(r.left>0?' · '+r.left+' left':'')+'</p>';
   }
   function hyperPanel(c){
     return '<div class="panel"><h2>Hyper stats</h2>'+
