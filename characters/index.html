@@ -160,6 +160,16 @@
   .lk-row .lk-val{text-align:right;color:var(--acc);font-weight:600;}
   .lk-row.lk-zero{opacity:.4;}
   .lk-row.lk-zero .lk-val{color:var(--dim);}
+  /* hyper stats */
+  .hyp-grid{border:1px solid var(--line);border-radius:6px;overflow:hidden;max-width:420px;margin-top:6px;}
+  .hyp-row{display:grid;grid-template-columns:1fr 68px 78px;gap:8px;align-items:center;padding:4px 10px;border-bottom:1px solid var(--line);font-size:12px;}
+  .hyp-row:last-child{border-bottom:none;}
+  .hyp-row.hyp-head{background:var(--panel2);color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.5px;}
+  .hyp-lbl{color:var(--fg);}
+  .hyp-cur{width:60px;}
+  .hyp-opt{text-align:right;color:var(--acc);font-weight:600;}
+  .hyp-opt.hyp-diff{color:var(--warn);}   /* differs from your current */
+  .hyp-sum{margin-top:8px;}
   /* boss setup sheet (rows = characters, 2 cols per boss) */
   .bset-wrap{max-height:calc(100vh - 210px);overflow:auto;}
   #bsetTbl{border-collapse:separate;border-spacing:0;width:auto;font-size:11px;white-space:nowrap;}
@@ -514,6 +524,9 @@
       for(var bok in bo){if(bo.hasOwnProperty(bok))bo[bok].p=Math.max(1,Math.min(6,num(bo[bok].p)||1));}
       if(typeof c.linkText!=="string")c.linkText="";   // pasted MapleScouter stat equivalence for link ranking
       if(typeof c.buffDur!=="number")c.buffDur=100;     // buff duration % (base 100); scales the AB link
+      if(typeof c.hyperCrit!=="number")c.hyperCrit=0;   // crit rate before hyper (to fill hyper crit to 100)
+      if(typeof c.hyperArc!=="number")c.hyperArc=0;     // Arcane Force hyper levels reserved
+      if(!c.hyperCur||typeof c.hyperCur!=="object")c.hyperCur={};
       var bg=c.badges;for(var bk in bg){if(bg.hasOwnProperty(bk))bg[bk]=(bg[bk]===2||bg[bk]===true);}  // drop old 'o' planning state
       var b0=c.boss, fl=b0.flags;               // flag cleanup / rename / restructure
       delete fl.Abso; delete fl.Rein; delete fl.Pocket; delete fl.CRA;
@@ -999,6 +1012,68 @@
   }
   function updateLinkRank(c){var o=document.querySelector('#editor .lk-out');if(o)o.innerHTML=linkOutHTML(c);}
 
+  // ---------- hyper stat optimizer (tables from brendonmay/hyperCalculator) ----------
+  var HYP_COST=[1,2,4,8,10,15,20,25,30,35,50,65,80,95,110];   // points to raise from level i to i+1
+  function hypCum(n){var t=0,i;n=Math.max(0,Math.min(15,n));for(i=0;i<n;i++)t+=HYP_COST[i];return t;}
+  function hyperPoints(level){level=num(level);var pts=0,inc=3,cl;for(cl=140;cl<=level;cl++){if(cl%10===0&&cl>140)inc++;pts+=inc;}return pts;}
+  var CRIT_BY_LV=[0,1,2,3,4,5,7,9,11,13,15,17,19,21,23,25];   // total crit-rate % from N hyper levels
+  function hyperWeights(w){
+    var flats=[num(w.int),num(w.str),num(w.dex),num(w.luk)].sort(function(a,b){return b-a;});
+    return {mainFlat:flats[0],secFlat:flats[1],att:Math.max(num(w.mattFlat),num(w.attFlat)),
+      boss:num(w.boss),critDmg:num(w.critDmg),ied:num(w.ied380)||num(w.ied300)};
+  }
+  function optimizeHyper(c){
+    var W=hyperWeights(parseLinkStats(c.linkText||"").w);
+    var hasW=!!(W.mainFlat||W.boss||W.critDmg||W.att||W.ied);
+    var total=hyperPoints(c.level), pool=total-hypCum(num(c.hyperArc)), arc=Math.max(0,Math.min(15,num(c.hyperArc)));
+    var gap=Math.max(0,100-num(c.hyperCrit)), critLv=0;
+    while(critLv<15&&CRIT_BY_LV[critLv]<gap)critLv++;
+    if(hypCum(critLv)>pool){critLv=0;while(critLv<15&&hypCum(critLv+1)<=pool)critLv++;}
+    pool-=hypCum(critLv);
+    var lv={main:0,sec:0,att:0,critDmg:0,dmg:0,boss:0,ied:0}, cats=["main","sec","att","critDmg","dmg","boss","ied"];
+    function delta(cat,f){return cat==="main"||cat==="sec"?30:cat==="att"?3:cat==="critDmg"?1:cat==="dmg"?3:cat==="boss"?(f<5?3:4):3*Math.pow(0.97,f);}
+    function wt(cat){return cat==="main"?W.mainFlat:cat==="sec"?W.secFlat:cat==="att"?W.att:cat==="critDmg"?W.critDmg:cat==="ied"?W.ied:W.boss;}
+    while(true){
+      var best=null,bpp=0,i;
+      for(i=0;i<cats.length;i++){var cat=cats[i],cl=lv[cat];if(cl>=15)continue;
+        var cost=HYP_COST[cl];if(cost>pool)continue;
+        var val=delta(cat,cl)*wt(cat);if(val<=0)continue;
+        if(val/cost>bpp){bpp=val/cost;best=cat;}}
+      if(!best)break;
+      lv[best]++;pool-=HYP_COST[lv[best]-1];
+    }
+    return {total:total,arc:arc,critLv:critLv,critPct:CRIT_BY_LV[critLv],lv:lv,used:total-pool,left:pool,hasW:hasW};
+  }
+  var HYPER_ROWS=[["main","Main stat"],["sec","Secondary"],["crit","Critical Rate"],["cdmg","Critical Dmg"],
+    ["ied","Ignore Def"],["dmg","Damage"],["boss","Boss Dmg"],["att","ATT / M.Att"]];
+  function hyperOutHTML(c){
+    var r=optimizeHyper(c);
+    if(!r.hasW)return '<p class="muted">Paste this character&rsquo;s stat equivalence in <b>Link skills</b> above to optimize hyper stats.</p>';
+    var opt={main:r.lv.main,sec:r.lv.sec,crit:r.critLv,cdmg:r.lv.critDmg,ied:r.lv.ied,dmg:r.lv.dmg,boss:r.lv.boss,att:r.lv.att};
+    var cur=c.hyperCur||{};
+    var rows=HYPER_ROWS.map(function(p){var k=p[0],cv=num(cur[k]),ov=opt[k];
+      return '<div class="hyp-row"><span class="hyp-lbl">'+p[1]+'</span>'+
+        '<input type="number" min="0" max="15" class="hyp-cur" data-hk="'+k+'" value="'+(cur[k]===0||cur[k]?cv:"")+'">'+
+        '<span class="hyp-opt'+(cv!==ov?" hyp-diff":"")+'">'+ov+'</span></div>';}).join("");
+    return '<div class="hyp-grid"><div class="hyp-row hyp-head"><span>Stat</span><span>Current</span><span>Optimized</span></div>'+rows+'</div>'+
+      '<p class="muted hyp-sum">Uses <b>'+r.used+'</b> / '+r.total+' pts · crit hyper <b>+'+r.critPct+'%</b> (fills to 100) · Arcane Force reserved <b>'+r.arc+'</b> lv'+(r.left>0?' · '+r.left+' left':'')+'</p>';
+  }
+  function hyperPanel(c){
+    return '<div class="panel"><h2>Hyper stats</h2>'+
+      '<div class="edgrid">'+
+        '<div class="field"><label>Crit rate before hyper %</label><input type="number" min="0" max="100" data-hyp="crit" value="'+num(c.hyperCrit)+'"></div>'+
+        '<div class="field"><label>Reserve Arcane Force (lv)</label><input type="number" min="0" max="15" data-hyp="arc" value="'+num(c.hyperArc)+'"></div>'+
+        '<div class="field"><label>Hyper points (Lv '+num(c.level)+')</label><div class="readfld">'+hyperPoints(c.level)+'</div></div>'+
+      '</div><div class="hyp-out">'+hyperOutHTML(c)+'</div></div>';
+  }
+  function wireHypCur(c){
+    document.querySelectorAll('#editor .hyp-cur').forEach(function(inp){
+      inp.oninput=function(){var k=inp.getAttribute("data-hk");var cu=c.hyperCur=c.hyperCur||{};cu[k]=Math.max(0,Math.min(15,num(inp.value)));save();
+        var opt=inp.parentNode.querySelector(".hyp-opt");if(opt)opt.classList.toggle("hyp-diff",num(inp.value)!==num(opt.textContent));};
+    });
+  }
+  function updateHyper(c){var o=document.querySelector('#editor .hyp-out');if(o){o.innerHTML=hyperOutHTML(c);wireHypCur(c);}}
+
   // ---------- bosses SETUP sheet (rows = characters, 2 cols per boss) ----------
   function setupChars(){return chars.slice();}   // follow the roster (manual) order
   function bsetPartyInput(cid,bk,p){return '<input class="bset-p" type="number" min="0" max="6" data-cid="'+cid+'" data-bk="'+bk+'" value="'+p+'">';}
@@ -1076,7 +1151,8 @@
       bossPanel(c)+
       badgesPanel(c)+
       dropPanel(c)+
-      linksPanel(c);
+      linksPanel(c)+
+      hyperPanel(c);
     wireEditor(c);
   }
   function fld(label,key,type,val){return '<div class="field"><label>'+label+'</label><input data-id="'+key+'" type="'+type+'" value="'+String(val).replace(/"/g,"&quot;")+'"></div>';}
@@ -1168,6 +1244,11 @@
     if(lp)lp.addEventListener("input",function(){c.linkText=lp.value;save();updateLinkRank(c);});
     var lbd=document.querySelector('#editor .lk-bd');
     if(lbd)lbd.addEventListener("input",function(){c.buffDur=Math.max(0,num(lbd.value));save();updateLinkRank(c);});
+    var hpc=document.querySelector('#editor [data-hyp="crit"]');
+    if(hpc)hpc.addEventListener("input",function(){c.hyperCrit=Math.max(0,Math.min(100,num(hpc.value)));save();updateHyper(c);});
+    var hpa=document.querySelector('#editor [data-hyp="arc"]');
+    if(hpa)hpa.addEventListener("input",function(){c.hyperArc=Math.max(0,Math.min(15,num(hpa.value)));save();updateHyper(c);});
+    wireHypCur(c);
   }
   function byId(id){return chars.filter(function(c){return c.id===id;})[0];}
   function refreshComputed(c){
