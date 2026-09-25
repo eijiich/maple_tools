@@ -255,9 +255,9 @@
     <button id="tabBosses">Bosses</button>
     <span class="spacer"></span>
     <span class="muted" id="count"></span>
-    <button id="btnExport">export</button>
-    <button id="btnImport">import</button>
-    <input type="file" id="importFile" accept=".json,application/json" hidden>
+    <button id="btnExport" title="Save Tracker + Gear Progression to one file">export</button>
+    <button id="btnImport" title="Load an Ayamushy Tools data file">import</button>
+    <button id="btnDevices" title="Move data to or from another device with a QR code">transfer</button>
   </div>
 
   <!-- TABLE VIEW -->
@@ -319,6 +319,7 @@
   </div>
 </div>
 
+<script src="../shared/transfer.js"></script>
 <script src="seed.js"></script>
 <script>
 (function(){
@@ -1753,16 +1754,15 @@
     if(!confirm("Delete this character?"))return;
     chars=chars.filter(function(c){return c.id!==curId;});curId=chars.length?chars[0].id:null;save();renderEditor();renderTable();
   };
-  document.getElementById("btnExport").onclick=function(){
-    var blob=new Blob([JSON.stringify(chars,null,1)],{type:"application/json"});
-    var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ayamushy-characters.json";a.click();
-  };
-  document.getElementById("btnImport").onclick=function(){document.getElementById("importFile").click();};
-  document.getElementById("importFile").onchange=function(e){
-    var f=e.target.files[0];if(!f)return;var rd=new FileReader();
-    rd.onload=function(){try{chars=normalize(JSON.parse(rd.result));curId=chars.length?chars[0].id:null;save();show("table");}catch(err){alert("Bad JSON: "+err);}};
-    rd.readAsText(f);
-  };
+  // One data file / device transfer for every tool (shared/transfer.js). Register live hooks so
+  // export reads the in-memory roster and import goes through normalize + re-render.
+  if(window.AyaTransfer){
+    AyaTransfer.register(KEY,{get:function(){return chars;},
+      set:function(d){chars=normalize(Array.isArray(d)?d:[]);curId=chars.length?chars[0].id:null;save();show("table");}});
+    document.getElementById("btnExport").onclick=AyaTransfer.exportFile;
+    document.getElementById("btnImport").onclick=AyaTransfer.importFile;
+    document.getElementById("btnDevices").onclick=AyaTransfer.openDevices;
+  }
 
   // spreadsheet-style grid nav: Enter = same column next row, Shift+Enter = prev row
   // (skips cells with no control). Tab / Shift+Tab keep the browser's native order.

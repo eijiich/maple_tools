@@ -200,9 +200,9 @@
     <button id="charAdd">+ char</button>
     <button id="charRename">rename</button>
     <button id="charDel" class="danger">delete</button>
-    <button id="doExport">export</button>
-    <button id="doImport">import</button>
-    <input type="file" id="importFile" accept=".json,application/json" hidden>
+    <button id="doExport" title="Save Tracker + Gear Progression to one file">export</button>
+    <button id="doImport" title="Load an Ayamushy Tools data file">import</button>
+    <button id="doDevices" title="Move data to or from another device with a QR code">transfer</button>
   </div>
 
   <div class="tabs" id="tabBar">
@@ -612,6 +612,7 @@
 
 </div>
 
+<script src="../shared/transfer.js"></script>
 <script src="js/sf-stats.js"></script>
 <script src="js/sf.js"></script>
 <script src="js/cubing.js"></script>

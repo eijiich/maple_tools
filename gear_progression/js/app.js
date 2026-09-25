@@ -1778,26 +1778,20 @@ document.getElementById('charDel').addEventListener('click', () => {
   save(); renderAll();
 });
 
-document.getElementById('doExport').addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-  const a = el('a', { href: URL.createObjectURL(blob), download: 'gear-progression.json' });
-  a.click(); URL.revokeObjectURL(a.href);
-});
-document.getElementById('doImport').addEventListener('click', () =>
-  document.getElementById('importFile').click());
-document.getElementById('importFile').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  try {
-    const s = JSON.parse(await file.text());
-    if (!s || !s.chars) throw new Error('no characters in that file');
-    if (!confirm('Replace everything currently saved with this file?')) return;
-    state = migrate(s); sfCacheClear(); save(); renderAll();
-  } catch (err) {
-    alert("Couldn't read that file: " + err.message);
-  }
-  e.target.value = '';
-});
+// One data file / device transfer for every tool (shared/transfer.js). Live hooks: export reads
+// the in-memory state (the save is debounced), import goes through migrate + re-render.
+if (window.AyaTransfer) {
+  AyaTransfer.register(LS_KEY, {
+    get: () => state,
+    set: (s) => {
+      state = migrate(s && s.chars ? s : { chars: { c1: newChar('Character 1') }, active: 'c1' });
+      sfCacheClear(); save(); renderAll();
+    },
+  });
+  document.getElementById('doExport').addEventListener('click', AyaTransfer.exportFile);
+  document.getElementById('doImport').addEventListener('click', AyaTransfer.importFile);
+  document.getElementById('doDevices').addEventListener('click', AyaTransfer.openDevices);
+}
 
 // surface a broken data table rather than silently ranking on bad numbers
 if (typeof CUBE_POOL_ERRORS !== 'undefined' && CUBE_POOL_ERRORS.length) {

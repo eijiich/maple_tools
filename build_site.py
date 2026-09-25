@@ -224,6 +224,12 @@ def build(out: Path):
         d = out / slug
         if d.exists():
             shutil.rmtree(d)
+    # shared/ (e.g. transfer.js, used by several apps as ../shared/...) goes first so each
+    # app page's cache-bust hash can find it
+    if (out / 'shared').exists():
+        shutil.rmtree(out / 'shared')
+    shutil.copytree(ROOT / 'shared', out / 'shared')
+    print(f'  shared           <- shared')
     for slug, src_rel, items, _label, _blurb in APPS:
         src = ROOT / src_rel
         dst = out / slug
